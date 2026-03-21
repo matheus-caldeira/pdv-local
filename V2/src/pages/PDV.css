@@ -439,6 +439,12 @@
   font-weight: var(--weight-regular);
 }
 
+.custom-modal-item-max {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-tertiary);
+}
+
 .custom-modal-item-controls {
   display: flex;
   align-items: center;

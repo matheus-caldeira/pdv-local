@@ -82,7 +82,7 @@ export function Customizations() {
   // === Item CRUD ===
   function openNewItem(groupId: number) {
     setItemGroupId(groupId)
-    setEditingItem({ name: '', price: 0, chargeAfter: 0, active: true })
+    setEditingItem({ name: '', price: 0, maxQty: 0, chargeAfter: 0, active: true })
     setItemModal(true)
   }
 
@@ -101,6 +101,7 @@ export function Customizations() {
       groupId: itemGroupId,
       name: editingItem.name!.trim(),
       price: Number(editingItem.price) || 0,
+      maxQty: Number(editingItem.maxQty) || 0,
       chargeAfter: Number(editingItem.chargeAfter) || 0,
       active: editingItem.active !== false,
     }
@@ -178,6 +179,9 @@ export function Customizations() {
                           <span className="custom-item-price tabular">
                             {item.price > 0 ? formatMoney(item.price) : 'Gratis'}
                           </span>
+                          {(item.maxQty || 0) > 0 && (
+                            <span className="custom-item-charge">max {item.maxQty}</span>
+                          )}
                           {item.chargeAfter > 0 && (
                             <span className="custom-item-charge">cobra +{item.chargeAfter}</span>
                           )}
@@ -219,19 +223,22 @@ export function Customizations() {
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <div className="form-field" style={{ flex: 1 }}>
               <label>Minimo</label>
-              <input type="number" inputMode="numeric" value={editingGroup.minQty || 0}
-                onChange={e => setEditingGroup(g => ({ ...g, minQty: parseInt(e.target.value) || 0 }))} />
+              <input type="number" inputMode="numeric"
+                value={editingGroup.minQty ?? ''}
+                onChange={e => setEditingGroup(g => ({ ...g, minQty: e.target.value === '' ? 0 : parseInt(e.target.value) }))} />
             </div>
             <div className="form-field" style={{ flex: 1 }}>
               <label>Maximo</label>
-              <input type="number" inputMode="numeric" value={editingGroup.maxQty || 10}
-                onChange={e => setEditingGroup(g => ({ ...g, maxQty: parseInt(e.target.value) || 0 }))} />
+              <input type="number" inputMode="numeric"
+                value={editingGroup.maxQty ?? ''}
+                onChange={e => setEditingGroup(g => ({ ...g, maxQty: e.target.value === '' ? undefined as unknown as number : parseInt(e.target.value) }))} />
             </div>
           </div>
           <div className="form-field">
             <label>Cobrar a partir de (selecoes)</label>
-            <input type="number" inputMode="numeric" value={editingGroup.chargeAfter || 0}
-              onChange={e => setEditingGroup(g => ({ ...g, chargeAfter: parseInt(e.target.value) || 0 }))}
+            <input type="number" inputMode="numeric"
+              value={editingGroup.chargeAfter ?? ''}
+              onChange={e => setEditingGroup(g => ({ ...g, chargeAfter: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
               placeholder="0 = sempre cobra" />
             <span className="form-hint">Ex: 2 = as 2 primeiras selecoes sao gratis</span>
           </div>
@@ -250,14 +257,24 @@ export function Customizations() {
           </div>
           <div className="form-field">
             <label>Preco (R$)</label>
-            <input type="number" inputMode="decimal" step="0.01" value={editingItem.price || ''}
-              onChange={e => setEditingItem(i => ({ ...i, price: parseFloat(e.target.value) || 0 }))}
+            <input type="number" inputMode="decimal" step="0.01"
+              value={editingItem.price ?? ''}
+              onChange={e => setEditingItem(i => ({ ...i, price: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
               placeholder="0,00 = gratis" />
           </div>
           <div className="form-field">
+            <label>Maximo por item</label>
+            <input type="number" inputMode="numeric"
+              value={editingItem.maxQty ?? ''}
+              onChange={e => setEditingItem(i => ({ ...i, maxQty: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
+              placeholder="0 = sem limite" />
+            <span className="form-hint">0 = usa o limite do grupo</span>
+          </div>
+          <div className="form-field">
             <label>Cobrar a partir de (unidades)</label>
-            <input type="number" inputMode="numeric" value={editingItem.chargeAfter || 0}
-              onChange={e => setEditingItem(i => ({ ...i, chargeAfter: parseInt(e.target.value) || 0 }))}
+            <input type="number" inputMode="numeric"
+              value={editingItem.chargeAfter ?? ''}
+              onChange={e => setEditingItem(i => ({ ...i, chargeAfter: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
               placeholder="0 = sempre cobra" />
             <span className="form-hint">Ex: 1 = primeira unidade gratis, cobra a partir da 2a</span>
           </div>

@@ -202,11 +202,16 @@ export function PDV() {
 
     setCustomModal(prev => {
       if (!prev) return prev
+      const item = group.items.find(i => i.id === itemId)
       const groupSel = { ...(prev.selections[groupId] || {}) }
       const newQty = Math.max(0, (groupSel[itemId] || 0) + delta)
+
+      // Check item max
+      if (item?.maxQty && item.maxQty > 0 && newQty > item.maxQty) return prev
+
       groupSel[itemId] = newQty
 
-      // Check max
+      // Check group max
       const totalSelected = Object.values(groupSel).reduce((s, q) => s + q, 0)
       if (totalSelected > group.maxQty) return prev
 
@@ -440,6 +445,9 @@ export function PDV() {
                               {item.chargeAfter > 0 && <span className="custom-modal-item-free"> ({item.chargeAfter} gratis)</span>}
                             </span>
                           )}
+                          {(item.maxQty || 0) > 0 && (
+                            <span className="custom-modal-item-max">max {item.maxQty}</span>
+                          )}
                         </div>
                         <div className="custom-modal-item-controls">
                           {qty > 0 && (
@@ -449,7 +457,7 @@ export function PDV() {
                             </>
                           )}
                           <button className="qty-btn-sm qty-btn-add" onClick={() => updateCustomSelection(group.id!, item.id!, 1)}
-                            disabled={totalSelected >= group.maxQty}><Plus size={12} /></button>
+                            disabled={totalSelected >= group.maxQty || (item.maxQty > 0 && qty >= item.maxQty)}><Plus size={12} /></button>
                         </div>
                       </div>
                     )

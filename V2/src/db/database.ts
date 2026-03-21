@@ -5,6 +5,7 @@ export interface CustomizationItem {
   groupId: number
   name: string
   price: number
+  maxQty: number // max por item (0 = sem limite, usa o do grupo)
   chargeAfter: number // cobrar preco a partir de X unidades (0 = sempre cobra)
   active: boolean
 }
