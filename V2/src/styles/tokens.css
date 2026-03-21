@@ -1,0 +1,151 @@
+:root {
+  /* === Balcão Digital — Lanchonete PDV === */
+
+  /* Surfaces — receipt paper warmth */
+  --surface-0: #F5F2ED;
+  --surface-1: #F8F7F4;
+  --surface-2: #FFFFFF;
+  --surface-inset: #EDEAE4;
+
+  /* Cardápio — chalkboard dark */
+  --cardapio-bg: #2C2C2E;
+  --cardapio-surface: #3A3A3C;
+  --cardapio-text: #F5F2ED;
+  --cardapio-muted: #A1A1A6;
+
+  /* Ink — warm grays */
+  --ink-primary: #1C1B1A;
+  --ink-secondary: #5C5A56;
+  --ink-tertiary: #8A8680;
+  --ink-muted: #B5B1AA;
+
+  /* Accent — price tag amber/orange */
+  --accent: #E8722A;
+  --accent-hover: #D4621F;
+  --accent-subtle: #FDF0E8;
+  --accent-text: #FFFFFF;
+
+  /* Semantic */
+  --success: #3A8A5C;
+  --success-subtle: #E8F5EC;
+  --warning: #D4922A;
+  --warning-subtle: #FDF5E8;
+  --danger: #C43E3E;
+  --danger-subtle: #FCE8E8;
+  --info: #3A6B8A;
+  --info-subtle: #E8F0F5;
+
+  /* Borders — warm, low opacity */
+  --border: rgba(28, 27, 26, 0.10);
+  --border-emphasis: rgba(28, 27, 26, 0.18);
+  --border-strong: rgba(28, 27, 26, 0.28);
+  --border-focus: #E8722A;
+
+  /* Control tokens */
+  --control-bg: #EDEAE4;
+  --control-bg-hover: #E5E2DB;
+  --control-border: rgba(28, 27, 26, 0.15);
+  --control-focus-ring: rgba(232, 114, 42, 0.25);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  --tracking-tight: -0.3px;
+  --tracking-normal: 0;
+  --tracking-wide: 0.5px;
+
+  /* Spacing — 4px base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius — slightly rounded, not bubbly */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  /* Layout */
+  --nav-rail-width: 72px;
+  --nav-bottom-height: 64px;
+  --header-height: 56px;
+}
+
+/* === Reset & Base === */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--ink-primary);
+  background: var(--surface-0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-muted);
+  border-radius: var(--radius-full);
+}
+
+/* Tabular numbers for prices */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
