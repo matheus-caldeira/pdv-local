@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Printer } from 'lucide-react'
 import { db, type Order } from '../db/database'
 import { formatMoney, formatDateTime } from '../utils/format'
 import { Modal } from '../components/Modal'
@@ -25,6 +25,7 @@ export function Orders() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [detailOrder, setDetailOrder] = useState<Order | null>(null)
+  const [payMethodModal, setPayMethodModal] = useState(false)
 
   useEffect(() => { loadOrders() }, [])
 
@@ -40,6 +41,7 @@ export function Orders() {
       updatedAt: Date.now(),
     })
     toast('Pedido marcado como pago')
+    setPayMethodModal(false)
     setDetailOrder(null)
     loadOrders()
   }
@@ -53,6 +55,10 @@ export function Orders() {
     toast('Pedido cancelado')
     setDetailOrder(null)
     loadOrders()
+  }
+
+  function handlePrint() {
+    toast('Configure a impressora em Config > Impressora (ESC/POS)', 'info')
   }
 
   const filtered = orders.filter(o => {
@@ -130,49 +136,117 @@ export function Orders() {
       >
         {detailOrder && (
           <div className="order-detail">
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
-              <span className={`status-badge status-${detailOrder.status}`}>
-                {statusLabel(detailOrder.status)}
-              </span>
-            </div>
-            {detailOrder.customerName && (
-              <div className="detail-row">
-                <span className="detail-label">Cliente</span>
-                <span>{detailOrder.customerName}</span>
+            {/* Header info */}
+            <div className="detail-header-card">
+              <div className="detail-header-row">
+                <span className={`status-badge status-${detailOrder.status}`}>
+                  {statusLabel(detailOrder.status)}
+                </span>
+                <span className="detail-date">{formatDateTime(detailOrder.createdAt)}</span>
               </div>
-            )}
-            <div className="detail-row">
-              <span className="detail-label">Pagamento</span>
-              <span>{PAYMENT_LABELS[detailOrder.paymentMethod || ''] || 'Nenhum'}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Data</span>
-              <span>{formatDateTime(detailOrder.createdAt)}</span>
+              {detailOrder.customerName && (
+                <div className="detail-customer">{detailOrder.customerName}</div>
+              )}
+              <div className="detail-payment-info">
+                {PAYMENT_LABELS[detailOrder.paymentMethod || ''] || 'Sem pagamento'}
+              </div>
             </div>
 
-            <div className="detail-items-title">Itens</div>
-            {detailOrder.items.map((item, i) => (
-              <div key={i} className="detail-item">
-                <span>{item.qty}x {item.name}</span>
-                <span className="tabular">{formatMoney(item.salePrice * item.qty)}</span>
-              </div>
-            ))}
+            {/* Items with customizations */}
+            <div className="detail-items-section">
+              <div className="detail-items-title">Itens</div>
+              {detailOrder.items.map((item, i) => {
+                const unitTotal = item.salePrice + (item.customizationTotal || 0)
+                return (
+                  <div key={i} className="detail-item-card">
+                    <div className="detail-item-top">
+                      <div className="detail-item-info">
+                        <span className="detail-item-qty">{item.qty}x</span>
+                        <span className="detail-item-name">{item.name}</span>
+                      </div>
+                      <span className="detail-item-total tabular">{formatMoney(unitTotal * item.qty)}</span>
+                    </div>
+
+                    {/* Customizations */}
+                    {item.customizations && item.customizations.length > 0 && (
+                      <div className="detail-customs">
+                        {item.customizations.map((cg, gi) => (
+                          <div key={gi} className="detail-custom-group">
+                            <span className="detail-custom-group-name">{cg.groupName}:</span>
+                            {cg.items.map((ci, ci2) => (
+                              <span key={ci2} className="detail-custom-item">
+                                {ci.qty > 1 ? ci.qty + 'x ' : ''}{ci.name}
+                                {ci.price > 0 && <span className="detail-custom-price"> (+{formatMoney(ci.price)})</span>}
+                              </span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Observation */}
+                    {item.observation && (
+                      <div className="detail-item-obs">
+                        {item.observation}
+                      </div>
+                    )}
+
+                    {/* Price breakdown if has customizations */}
+                    {(item.customizationTotal || 0) > 0 && (
+                      <div className="detail-item-breakdown">
+                        <span>Produto: {formatMoney(item.salePrice)}</span>
+                        <span>Adicionais: +{formatMoney(item.customizationTotal!)}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Total */}
             <div className="detail-total">
               <span>Total</span>
               <span className="tabular">{formatMoney(detailOrder.total)}</span>
             </div>
 
-            {(detailOrder.status === 'open' || detailOrder.status === 'pending') && (
-              <div className="detail-actions">
-                <button className="btn btn-accent btn-full" onClick={() => markAsPaid(detailOrder, 'dinheiro')}>
-                  Marcar como Pago
-                </button>
-                <button className="btn btn-outline btn-full" onClick={() => cancelOrder(detailOrder)}>
-                  Cancelar Pedido
-                </button>
-              </div>
-            )}
+            {/* Actions */}
+            <div className="detail-actions">
+              <button className="btn btn-outline btn-full" onClick={handlePrint}>
+                <Printer size={16} /> Imprimir
+              </button>
+
+              {(detailOrder.status === 'open' || detailOrder.status === 'pending') && (
+                <>
+                  <button className="btn btn-accent btn-full" onClick={() => setPayMethodModal(true)}>
+                    Marcar como Pago
+                  </button>
+                  <button className="btn btn-ghost btn-full" style={{ color: 'var(--danger)' }} onClick={() => cancelOrder(detailOrder)}>
+                    Cancelar Pedido
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Payment method selection for marking as paid */}
+      <Modal
+        open={payMethodModal}
+        onClose={() => setPayMethodModal(false)}
+        title="Forma de Pagamento"
+      >
+        {detailOrder && (
+          <div className="pay-method-grid">
+            {Object.entries(PAYMENT_LABELS).filter(([k]) => k !== 'pagar_depois').map(([key, label]) => (
+              <button
+                key={key}
+                className="btn btn-outline"
+                onClick={() => markAsPaid(detailOrder, key)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         )}
       </Modal>
