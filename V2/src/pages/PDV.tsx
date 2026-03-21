@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
-import { db, type Product, type OrderItem } from '../db/database'
+import { db, type Product, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
@@ -9,7 +9,7 @@ import { formatMoney } from '../utils/format'
 import './PDV.css'
 
 interface CartItem extends OrderItem {
-  id: number
+  cartId: string // unique per cart entry (same product can appear with different customizations)
 }
 
 const PAYMENT_METHODS = [
@@ -19,6 +19,13 @@ const PAYMENT_METHODS = [
   { key: 'dinheiro', label: 'Dinheiro', icon: '$' },
   { key: 'pagar_depois', label: 'Pagar Depois', icon: '...' },
 ]
+
+interface CustomModalState {
+  product: Product
+  groups: (CustomizationGroup & { items: CustomizationItem[] })[]
+  selections: Record<number, Record<number, number>> // groupId -> itemId -> qty
+  observation: string
+}
 
 export function PDV() {
   const { activeSession } = useSession()
@@ -33,6 +40,7 @@ export function PDV() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
   const [summaryExpanded, setSummaryExpanded] = useState(false)
+  const [customModal, setCustomModal] = useState<CustomModalState | null>(null)
 
   useEffect(() => {
     db.products.filter(p => p.active !== false).toArray().then(setProducts)
@@ -47,7 +55,7 @@ export function PDV() {
     ? products.filter(p => p.category === selectedCategory)
     : products
 
-  const total = cart.reduce((s, i) => s + i.salePrice * i.qty, 0)
+  const total = cart.reduce((s, i) => s + (i.salePrice + (i.customizationTotal || 0)) * i.qty, 0)
   const totalQty = cart.reduce((s, i) => s + i.qty, 0)
 
   if (!activeSession) {
@@ -61,16 +69,46 @@ export function PDV() {
     )
   }
 
-  function addToCart(product: Product) {
+  async function handleProductClick(product: Product) {
+    const groupIds = product.customizationGroupIds || []
+    if (groupIds.length === 0) {
+      // No customizations — add directly
+      addSimpleToCart(product)
+      return
+    }
+
+    // Load groups and items
+    const groups: CustomModalState['groups'] = []
+    for (const gid of groupIds) {
+      const group = await db.customizationGroups.get(gid)
+      if (!group) continue
+      const items = await db.customizationItems.where('groupId').equals(gid).toArray()
+      groups.push({ ...group, items: items.filter(i => i.active !== false) })
+    }
+
+    if (groups.length === 0) {
+      addSimpleToCart(product)
+      return
+    }
+
+    setCustomModal({
+      product,
+      groups,
+      selections: {},
+      observation: '',
+    })
+  }
+
+  function addSimpleToCart(product: Product) {
     setCart(prev => {
-      const existing = prev.find(i => i.productId === product.id!)
+      const existing = prev.find(i => i.productId === product.id! && !i.customizations?.length)
       if (existing) {
         return prev.map(i =>
-          i.productId === product.id! ? { ...i, qty: i.qty + 1 } : i
+          i.cartId === existing.cartId ? { ...i, qty: i.qty + 1 } : i
         )
       }
       return [...prev, {
-        id: product.id!,
+        cartId: Date.now().toString(36) + Math.random().toString(36).slice(2, 4),
         productId: product.id!,
         name: product.name,
         salePrice: product.salePrice,
@@ -80,16 +118,111 @@ export function PDV() {
     })
   }
 
-  function updateQty(productId: number, delta: number) {
+  function calcCustomizationTotal(modal: CustomModalState): number {
+    let total = 0
+    for (const group of modal.groups) {
+      const groupSelections = modal.selections[group.id!] || {}
+      const selectedEntries = Object.entries(groupSelections).filter(([, qty]) => qty > 0)
+      let freeCountGroup = group.chargeAfter // free selections at group level
+
+      for (const [itemIdStr, qty] of selectedEntries) {
+        const item = group.items.find(i => i.id === Number(itemIdStr))
+        if (!item || item.price <= 0) continue
+
+        for (let u = 0; u < qty; u++) {
+          // Check group-level free
+          if (freeCountGroup > 0) {
+            freeCountGroup--
+            continue
+          }
+          // Check item-level free
+          if (item.chargeAfter > 0 && u < item.chargeAfter) {
+            continue
+          }
+          total += item.price
+        }
+      }
+    }
+    return total
+  }
+
+  function confirmCustomization() {
+    if (!customModal) return
+    const { product, groups, selections, observation } = customModal
+
+    // Validate required groups
+    for (const group of groups) {
+      if (group.required) {
+        const sel = selections[group.id!] || {}
+        const totalSelected = Object.values(sel).reduce((s, q) => s + q, 0)
+        if (totalSelected < (group.minQty || 1)) {
+          toast(`Selecione pelo menos ${group.minQty || 1} em "${group.name}"`, 'error')
+          return
+        }
+      }
+    }
+
+    const customizations: OrderCustomization[] = []
+    for (const group of groups) {
+      const sel = selections[group.id!] || {}
+      const items = Object.entries(sel)
+        .filter(([, qty]) => qty > 0)
+        .map(([itemId, qty]) => {
+          const item = group.items.find(i => i.id === Number(itemId))!
+          return { name: item.name, qty, price: item.price }
+        })
+      if (items.length > 0) {
+        customizations.push({ groupName: group.name, items })
+      }
+    }
+
+    const customTotal = calcCustomizationTotal(customModal)
+
+    setCart(prev => [...prev, {
+      cartId: Date.now().toString(36) + Math.random().toString(36).slice(2, 4),
+      productId: product.id!,
+      name: product.name,
+      salePrice: product.salePrice,
+      costPrice: product.costPrice,
+      qty: 1,
+      observation: observation.trim() || undefined,
+      customizations: customizations.length > 0 ? customizations : undefined,
+      customizationTotal: customTotal > 0 ? customTotal : undefined,
+    }])
+
+    setCustomModal(null)
+  }
+
+  function updateCustomSelection(groupId: number, itemId: number, delta: number) {
+    if (!customModal) return
+    const group = customModal.groups.find(g => g.id === groupId)
+    if (!group) return
+
+    setCustomModal(prev => {
+      if (!prev) return prev
+      const groupSel = { ...(prev.selections[groupId] || {}) }
+      const newQty = Math.max(0, (groupSel[itemId] || 0) + delta)
+      groupSel[itemId] = newQty
+
+      // Check max
+      const totalSelected = Object.values(groupSel).reduce((s, q) => s + q, 0)
+      if (totalSelected > group.maxQty) return prev
+
+      return {
+        ...prev,
+        selections: { ...prev.selections, [groupId]: groupSel },
+      }
+    })
+  }
+
+  function updateQty(cartId: string, delta: number) {
     setCart(prev =>
-      prev.map(i =>
-        i.productId === productId ? { ...i, qty: i.qty + delta } : i
-      ).filter(i => i.qty > 0)
+      prev.map(i => i.cartId === cartId ? { ...i, qty: i.qty + delta } : i).filter(i => i.qty > 0)
     )
   }
 
-  function removeItem(productId: number) {
-    setCart(prev => prev.filter(i => i.productId !== productId))
+  function removeCartItem(cartId: string) {
+    setCart(prev => prev.filter(i => i.cartId !== cartId))
   }
 
   async function finalizeSale() {
@@ -97,8 +230,8 @@ export function PDV() {
 
     await db.orders.add({
       sessionId: activeSession!.id!,
-      items: cart.map(({ productId, name, salePrice, costPrice, qty }) => ({
-        productId, name, salePrice, costPrice, qty,
+      items: cart.map(({ productId, name, salePrice, costPrice, qty, observation, customizations, customizationTotal }) => ({
+        productId, name, salePrice, costPrice, qty, observation, customizations, customizationTotal,
       })),
       total,
       paymentMethod: selectedPayment,
@@ -125,6 +258,8 @@ export function PDV() {
     setSummaryExpanded(false)
   }
 
+  const itemUnitTotal = (item: CartItem) => item.salePrice + (item.customizationTotal || 0)
+
   return (
     <div className="pdv">
       <div className="pdv-products">
@@ -134,20 +269,9 @@ export function PDV() {
 
         {categories.length > 0 && (
           <div className="category-pills">
-            <button
-              className={`cat-pill ${!selectedCategory ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(null)}
-            >
-              Todos
-            </button>
+            <button className={`cat-pill ${!selectedCategory ? 'active' : ''}`} onClick={() => setSelectedCategory(null)}>Todos</button>
             {categories.map(cat => (
-              <button
-                key={cat}
-                className={`cat-pill ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-              </button>
+              <button key={cat} className={`cat-pill ${selectedCategory === cat ? 'active' : ''}`} onClick={() => setSelectedCategory(cat)}>{cat}</button>
             ))}
           </div>
         )}
@@ -155,22 +279,18 @@ export function PDV() {
         <div className="cardapio-grid">
           {filteredProducts.length === 0 ? (
             <div className="cardapio-empty">
-              {products.length === 0
-                ? 'Cadastre produtos primeiro'
-                : 'Nenhum produto nesta categoria'}
+              {products.length === 0 ? 'Cadastre produtos primeiro' : 'Nenhum produto nesta categoria'}
             </div>
           ) : (
             filteredProducts.map(p => {
-              const inCart = cart.find(i => i.productId === p.id!)
+              const inCartQty = cart.filter(i => i.productId === p.id!).reduce((s, i) => s + i.qty, 0)
+              const hasCustom = (p.customizationGroupIds?.length || 0) > 0
               return (
-                <button
-                  key={p.id}
-                  className={`cardapio-item ${inCart ? 'in-cart' : ''}`}
-                  onClick={() => addToCart(p)}
-                >
+                <button key={p.id} className={`cardapio-item ${inCartQty > 0 ? 'in-cart' : ''}`} onClick={() => handleProductClick(p)}>
                   <span className="cardapio-name">{p.name}</span>
                   <span className="cardapio-price">{formatMoney(p.salePrice)}</span>
-                  {inCart && <span className="cardapio-qty">{inCart.qty}</span>}
+                  {hasCustom && <span className="cardapio-custom-badge">+</span>}
+                  {inCartQty > 0 && <span className="cardapio-qty">{inCartQty}</span>}
                 </button>
               )
             })
@@ -180,31 +300,35 @@ export function PDV() {
 
       {/* Desktop sidebar cart */}
       <div className="pdv-cart-desktop">
-        <div className="cart-header">
-          <h2>Carrinho</h2>
-        </div>
+        <div className="cart-header"><h2>Carrinho</h2></div>
         <div className="cart-fields">
-          <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)"
-            value={customerName} onChange={e => setCustomerName(e.target.value)} />
-          <input type="text" className="cart-input" placeholder="Comanda / Mesa"
-            value={ticket} onChange={e => setTicket(e.target.value)} />
+          <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+          <input type="text" className="cart-input" placeholder="Comanda / Mesa" value={ticket} onChange={e => setTicket(e.target.value)} />
         </div>
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="cart-empty">Toque nos produtos para adicionar</div>
           ) : (
             cart.map(item => (
-              <div key={item.productId} className="cart-item">
+              <div key={item.cartId} className="cart-item">
                 <div className="cart-item-info">
                   <span className="cart-item-name">{item.name}</span>
-                  <span className="cart-item-price">{formatMoney(item.salePrice)} un.</span>
+                  <span className="cart-item-price">{formatMoney(itemUnitTotal(item))} un.</span>
                 </div>
+                {item.customizations && item.customizations.map((c, i) => (
+                  <div key={i} className="cart-item-customs">
+                    {c.items.map((ci, j) => (
+                      <span key={j} className="cart-custom-tag">{ci.qty > 1 ? ci.qty + 'x ' : ''}{ci.name}</span>
+                    ))}
+                  </div>
+                ))}
+                {item.observation && <div className="cart-item-obs">Obs: {item.observation}</div>}
                 <div className="cart-item-controls">
-                  <span className="cart-item-subtotal tabular">{formatMoney(item.salePrice * item.qty)}</span>
-                  <button className="qty-btn" onClick={() => updateQty(item.productId, -1)}><Minus size={14} /></button>
+                  <span className="cart-item-subtotal tabular">{formatMoney(itemUnitTotal(item) * item.qty)}</span>
+                  <button className="qty-btn" onClick={() => updateQty(item.cartId, -1)}><Minus size={14} /></button>
                   <span className="qty-display tabular">{item.qty}</span>
-                  <button className="qty-btn" onClick={() => updateQty(item.productId, 1)}><Plus size={14} /></button>
-                  <button className="qty-btn qty-btn-remove" onClick={() => removeItem(item.productId)}><Trash2 size={14} /></button>
+                  <button className="qty-btn" onClick={() => updateQty(item.cartId, 1)}><Plus size={14} /></button>
+                  <button className="qty-btn qty-btn-remove" onClick={() => removeCartItem(item.cartId)}><Trash2 size={14} /></button>
                 </div>
               </div>
             ))
@@ -216,9 +340,7 @@ export function PDV() {
               <span>Total</span>
               <span className="cart-total-value tabular">{formatMoney(total)}</span>
             </div>
-            <button className="btn btn-accent btn-full" onClick={() => setPaymentOpen(true)}>
-              Finalizar Venda
-            </button>
+            <button className="btn btn-accent btn-full" onClick={() => setPaymentOpen(true)}>Finalizar Venda</button>
           </div>
         )}
       </div>
@@ -226,67 +348,132 @@ export function PDV() {
       {/* Mobile bottom summary bar */}
       {cart.length > 0 && (
         <div className={`pdv-summary-bar ${summaryExpanded ? 'expanded' : ''}`}>
-          {/* Expandable items list */}
           {summaryExpanded && (
             <div className="summary-items">
               <div className="summary-fields">
-                <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)"
-                  value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                <input type="text" className="cart-input" placeholder="Comanda / Mesa"
-                  value={ticket} onChange={e => setTicket(e.target.value)} />
+                <input type="text" className="cart-input" placeholder="Cliente (opcional)" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                <input type="text" className="cart-input" placeholder="Comanda / Mesa" value={ticket} onChange={e => setTicket(e.target.value)} />
               </div>
               {cart.map(item => (
-                <div key={item.productId} className="summary-item">
+                <div key={item.cartId} className="summary-item">
                   <div className="summary-item-left">
                     <span className="summary-item-qty tabular">{item.qty}x</span>
-                    <span className="summary-item-name">{item.name}</span>
+                    <div>
+                      <span className="summary-item-name">{item.name}</span>
+                      {item.customizations && (
+                        <span className="summary-item-customs">
+                          {item.customizations.flatMap(c => c.items.map(ci => ci.name)).join(', ')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="summary-item-right">
-                    <span className="summary-item-total tabular">{formatMoney(item.salePrice * item.qty)}</span>
-                    <button className="qty-btn-sm" onClick={() => updateQty(item.productId, -1)}><Minus size={12} /></button>
-                    <button className="qty-btn-sm" onClick={() => updateQty(item.productId, 1)}><Plus size={12} /></button>
-                    <button className="qty-btn-sm qty-btn-remove" onClick={() => removeItem(item.productId)}><Trash2 size={12} /></button>
+                    <span className="summary-item-total tabular">{formatMoney(itemUnitTotal(item) * item.qty)}</span>
+                    <button className="qty-btn-sm" onClick={() => updateQty(item.cartId, -1)}><Minus size={12} /></button>
+                    <button className="qty-btn-sm" onClick={() => updateQty(item.cartId, 1)}><Plus size={12} /></button>
+                    <button className="qty-btn-sm qty-btn-remove" onClick={() => removeCartItem(item.cartId)}><Trash2 size={12} /></button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          {/* Always visible footer */}
           <div className="summary-footer">
             <button className="summary-toggle" onClick={() => setSummaryExpanded(!summaryExpanded)}>
               {summaryExpanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
               <span className="summary-count tabular">{totalQty} {totalQty === 1 ? 'item' : 'itens'}</span>
             </button>
             <span className="summary-total tabular">{formatMoney(total)}</span>
-            <button className="btn btn-accent btn-sm" onClick={() => setPaymentOpen(true)}>
-              Pagar
-            </button>
+            <button className="btn btn-accent btn-sm" onClick={() => setPaymentOpen(true)}>Pagar</button>
           </div>
         </div>
       )}
+
+      {/* Customization modal */}
+      <Modal open={!!customModal} onClose={() => setCustomModal(null)} title={customModal?.product.name || ''}>
+        {customModal && (
+          <div className="custom-modal">
+            <div className="custom-modal-price tabular">{formatMoney(customModal.product.salePrice)}</div>
+
+            {customModal.groups.map(group => {
+              const groupSel = customModal.selections[group.id!] || {}
+              const totalSelected = Object.values(groupSel).reduce((s, q) => s + q, 0)
+              return (
+                <div key={group.id} className="custom-modal-group">
+                  <div className="custom-modal-group-header">
+                    <div>
+                      <span className="custom-modal-group-name">{group.name}</span>
+                      <span className="custom-modal-group-range">
+                        {group.required ? 'Obrigatorio' : 'Opcional'} · {group.minQty}-{group.maxQty}
+                        {group.chargeAfter > 0 && ` · ${group.chargeAfter} gratis`}
+                      </span>
+                    </div>
+                    <span className="custom-modal-group-count tabular">{totalSelected}/{group.maxQty}</span>
+                  </div>
+                  {group.items.map(item => {
+                    const qty = groupSel[item.id!] || 0
+                    return (
+                      <div key={item.id} className="custom-modal-item">
+                        <div className="custom-modal-item-info">
+                          <span className="custom-modal-item-name">{item.name}</span>
+                          {item.price > 0 && (
+                            <span className="custom-modal-item-price tabular">
+                              + {formatMoney(item.price)}
+                              {item.chargeAfter > 0 && <span className="custom-modal-item-free"> ({item.chargeAfter} gratis)</span>}
+                            </span>
+                          )}
+                        </div>
+                        <div className="custom-modal-item-controls">
+                          {qty > 0 && (
+                            <>
+                              <button className="qty-btn-sm" onClick={() => updateCustomSelection(group.id!, item.id!, -1)}><Minus size={12} /></button>
+                              <span className="qty-sm tabular">{qty}</span>
+                            </>
+                          )}
+                          <button className="qty-btn-sm qty-btn-add" onClick={() => updateCustomSelection(group.id!, item.id!, 1)}
+                            disabled={totalSelected >= group.maxQty}><Plus size={12} /></button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+
+            <div className="custom-modal-obs">
+              <label>Observacao</label>
+              <textarea
+                value={customModal.observation}
+                onChange={e => setCustomModal(prev => prev ? { ...prev, observation: e.target.value } : prev)}
+                placeholder="Ex: Sem cebola, ponto da carne..."
+                rows={2}
+              />
+            </div>
+
+            {calcCustomizationTotal(customModal) > 0 && (
+              <div className="custom-modal-extra">
+                Adicionais: + {formatMoney(calcCustomizationTotal(customModal))}
+              </div>
+            )}
+
+            <button className="btn btn-accent btn-full" onClick={confirmCustomization} style={{ marginTop: 'var(--space-3)' }}>
+              Adicionar · {formatMoney(customModal.product.salePrice + calcCustomizationTotal(customModal))}
+            </button>
+          </div>
+        )}
+      </Modal>
 
       {/* Payment modal */}
       <Modal open={paymentOpen} onClose={() => setPaymentOpen(false)} title="Forma de Pagamento">
         <div className="payment-total tabular">{formatMoney(total)}</div>
         <div className="payment-methods">
           {PAYMENT_METHODS.map(pm => (
-            <button
-              key={pm.key}
-              className={`payment-method ${selectedPayment === pm.key ? 'selected' : ''} ${pm.key === 'pagar_depois' ? 'pay-later' : ''}`}
-              onClick={() => setSelectedPayment(pm.key)}
-            >
+            <button key={pm.key} className={`payment-method ${selectedPayment === pm.key ? 'selected' : ''} ${pm.key === 'pagar_depois' ? 'pay-later' : ''}`} onClick={() => setSelectedPayment(pm.key)}>
               <span className="pm-icon">{pm.icon}</span>
               <span className="pm-label">{pm.label}</span>
             </button>
           ))}
         </div>
-        <button
-          className="btn btn-accent btn-full"
-          disabled={!selectedPayment}
-          onClick={finalizeSale}
-          style={{ marginTop: 'var(--space-4)' }}
-        >
+        <button className="btn btn-accent btn-full" disabled={!selectedPayment} onClick={finalizeSale} style={{ marginTop: 'var(--space-4)' }}>
           Confirmar Pagamento
         </button>
       </Modal>

@@ -1,5 +1,23 @@
 import Dexie, { type Table } from 'dexie'
 
+export interface CustomizationItem {
+  id?: number
+  groupId: number
+  name: string
+  price: number
+  chargeAfter: number // cobrar preco a partir de X unidades (0 = sempre cobra)
+  active: boolean
+}
+
+export interface CustomizationGroup {
+  id?: number
+  name: string
+  required: boolean
+  minQty: number
+  maxQty: number
+  chargeAfter: number // cobrar a partir de X selecoes no grupo (0 = sempre cobra)
+}
+
 export interface Product {
   id?: number
   name: string
@@ -8,8 +26,14 @@ export interface Product {
   salePrice: number
   stock: number
   active: boolean
+  customizationGroupIds: number[]
   createdAt: number
   updatedAt: number
+}
+
+export interface OrderCustomization {
+  groupName: string
+  items: { name: string; qty: number; price: number }[]
 }
 
 export interface OrderItem {
@@ -18,6 +42,9 @@ export interface OrderItem {
   salePrice: number
   costPrice: number
   qty: number
+  observation?: string
+  customizations?: OrderCustomization[]
+  customizationTotal?: number
 }
 
 export interface Order {
@@ -65,6 +92,8 @@ export class PDVDatabase extends Dexie {
   sessions!: Table<Session>
   cashMovements!: Table<CashMovement>
   config!: Table<BusinessConfig>
+  customizationGroups!: Table<CustomizationGroup>
+  customizationItems!: Table<CustomizationItem>
 
   constructor() {
     super('pdv_v2')
@@ -74,6 +103,21 @@ export class PDVDatabase extends Dexie {
       sessions: '++id, openedAt, closedAt',
       cashMovements: '++id, sessionId, type',
       config: '++id',
+    })
+    this.version(2).stores({
+      products: '++id, name, category, active',
+      orders: '++id, sessionId, status, paymentMethod, createdAt',
+      sessions: '++id, openedAt, closedAt',
+      cashMovements: '++id, sessionId, type',
+      config: '++id',
+      customizationGroups: '++id, name',
+      customizationItems: '++id, groupId, active',
+    }).upgrade(tx => {
+      return tx.table('products').toCollection().modify(product => {
+        if (!product.customizationGroupIds) {
+          product.customizationGroupIds = []
+        }
+      })
     })
   }
 }

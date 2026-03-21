@@ -1,0 +1,136 @@
+.custom-page { max-width: 800px; }
+
+.custom-desc {
+  font-size: var(--text-sm);
+  color: var(--ink-secondary);
+  margin-bottom: var(--space-5);
+  line-height: 1.5;
+}
+
+.custom-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.custom-group-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.custom-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.custom-group-header:active { background: var(--surface-1); }
+
+.custom-group-toggle {
+  color: var(--ink-tertiary);
+  flex-shrink: 0;
+}
+
+.custom-group-info { flex: 1; min-width: 0; }
+
+.custom-group-name {
+  display: block;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+}
+
+.custom-group-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.custom-tag {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-inset);
+  color: var(--ink-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.custom-tag.required {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.custom-group-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* Group body / items */
+.custom-group-body {
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+}
+
+.custom-items-empty {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  text-align: center;
+  padding: var(--space-3) 0;
+}
+
+.custom-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.custom-item-row:last-of-type { border-bottom: none; }
+.custom-item-row.inactive { opacity: 0.5; }
+
+.custom-item-name {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.custom-item-price {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+}
+
+.custom-item-charge {
+  font-size: 10px;
+  color: var(--ink-tertiary);
+  background: var(--surface-inset);
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+}
+
+.custom-item-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.custom-add-item {
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
+/* Form hint */
+.form-hint {
+  font-size: var(--text-xs);
+  color: var(--ink-tertiary);
+  margin-top: 2px;
+}

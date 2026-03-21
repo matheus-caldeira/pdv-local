@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
-import { db, type Product } from '../db/database'
+import { Plus, Pencil, Trash2, Search, Settings2 } from 'lucide-react'
+import { db, type Product, type CustomizationGroup } from '../db/database'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
 import { formatMoney } from '../utils/format'
 import './Products.css'
 
 const EMPTY_PRODUCT = {
-  name: '', category: '', costPrice: 0, salePrice: 0, stock: 0, active: true,
+  name: '', category: '', costPrice: 0, salePrice: 0, stock: 0, active: true, customizationGroupIds: [] as number[],
 }
 
 export function Products() {
@@ -16,8 +16,13 @@ export function Products() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Partial<Product> & { id?: number }>(EMPTY_PRODUCT)
+  const [allGroups, setAllGroups] = useState<CustomizationGroup[]>([])
 
-  useEffect(() => { loadProducts() }, [])
+  useEffect(() => { loadProducts(); loadGroups() }, [])
+
+  async function loadGroups() {
+    setAllGroups(await db.customizationGroups.toArray())
+  }
 
   async function loadProducts() {
     const all = await db.products.toArray()
@@ -48,12 +53,14 @@ export function Products() {
       salePrice: Number(editing.salePrice) || 0,
       stock: Number(editing.stock) || 0,
       active: editing.active !== false,
+      customizationGroupIds: editing.customizationGroupIds || [],
       updatedAt: Date.now(),
       createdAt: editing.createdAt || Date.now(),
     }
 
     if (editing.id) {
-      await db.products.update(editing.id, data)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await db.products.update(editing.id, data as any)
       toast('Produto atualizado')
     } else {
       delete (data as Partial<Product>).id
@@ -122,6 +129,11 @@ export function Products() {
                 <span className={`stock-badge ${p.stock <= 0 ? 'out' : p.stock <= 5 ? 'low' : ''}`}>
                   {p.stock <= 0 ? 'Sem estoque' : p.stock + ' un.'}
                 </span>
+                {(p.customizationGroupIds?.length || 0) > 0 && (
+                  <span className="custom-count-badge">
+                    <Settings2 size={10} /> {p.customizationGroupIds.length}
+                  </span>
+                )}
               </div>
               <div className="product-actions">
                 <button className="btn btn-ghost" onClick={() => openEdit(p)}>
@@ -207,6 +219,36 @@ export function Products() {
             </select>
           </div>
         </div>
+        {allGroups.length > 0 && (
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--ink-secondary)', display: 'block', marginBottom: 'var(--space-2)' }}>
+              Grupos de Customizacao
+            </label>
+            <div className="custom-group-picker">
+              {allGroups.map(g => {
+                const selected = editing.customizationGroupIds?.includes(g.id!) || false
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className={`custom-group-chip ${selected ? 'selected' : ''}`}
+                    onClick={() => {
+                      setEditing(p => ({
+                        ...p,
+                        customizationGroupIds: selected
+                          ? (p.customizationGroupIds || []).filter(id => id !== g.id!)
+                          : [...(p.customizationGroupIds || []), g.id!]
+                      }))
+                    }}
+                  >
+                    {g.name}
+                    {g.required && <span className="chip-required">*</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
         <button className="btn btn-accent btn-full" onClick={save} style={{ marginTop: 'var(--space-4)' }}>
           Salvar
         </button>

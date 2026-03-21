@@ -8,6 +8,7 @@ import {
   Wallet,
   BarChart3,
   Settings,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { useSession } from '../hooks/useSession'
 import { formatTime } from '../utils/format'
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { to: '/pdv', icon: ShoppingCart, label: 'Vender' },
   { to: '/products', icon: Package, label: 'Produtos' },
   { to: '/orders', icon: ClipboardList, label: 'Pedidos' },
+  { to: '/customizations', icon: SlidersHorizontal, label: 'Extras' },
   { to: '/cash', icon: Wallet, label: 'Caixa' },
   { to: '/reports', icon: BarChart3, label: 'Relatorios' },
   { to: '/settings', icon: Settings, label: 'Config' },
@@ -79,7 +81,7 @@ export function Layout() {
 
       {/* Mobile bottom tabs — show key items + config via "Mais" */}
       <nav className="nav-bottom">
-        {[NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[3], NAV_ITEMS[4], NAV_ITEMS[6]].map(item => (
+        {[NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[3], NAV_ITEMS[5], NAV_ITEMS[7]].map(item => (
           <NavLink
             key={item.to}
             to={item.to}

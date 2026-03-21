@@ -8,6 +8,7 @@ import { Orders } from './pages/Orders'
 import { Cash } from './pages/Cash'
 import { Reports } from './pages/Reports'
 import { Settings } from './pages/Settings'
+import { Customizations } from './pages/Customizations'
 
 const BASE = '/escoteiros/v2'
 
@@ -23,6 +24,7 @@ export function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/cash" element={<Cash />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/customizations" element={<Customizations />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
