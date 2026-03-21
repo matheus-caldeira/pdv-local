@@ -76,6 +76,25 @@
   min-width: 200px;
 }
 
+/* Printer */
+.printer-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.printer-info {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.printer-info p {
+  font-size: var(--text-xs);
+  color: var(--ink-tertiary);
+  margin-bottom: var(--space-1);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .export-buttons {

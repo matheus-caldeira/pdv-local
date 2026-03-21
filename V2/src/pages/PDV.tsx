@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Minus, Plus, Trash2, X } from 'lucide-react'
+import { Minus, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { db, type Product, type OrderItem } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
@@ -32,7 +32,7 @@ export function PDV() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
-  const [cartOpen, setCartOpen] = useState(false)
+  const [summaryExpanded, setSummaryExpanded] = useState(false)
 
   useEffect(() => {
     db.products.filter(p => p.active !== false).toArray().then(setProducts)
@@ -48,6 +48,7 @@ export function PDV() {
     : products
 
   const total = cart.reduce((s, i) => s + i.salePrice * i.qty, 0)
+  const totalQty = cart.reduce((s, i) => s + i.qty, 0)
 
   if (!activeSession) {
     return (
@@ -77,16 +78,14 @@ export function PDV() {
         qty: 1,
       }]
     })
-    setCartOpen(true)
   }
 
   function updateQty(productId: number, delta: number) {
-    setCart(prev => {
-      const updated = prev.map(i =>
+    setCart(prev =>
+      prev.map(i =>
         i.productId === productId ? { ...i, qty: i.qty + delta } : i
       ).filter(i => i.qty > 0)
-      return updated
-    })
+    )
   }
 
   function removeItem(productId: number) {
@@ -110,7 +109,6 @@ export function PDV() {
       updatedAt: Date.now(),
     })
 
-    // Update stock
     for (const item of cart) {
       const product = await db.products.get(item.productId)
       if (product && product.stock > 0) {
@@ -124,12 +122,11 @@ export function PDV() {
     setTicket('')
     setSelectedPayment(null)
     setPaymentOpen(false)
-    setCartOpen(false)
+    setSummaryExpanded(false)
   }
 
   return (
     <div className="pdv">
-      {/* Product grid — cardápio style */}
       <div className="pdv-products">
         <div className="pdv-header">
           <h1>Venda Rapida</h1>
@@ -181,32 +178,17 @@ export function PDV() {
         </div>
       </div>
 
-      {/* Cart — desktop sidebar / mobile bottom sheet */}
-      <div className={`pdv-cart ${cartOpen ? 'open' : ''}`}>
+      {/* Desktop sidebar cart */}
+      <div className="pdv-cart-desktop">
         <div className="cart-header">
           <h2>Carrinho</h2>
-          <button className="btn btn-ghost cart-close-mobile" onClick={() => setCartOpen(false)}>
-            <X size={20} />
-          </button>
         </div>
-
         <div className="cart-fields">
-          <input
-            type="text"
-            className="cart-input"
-            placeholder="Nome do cliente (opcional)"
-            value={customerName}
-            onChange={e => setCustomerName(e.target.value)}
-          />
-          <input
-            type="text"
-            className="cart-input"
-            placeholder="Comanda / Mesa"
-            value={ticket}
-            onChange={e => setTicket(e.target.value)}
-          />
+          <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)"
+            value={customerName} onChange={e => setCustomerName(e.target.value)} />
+          <input type="text" className="cart-input" placeholder="Comanda / Mesa"
+            value={ticket} onChange={e => setTicket(e.target.value)} />
         </div>
-
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="cart-empty">Toque nos produtos para adicionar</div>
@@ -219,22 +201,15 @@ export function PDV() {
                 </div>
                 <div className="cart-item-controls">
                   <span className="cart-item-subtotal tabular">{formatMoney(item.salePrice * item.qty)}</span>
-                  <button className="qty-btn" onClick={() => updateQty(item.productId, -1)}>
-                    <Minus size={14} />
-                  </button>
+                  <button className="qty-btn" onClick={() => updateQty(item.productId, -1)}><Minus size={14} /></button>
                   <span className="qty-display tabular">{item.qty}</span>
-                  <button className="qty-btn" onClick={() => updateQty(item.productId, 1)}>
-                    <Plus size={14} />
-                  </button>
-                  <button className="qty-btn qty-btn-remove" onClick={() => removeItem(item.productId)}>
-                    <Trash2 size={14} />
-                  </button>
+                  <button className="qty-btn" onClick={() => updateQty(item.productId, 1)}><Plus size={14} /></button>
+                  <button className="qty-btn qty-btn-remove" onClick={() => removeItem(item.productId)}><Trash2 size={14} /></button>
                 </div>
               </div>
             ))
           )}
         </div>
-
         {cart.length > 0 && (
           <div className="cart-footer">
             <div className="cart-total">
@@ -248,12 +223,47 @@ export function PDV() {
         )}
       </div>
 
-      {/* Mobile cart toggle */}
-      {cart.length > 0 && !cartOpen && (
-        <button className="cart-fab" onClick={() => setCartOpen(true)}>
-          <span className="cart-fab-count">{cart.reduce((s, i) => s + i.qty, 0)}</span>
-          <span className="cart-fab-total tabular">{formatMoney(total)}</span>
-        </button>
+      {/* Mobile bottom summary bar */}
+      {cart.length > 0 && (
+        <div className={`pdv-summary-bar ${summaryExpanded ? 'expanded' : ''}`}>
+          {/* Expandable items list */}
+          {summaryExpanded && (
+            <div className="summary-items">
+              <div className="summary-fields">
+                <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)"
+                  value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                <input type="text" className="cart-input" placeholder="Comanda / Mesa"
+                  value={ticket} onChange={e => setTicket(e.target.value)} />
+              </div>
+              {cart.map(item => (
+                <div key={item.productId} className="summary-item">
+                  <div className="summary-item-left">
+                    <span className="summary-item-qty tabular">{item.qty}x</span>
+                    <span className="summary-item-name">{item.name}</span>
+                  </div>
+                  <div className="summary-item-right">
+                    <span className="summary-item-total tabular">{formatMoney(item.salePrice * item.qty)}</span>
+                    <button className="qty-btn-sm" onClick={() => updateQty(item.productId, -1)}><Minus size={12} /></button>
+                    <button className="qty-btn-sm" onClick={() => updateQty(item.productId, 1)}><Plus size={12} /></button>
+                    <button className="qty-btn-sm qty-btn-remove" onClick={() => removeItem(item.productId)}><Trash2 size={12} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Always visible footer */}
+          <div className="summary-footer">
+            <button className="summary-toggle" onClick={() => setSummaryExpanded(!summaryExpanded)}>
+              {summaryExpanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+              <span className="summary-count tabular">{totalQty} {totalQty === 1 ? 'item' : 'itens'}</span>
+            </button>
+            <span className="summary-total tabular">{formatMoney(total)}</span>
+            <button className="btn btn-accent btn-sm" onClick={() => setPaymentOpen(true)}>
+              Pagar
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Payment modal */}

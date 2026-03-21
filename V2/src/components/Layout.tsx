@@ -77,9 +77,9 @@ export function Layout() {
         <Outlet />
       </main>
 
-      {/* Mobile bottom tabs */}
+      {/* Mobile bottom tabs — show key items + config via "Mais" */}
       <nav className="nav-bottom">
-        {NAV_ITEMS.slice(0, 5).map(item => (
+        {[NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[3], NAV_ITEMS[4], NAV_ITEMS[6]].map(item => (
           <NavLink
             key={item.to}
             to={item.to}

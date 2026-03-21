@@ -102,18 +102,20 @@ export function Orders() {
         <div className="order-list">
           {filtered.map(o => (
             <div key={o.id} className="order-row" onClick={() => setDetailOrder(o)}>
-              <div className="order-main">
-                <span className="order-ticket">#{o.ticket}</span>
-                {o.customerName && <span className="order-customer">{o.customerName}</span>}
-                <span className="order-date">{formatDateTime(o.createdAt)}</span>
-              </div>
-              <div className="order-meta">
-                <span className="order-payment">{PAYMENT_LABELS[o.paymentMethod || ''] || '-'}</span>
-                <span className="order-items-count">{o.items.length} {o.items.length === 1 ? 'item' : 'itens'}</span>
-              </div>
-              <div className="order-right-col">
-                <span className={`status-badge status-${o.status}`}>{statusLabel(o.status)}</span>
+              <div className="order-row-top">
+                <div>
+                  <span className="order-ticket">#{o.ticket}</span>
+                  {o.customerName && <span className="order-customer">{o.customerName}</span>}
+                </div>
                 <span className="order-total tabular">{formatMoney(o.total)}</span>
+              </div>
+              <div className="order-row-bottom">
+                <div className="order-row-meta">
+                  <span className={`status-badge status-${o.status}`}>{statusLabel(o.status)}</span>
+                  <span className="order-payment">{PAYMENT_LABELS[o.paymentMethod || ''] || '-'}</span>
+                  <span>{o.items.length} {o.items.length === 1 ? 'item' : 'itens'}</span>
+                </div>
+                <span className="order-date">{formatDateTime(o.createdAt)}</span>
               </div>
             </div>
           ))}

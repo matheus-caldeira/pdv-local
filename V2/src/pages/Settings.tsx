@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Download, Upload, Store } from 'lucide-react'
+import { Download, Upload, Store, Printer } from 'lucide-react'
 import { db, type BusinessConfig } from '../db/database'
 import { exportAll, exportEntity, importEntity } from '../db/export-import'
 import { useToast } from '../components/Toast'
@@ -175,6 +175,57 @@ export function Settings() {
           <button className="btn btn-accent" onClick={handleImport} style={{ marginTop: 'var(--space-3)' }}>
             Importar
           </button>
+        </div>
+      </div>
+
+      {/* Printer ESC/POS */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <Printer size={20} />
+          <h2>Impressora (ESC/POS)</h2>
+        </div>
+        <div className="settings-card">
+          <p className="settings-desc">
+            Configure uma impressora termica via USB ou Bluetooth para imprimir recibos e comandas.
+            Utiliza o protocolo ESC/POS compativel com a maioria das impressoras termicas (Epson, Elgin, Bematech, etc).
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+            <div className="form-field">
+              <label>Tipo de Conexao</label>
+              <select defaultValue="none">
+                <option value="none">Nenhuma (desabilitado)</option>
+                <option value="usb">USB (WebUSB)</option>
+                <option value="bluetooth">Bluetooth (Web Bluetooth)</option>
+                <option value="network">Rede (IP:Porta)</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Largura do Papel</label>
+              <select defaultValue="80">
+                <option value="58">58mm</option>
+                <option value="80">80mm</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Imprimir Automaticamente</label>
+              <select defaultValue="0">
+                <option value="0">Nao - apenas manual</option>
+                <option value="1">Sim - ao fechar pedido</option>
+              </select>
+            </div>
+          </div>
+          <div className="printer-actions">
+            <button className="btn btn-outline" onClick={() => toast('Funcionalidade de teste sera implementada com a lib ESC/POS', 'info')}>
+              Testar Impressao
+            </button>
+            <button className="btn btn-accent" onClick={() => toast('Configuracoes de impressao salvas')}>
+              Salvar
+            </button>
+          </div>
+          <div className="printer-info">
+            <p>Libs compativeis: <strong>escpos-buffer</strong>, <strong>node-escpos</strong>, <strong>WebUSB API</strong></p>
+            <p>Para conectar via USB, o navegador precisa suportar WebUSB (Chrome/Edge).</p>
+          </div>
         </div>
       </div>
 
