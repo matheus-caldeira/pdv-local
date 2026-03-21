@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -9,6 +9,8 @@ import {
   BarChart3,
   Settings,
   SlidersHorizontal,
+  Menu,
+  X,
 } from 'lucide-react'
 import { useSession } from '../hooks/useSession'
 import { formatTime } from '../utils/format'
@@ -25,30 +27,40 @@ const NAV_ITEMS = [
   { to: '/settings', icon: Settings, label: 'Config' },
 ]
 
+const MOBILE_TABS = [
+  NAV_ITEMS[0], // Inicio
+  NAV_ITEMS[1], // Vender
+  NAV_ITEMS[3], // Pedidos
+  NAV_ITEMS[5], // Caixa
+]
+
 export function Layout() {
   const { activeSession } = useSession()
   const navigate = useNavigate()
   const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Push an initial history entry so back doesn't leave the app
   useEffect(() => {
-    // If we're on the home page, push a dummy entry so back stays in the app
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault()
-      // If not on home, go to home
+      if (sidebarOpen) {
+        setSidebarOpen(false)
+        window.history.pushState(null, '', window.location.href)
+        return
+      }
       if (location.pathname !== '/') {
         navigate('/', { replace: true })
       } else {
-        // On home, push state again to prevent leaving
         window.history.pushState(null, '', window.location.href)
       }
     }
-
-    // Push initial state to trap back button
     window.history.pushState(null, '', window.location.href)
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [location.pathname, navigate])
+  }, [location.pathname, navigate, sidebarOpen])
+
+  // Close sidebar on navigation
+  useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
   return (
     <div className="layout">
@@ -79,9 +91,9 @@ export function Layout() {
         <Outlet />
       </main>
 
-      {/* Mobile bottom tabs — show key items + config via "Mais" */}
+      {/* Mobile bottom tabs */}
       <nav className="nav-bottom">
-        {[NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[3], NAV_ITEMS[5], NAV_ITEMS[7]].map(item => (
+        {MOBILE_TABS.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -92,7 +104,48 @@ export function Layout() {
             <span>{item.label}</span>
           </NavLink>
         ))}
+        <button
+          className={`nav-bottom-item ${sidebarOpen ? 'active' : ''}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu size={22} strokeWidth={2} />
+          <span>Mais</span>
+        </button>
       </nav>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}>
+          <div className="sidebar" onClick={e => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <span className="sidebar-title">Menu</span>
+              <button className="btn btn-ghost" onClick={() => setSidebarOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="sidebar-items">
+              {NAV_ITEMS.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon size={20} strokeWidth={2} />
+                  <span>{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+            {activeSession && (
+              <div className="sidebar-session">
+                <div className="session-dot-sm" />
+                Sessao aberta desde {formatTime(activeSession.openedAt)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

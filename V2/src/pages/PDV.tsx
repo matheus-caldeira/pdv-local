@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Minus, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Minus, Plus, Trash2, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react'
 import { db, type Product, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
@@ -41,6 +41,8 @@ export function PDV() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
   const [summaryExpanded, setSummaryExpanded] = useState(false)
   const [customModal, setCustomModal] = useState<CustomModalState | null>(null)
+  const [editingObsId, setEditingObsId] = useState<string | null>(null)
+  const [obsText, setObsText] = useState('')
 
   useEffect(() => {
     db.products.filter(p => p.active !== false).toArray().then(setProducts)
@@ -225,6 +227,21 @@ export function PDV() {
     setCart(prev => prev.filter(i => i.cartId !== cartId))
   }
 
+  function openObsEdit(cartId: string) {
+    const item = cart.find(i => i.cartId === cartId)
+    setObsText(item?.observation || '')
+    setEditingObsId(cartId)
+  }
+
+  function saveObs() {
+    if (!editingObsId) return
+    setCart(prev => prev.map(i =>
+      i.cartId === editingObsId ? { ...i, observation: obsText.trim() || undefined } : i
+    ))
+    setEditingObsId(null)
+    setObsText('')
+  }
+
   async function finalizeSale() {
     if (!selectedPayment || cart.length === 0) return
 
@@ -325,6 +342,7 @@ export function PDV() {
                 {item.observation && <div className="cart-item-obs">Obs: {item.observation}</div>}
                 <div className="cart-item-controls">
                   <span className="cart-item-subtotal tabular">{formatMoney(itemUnitTotal(item) * item.qty)}</span>
+                  <button className="qty-btn qty-btn-obs" onClick={() => openObsEdit(item.cartId)} title="Anotacao"><MessageSquare size={13} /></button>
                   <button className="qty-btn" onClick={() => updateQty(item.cartId, -1)}><Minus size={14} /></button>
                   <span className="qty-display tabular">{item.qty}</span>
                   <button className="qty-btn" onClick={() => updateQty(item.cartId, 1)}><Plus size={14} /></button>
@@ -369,6 +387,7 @@ export function PDV() {
                   </div>
                   <div className="summary-item-right">
                     <span className="summary-item-total tabular">{formatMoney(itemUnitTotal(item) * item.qty)}</span>
+                    <button className="qty-btn-sm qty-btn-obs" onClick={() => openObsEdit(item.cartId)}><MessageSquare size={11} /></button>
                     <button className="qty-btn-sm" onClick={() => updateQty(item.cartId, -1)}><Minus size={12} /></button>
                     <button className="qty-btn-sm" onClick={() => updateQty(item.cartId, 1)}><Plus size={12} /></button>
                     <button className="qty-btn-sm qty-btn-remove" onClick={() => removeCartItem(item.cartId)}><Trash2 size={12} /></button>
@@ -460,6 +479,21 @@ export function PDV() {
             </button>
           </div>
         )}
+      </Modal>
+
+      {/* Observation modal */}
+      <Modal open={!!editingObsId} onClose={() => setEditingObsId(null)} title="Anotacao do Item">
+        <textarea
+          className="obs-textarea"
+          value={obsText}
+          onChange={e => setObsText(e.target.value)}
+          placeholder="Ex: Sem cebola, bem passado, molho a parte..."
+          rows={3}
+          autoFocus
+        />
+        <button className="btn btn-accent btn-full" onClick={saveObs} style={{ marginTop: 'var(--space-3)' }}>
+          Salvar
+        </button>
       </Modal>
 
       {/* Payment modal */}

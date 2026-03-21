@@ -287,6 +287,35 @@
   display: none;
 }
 
+/* Observation */
+.qty-btn-obs {
+  border-color: var(--info);
+  color: var(--info);
+}
+
+.qty-btn-sm.qty-btn-obs {
+  border-color: var(--info);
+  color: var(--info);
+}
+
+.obs-textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-base);
+  background: var(--control-bg);
+  color: var(--ink-primary);
+  resize: vertical;
+}
+
+.obs-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--control-focus-ring);
+}
+
 /* Cardapio custom badge */
 .cardapio-custom-badge {
   position: absolute;
