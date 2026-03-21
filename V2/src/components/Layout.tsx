@@ -1,4 +1,5 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -24,6 +25,28 @@ const NAV_ITEMS = [
 
 export function Layout() {
   const { activeSession } = useSession()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Push an initial history entry so back doesn't leave the app
+  useEffect(() => {
+    // If we're on the home page, push a dummy entry so back stays in the app
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault()
+      // If not on home, go to home
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true })
+      } else {
+        // On home, push state again to prevent leaving
+        window.history.pushState(null, '', window.location.href)
+      }
+    }
+
+    // Push initial state to trap back button
+    window.history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [location.pathname, navigate])
 
   return (
     <div className="layout">

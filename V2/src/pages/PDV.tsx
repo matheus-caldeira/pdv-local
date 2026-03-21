@@ -35,7 +35,7 @@ export function PDV() {
   const [cartOpen, setCartOpen] = useState(false)
 
   useEffect(() => {
-    db.products.where('active').equals(1).toArray().then(setProducts)
+    db.products.filter(p => p.active !== false).toArray().then(setProducts)
   }, [])
 
   const categories = useMemo(() => {
