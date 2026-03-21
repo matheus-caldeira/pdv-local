@@ -186,7 +186,7 @@ body {
   padding: 10px 0;
   border-bottom: 1px solid var(--gray-100);
 }
-.order-item:last-child { border-bottom: none; }
+.order-item:last-child { border-bottom: none; margin-bottom: 16px; }
 .order-item .qty-controls { display: flex; align-items: center; gap: 12px; }
 .order-item .qty-btn {
   width: 36px;

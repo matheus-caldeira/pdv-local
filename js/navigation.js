@@ -54,6 +54,16 @@ export function goBack() {
     return;
   }
 
+  // If on orders page with active search, clear search first
+  if (currentPage === 'orders') {
+    var searchInput = document.getElementById('orderSearch');
+    if (searchInput && searchInput.value.trim()) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input'));
+      return;
+    }
+  }
+
   // Navigate back
   if (currentPage !== 'orders') {
     navigateTo('orders', { skipPush: true });
