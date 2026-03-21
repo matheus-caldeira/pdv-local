@@ -26,18 +26,37 @@ export function saveCurrentOrder() {
   });
 }
 
+var cachedTodayOrders = [];
+
 export async function loadOrders() {
   var today = todayStr();
   var allOrders = await dbAll('orders');
-  var orders = allOrders.filter(function(o) { return o.session === today; })
-    .sort(function(a, b) { return b.createdAt - a.createdAt; });
+  cachedTodayOrders = allOrders.filter(function(o) { return o.session === today; })
+    .sort(function(a, b) { return Number(a.comanda) - Number(b.comanda); });
 
+  // Clear search on reload
+  var searchInput = document.getElementById('orderSearch');
+  if (searchInput) searchInput.value = '';
+
+  renderOrderList(cachedTodayOrders);
+}
+
+function filterOrders(query) {
+  if (!query) return renderOrderList(cachedTodayOrders);
+  var q = query.toLowerCase();
+  var filtered = cachedTodayOrders.filter(function(o) {
+    return String(o.comanda).includes(q) || o.responsavel.toLowerCase().includes(q);
+  });
+  renderOrderList(filtered);
+}
+
+function renderOrderList(orders) {
   var container = document.getElementById('ordersList');
   container.replaceChildren();
 
   if (orders.length === 0) {
     container.appendChild(createElement('div', { className: 'empty-state' },
-      createElement('p', null, 'Nenhum pedido hoje')));
+      createElement('p', null, 'Nenhum pedido encontrado')));
     return;
   }
 
@@ -301,6 +320,11 @@ export function initOrders() {
       el.classList.add('selected');
       selectPaymentMethod(el.dataset.method);
     });
+  });
+
+  // Search filter
+  document.getElementById('orderSearch').addEventListener('input', function(e) {
+    filterOrders(e.target.value.trim());
   });
 
   // Close modals on overlay click

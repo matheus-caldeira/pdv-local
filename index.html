@@ -21,9 +21,12 @@
 
 <!-- PAGE: Pedidos (lista) -->
 <div class="page active" id="page-orders">
-  <div class="flex-between mb-16">
+  <div class="flex-between mb-8">
     <h2 style="font-size:20px;font-weight:800">Pedidos</h2>
     <button class="btn btn-primary btn-sm" id="btnNewOrder" style="width:auto">+ Nova Comanda</button>
+  </div>
+  <div class="input-group" style="margin-bottom:12px">
+    <input type="text" id="orderSearch" placeholder="Buscar por nome ou numero..." autocomplete="off">
   </div>
   <div id="ordersList"></div>
 </div>
