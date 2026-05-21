@@ -57,6 +57,9 @@ export interface Order {
   paymentMethod: string | null
   customerName: string
   ticket: string
+  customerId?: number
+  customerPhone: string
+  stage: OrderStage
   status: 'open' | 'paid' | 'pending' | 'cancelled'
   createdAt: number
   updatedAt: number
@@ -80,6 +83,17 @@ export interface CashMovement {
   createdAt: number
 }
 
+export type OrderStage = 'aceito' | 'em_preparo' | 'a_caminho' | 'finalizado'
+
+export interface Customer {
+  id?: number
+  name: string
+  phone: string
+  addresses: string[]
+  createdAt: number
+  updatedAt: number
+}
+
 export interface BusinessConfig {
   id?: number
   name: string
@@ -89,6 +103,7 @@ export interface BusinessConfig {
   ticketCounter: number // proximo numero de comanda a usar
   ticketLimit: number // limite do reset automatico (define os digitos da comanda)
   ticketAutoReset: boolean // reinicia a sequencia ao passar do limite
+  statusControlEnabled: boolean
 }
 
 // Defaults da sequencia de comandas, aplicados a configs sem esses campos.
@@ -96,6 +111,11 @@ export const TICKET_DEFAULTS = {
   ticketCounter: 1,
   ticketLimit: 9999,
   ticketAutoReset: true,
+} as const
+
+// Default da flag de controle de status de pedido.
+export const ORDER_DEFAULTS = {
+  statusControlEnabled: false,
 } as const
 
 export class PDVDatabase extends Dexie {
@@ -106,6 +126,7 @@ export class PDVDatabase extends Dexie {
   config!: Table<BusinessConfig>
   customizationGroups!: Table<CustomizationGroup>
   customizationItems!: Table<CustomizationItem>
+  customers!: Table<Customer>
 
   constructor() {
     super('pdv_v2')
@@ -148,11 +169,28 @@ export class PDVDatabase extends Dexie {
       const merged = {
         name: '', document: '', phone: '', address: '',
         ...TICKET_DEFAULTS,
+        ...ORDER_DEFAULTS,
         ...(all[0] ?? {}),
         id: 1,
       }
       await table.clear()
       await table.put(merged)
+    })
+    this.version(4).stores({
+      products: '++id, name, category, active',
+      orders: '++id, sessionId, status, paymentMethod, createdAt, stage',
+      sessions: '++id, openedAt, closedAt',
+      cashMovements: '++id, sessionId, type',
+      config: '++id',
+      customizationGroups: '++id, name',
+      customizationItems: '++id, groupId, active',
+      customers: '++id, &phone, name',
+    }).upgrade(async tx => {
+      // Pedidos antigos entram como finalizados, sem cliente vinculado.
+      await tx.table('orders').toCollection().modify(order => {
+        if (order.stage == null) order.stage = 'finalizado'
+        if (order.customerPhone == null) order.customerPhone = ''
+      })
     })
   }
 }
@@ -170,6 +208,7 @@ export async function getConfig(): Promise<BusinessConfig> {
     id: CONFIG_ID,
     name: '', document: '', phone: '', address: '',
     ...TICKET_DEFAULTS,
+    ...ORDER_DEFAULTS,
     ...stored,
   }
 }
