@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Search, Printer } from 'lucide-react'
-import { db, type Order } from '../db/database'
+import { db, getConfig, type Order } from '../db/database'
 import { formatMoney, formatDateTime } from '../utils/format'
+import { STAGE_LABELS } from '../utils/order'
 import { Modal } from '../components/Modal'
 import { useToast } from '../components/Toast'
 import './Orders.css'
@@ -26,8 +27,12 @@ export function Orders() {
   const [statusFilter, setStatusFilter] = useState('')
   const [detailOrder, setDetailOrder] = useState<Order | null>(null)
   const [payMethodModal, setPayMethodModal] = useState(false)
+  const [statusControl, setStatusControl] = useState(false)
 
-  useEffect(() => { loadOrders() }, [])
+  useEffect(() => {
+    loadOrders()
+    getConfig().then(c => setStatusControl(c.statusControlEnabled))
+  }, [])
 
   async function loadOrders() {
     const all = await db.orders.toArray()
@@ -118,6 +123,9 @@ export function Orders() {
               <div className="order-row-bottom">
                 <div className="order-row-meta">
                   <span className={`status-badge status-${o.status}`}>{statusLabel(o.status)}</span>
+                  {statusControl && (
+                    <span className="status-badge">{STAGE_LABELS[o.stage]}</span>
+                  )}
                   <span className="order-payment">{PAYMENT_LABELS[o.paymentMethod || ''] || '-'}</span>
                   <span>{o.items.length} {o.items.length === 1 ? 'item' : 'itens'}</span>
                 </div>
