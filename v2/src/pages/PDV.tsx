@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, Trash2, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react'
-import { db, type Product, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
+import { db, getConfig, claimTicket, type Product, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
-import { formatMoney } from '../utils/format'
+import { formatMoney, formatTicket } from '../utils/format'
 import './PDV.css'
 
 interface CartItem extends OrderItem {
@@ -36,6 +36,9 @@ export function PDV() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [customerName, setCustomerName] = useState('')
   const [ticket, setTicket] = useState('')
+  // Numero da comanda mostrado como sugestao. Se o operador nao editar o campo,
+  // a sequencia e reservada na finalizacao; se editar, vale o valor digitado.
+  const [ticketPreview, setTicketPreview] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
@@ -44,8 +47,18 @@ export function PDV() {
   const [editingObsId, setEditingObsId] = useState<string | null>(null)
   const [obsText, setObsText] = useState('')
 
+  // Mostra o proximo numero da sequencia como sugestao no campo de comanda,
+  // SEM avancar o contador. O contador so e reservado quando o pedido e criado.
+  async function suggestNextTicket() {
+    const config = await getConfig()
+    const next = formatTicket(config.ticketCounter, config.ticketLimit)
+    setTicket(next)
+    setTicketPreview(next)
+  }
+
   useEffect(() => {
     db.products.filter(p => p.active !== false).toArray().then(setProducts)
+    suggestNextTicket()
   }, [])
 
   const categories = useMemo(() => {
@@ -250,6 +263,14 @@ export function PDV() {
   async function finalizeSale() {
     if (!selectedPayment || cart.length === 0) return
 
+    // Define a comanda do pedido: se o operador manteve a sugestao, reserva o
+    // proximo numero da sequencia (avancando o contador). Se digitou outro
+    // valor, usa o digitado e nao mexe na sequencia.
+    const edited = ticket.trim() !== ticketPreview
+    const orderTicket = edited
+      ? (ticket.trim() || '-')
+      : await claimTicket()
+
     await db.orders.add({
       sessionId: activeSession!.id!,
       items: cart.map(({ productId, name, salePrice, costPrice, qty, observation, customizations, customizationTotal }) => ({
@@ -258,7 +279,7 @@ export function PDV() {
       total,
       paymentMethod: selectedPayment,
       customerName: customerName.trim(),
-      ticket: ticket.trim() || String(Date.now()).slice(-4),
+      ticket: orderTicket,
       status: selectedPayment === 'pagar_depois' ? 'pending' : 'paid',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -274,10 +295,10 @@ export function PDV() {
     toast('Venda registrada!')
     setCart([])
     setCustomerName('')
-    setTicket('')
     setSelectedPayment(null)
     setPaymentOpen(false)
     setSummaryExpanded(false)
+    suggestNextTicket()
   }
 
   const itemUnitTotal = (item: CartItem) => item.salePrice + (item.customizationTotal || 0)

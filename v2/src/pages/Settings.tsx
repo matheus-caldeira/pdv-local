@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Download, Upload, Store, Printer } from 'lucide-react'
-import { db, type BusinessConfig } from '../db/database'
+import { Download, Upload, Store, Printer, Hash } from 'lucide-react'
+import { db, getConfig, saveConfig, TICKET_DEFAULTS, type BusinessConfig } from '../db/database'
 import { exportAll, exportEntity, importEntity } from '../db/export-import'
 import { useToast } from '../components/Toast'
+import { Modal } from '../components/Modal'
+import { formatTicket } from '../utils/format'
 import './Settings.css'
 
 const ENTITIES = [
@@ -17,31 +19,35 @@ export function Settings() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [config, setConfig] = useState<Partial<BusinessConfig>>({
     name: '', document: '', phone: '', address: '',
+    ...TICKET_DEFAULTS,
   })
   const [importTarget, setImportTarget] = useState<string>('products')
+  const [resetValue, setResetValue] = useState('1')
+  const [resetModalOpen, setResetModalOpen] = useState(false)
 
   useEffect(() => {
-    db.config.toArray().then(all => {
-      if (all.length > 0) setConfig(all[0])
-    })
+    getConfig().then(setConfig)
   }, [])
 
-  async function saveConfig() {
-    const data: BusinessConfig = {
-      ...config as BusinessConfig,
+  async function handleSaveConfig() {
+    await saveConfig({
+      ...config,
       name: config.name?.trim() || '',
       document: config.document?.trim() || '',
       phone: config.phone?.trim() || '',
       address: config.address?.trim() || '',
-    }
-
-    if (config.id) {
-      await db.config.update(config.id, data)
-    } else {
-      const id = await db.config.add(data)
-      setConfig(prev => ({ ...prev, id }))
-    }
+    })
+    setConfig(await getConfig())
     toast('Configuracoes salvas')
+  }
+
+  // Reinicia a sequencia de comandas a partir do valor informado.
+  async function applyReset() {
+    const value = Math.max(1, Math.floor(Number(resetValue) || 1))
+    await saveConfig({ ticketCounter: value })
+    setConfig(p => ({ ...p, ticketCounter: value }))
+    setResetModalOpen(false)
+    toast(`Sequencia reiniciada a partir de ${value}`)
   }
 
   async function handleImport() {
@@ -111,9 +117,78 @@ export function Settings() {
               />
             </div>
           </div>
-          <button className="btn btn-accent" onClick={saveConfig} style={{ marginTop: 'var(--space-4)' }}>
+          <button className="btn btn-accent" onClick={handleSaveConfig} style={{ marginTop: 'var(--space-4)' }}>
             Salvar
           </button>
+        </div>
+      </div>
+
+      {/* Comandas */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <Hash size={20} />
+          <h2>Comandas</h2>
+        </div>
+        <div className="settings-card">
+          <p className="settings-desc">
+            A comanda e gerada automaticamente em sequencia a cada nova venda,
+            com zeros a esquerda. A quantidade de digitos deriva do limite.
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+            <div className="form-field">
+              <label>Reset Automatico</label>
+              <select
+                value={config.ticketAutoReset ? '1' : '0'}
+                onChange={e => setConfig(p => ({ ...p, ticketAutoReset: e.target.value === '1' }))}
+              >
+                <option value="1">Sim - reinicia ao passar do limite</option>
+                <option value="0">Nao - sequencia continua sempre</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Limite (define os digitos da comanda)</label>
+              <input
+                type="number"
+                min={1}
+                value={config.ticketLimit ?? TICKET_DEFAULTS.ticketLimit}
+                onChange={e => setConfig(p => ({ ...p, ticketLimit: Math.max(1, Math.floor(Number(e.target.value) || 1)) }))}
+              />
+            </div>
+          </div>
+          <p className="settings-desc" style={{ marginTop: 'var(--space-3)' }}>
+            Proxima comanda:{' '}
+            <strong>
+              {formatTicket(
+                config.ticketCounter ?? TICKET_DEFAULTS.ticketCounter,
+                config.ticketLimit ?? TICKET_DEFAULTS.ticketLimit,
+              )}
+            </strong>
+          </p>
+          <button className="btn btn-accent" onClick={handleSaveConfig} style={{ marginTop: 'var(--space-3)' }}>
+            Salvar
+          </button>
+
+          <div className="export-individual">
+            <span className="settings-sublabel">Reiniciar Sequencia:</span>
+            <div className="import-controls">
+              <div className="form-field">
+                <label>Reiniciar a partir de</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={resetValue}
+                  onChange={e => setResetValue(e.target.value)}
+                />
+              </div>
+            </div>
+            <button
+              className="btn btn-outline"
+              onClick={() => setResetModalOpen(true)}
+              style={{ marginTop: 'var(--space-3)' }}
+            >
+              Reiniciar Sequencia
+            </button>
+          </div>
         </div>
       </div>
 
@@ -249,6 +324,31 @@ export function Settings() {
           </button>
         </div>
       </div>
+
+      <Modal
+        open={resetModalOpen}
+        onClose={() => setResetModalOpen(false)}
+        title="Reiniciar sequencia de comandas"
+      >
+        <p className="settings-desc">
+          A proxima comanda passara a ser{' '}
+          <strong>
+            {formatTicket(
+              Math.max(1, Math.floor(Number(resetValue) || 1)),
+              config.ticketLimit ?? TICKET_DEFAULTS.ticketLimit,
+            )}
+          </strong>
+          . Pedidos ja registrados nao sao afetados.
+        </p>
+        <div className="printer-actions" style={{ marginTop: 'var(--space-4)' }}>
+          <button className="btn btn-ghost" onClick={() => setResetModalOpen(false)}>
+            Cancelar
+          </button>
+          <button className="btn btn-accent" onClick={applyReset}>
+            Reiniciar
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
