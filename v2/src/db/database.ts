@@ -236,3 +236,40 @@ export async function claimTicket(): Promise<string> {
     return formatTicket(current.ticketCounter, current.ticketLimit)
   })
 }
+
+// Resolve o cliente de um pedido pelo telefone. Retorna o id do cliente
+// (ou undefined se telefone vazio). Cria o cliente se nao existir; se existir,
+// adiciona o endereco novo a lista e atualiza o nome apenas quando o cadastro
+// estiver com o nome default "Consumidor".
+export async function findOrCreateCustomer(
+  phone: string,
+  name: string,
+  address: string,
+): Promise<number | undefined> {
+  const cleanPhone = phone.trim()
+  if (!cleanPhone) return undefined
+
+  const cleanName = name.trim() || 'Consumidor'
+  const cleanAddress = address.trim()
+
+  const existing = await db.customers.where('phone').equals(cleanPhone).first()
+  if (existing?.id) {
+    const patch: Partial<Customer> = { updatedAt: Date.now() }
+    if (cleanAddress && !existing.addresses.includes(cleanAddress)) {
+      patch.addresses = [...existing.addresses, cleanAddress]
+    }
+    if (existing.name === 'Consumidor' && cleanName !== 'Consumidor') {
+      patch.name = cleanName
+    }
+    await db.customers.update(existing.id, patch)
+    return existing.id
+  }
+
+  return db.customers.add({
+    name: cleanName,
+    phone: cleanPhone,
+    addresses: cleanAddress ? [cleanAddress] : [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  })
+}
