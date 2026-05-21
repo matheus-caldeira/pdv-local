@@ -85,7 +85,13 @@
   margin-left: var(--nav-rail-width);
   padding: var(--space-6);
   padding-bottom: var(--space-8);
+  min-width: 0;
+}
+
+/* Centraliza o conteudo dentro da area util (apos a nav-rail) */
+.main-content > * {
   max-width: 1200px;
+  margin-inline: auto;
 }
 
 /* === Mobile Bottom Tabs === */
