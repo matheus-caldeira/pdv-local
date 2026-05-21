@@ -3,9 +3,8 @@ import { db } from '../db/database'
 
 import './Panel.css'
 
-const READY_LIMIT = 12
-
 export function Panel() {
+  // Pedidos em preparo (aceito + em_preparo).
   const preparing = useLiveQuery(
     () => db.orders
       .where('stage').anyOf('aceito', 'em_preparo')
@@ -13,17 +12,16 @@ export function Panel() {
       .toArray(),
   ) ?? []
 
-  const ready = useLiveQuery(
-    async () => {
-      const all = await db.orders
-        .where('stage').equals('finalizado')
-        .filter(o => o.status !== 'cancelled')
-        .toArray()
-      return all.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, READY_LIMIT)
-    },
+  // Pedidos saindo para entrega (a_caminho).
+  const onTheWay = useLiveQuery(
+    () => db.orders
+      .where('stage').equals('a_caminho')
+      .filter(o => o.status !== 'cancelled')
+      .toArray(),
   ) ?? []
 
   const sortedPreparing = [...preparing].sort((a, b) => a.createdAt - b.createdAt)
+  const sortedOnTheWay = [...onTheWay].sort((a, b) => a.createdAt - b.createdAt)
 
   return (
     <div className="panel-page">
@@ -41,11 +39,11 @@ export function Panel() {
         )}
       </div>
       <div className="panel-col">
-        <div className="panel-col-title">Prontos</div>
-        {ready.length === 0 ? (
-          <div className="panel-empty">Nenhum pedido pronto</div>
+        <div className="panel-col-title">A caminho</div>
+        {sortedOnTheWay.length === 0 ? (
+          <div className="panel-empty">Nenhum pedido a caminho</div>
         ) : (
-          ready.map(o => (
+          sortedOnTheWay.map(o => (
             <div key={o.id} className="panel-item ready">
               <span className="panel-item-ticket">#{o.ticket}</span>
               {o.customerName && <span className="panel-item-name">{o.customerName}</span>}

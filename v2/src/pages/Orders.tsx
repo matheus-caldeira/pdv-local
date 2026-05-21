@@ -123,7 +123,7 @@ export function Orders() {
               <div className="order-row-bottom">
                 <div className="order-row-meta">
                   <span className={`status-badge status-${o.status}`}>{statusLabel(o.status)}</span>
-                  {statusControl && (
+                  {statusControl && o.stage && (
                     <span className="status-badge">{STAGE_LABELS[o.stage]}</span>
                   )}
                   <span className="order-payment">{PAYMENT_LABELS[o.paymentMethod || ''] || '-'}</span>
