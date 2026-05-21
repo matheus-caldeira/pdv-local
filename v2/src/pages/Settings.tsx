@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Download, Upload, Store, Printer, Hash } from 'lucide-react'
-import { db, getConfig, saveConfig, TICKET_DEFAULTS, type BusinessConfig } from '../db/database'
+import { Download, Upload, Store, Printer, Hash, ClipboardList } from 'lucide-react'
+import { db, getConfig, saveConfig, TICKET_DEFAULTS, ORDER_DEFAULTS, type BusinessConfig } from '../db/database'
 import { exportAll, exportEntity, importEntity } from '../db/export-import'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
@@ -20,6 +20,7 @@ export function Settings() {
   const [config, setConfig] = useState<Partial<BusinessConfig>>({
     name: '', document: '', phone: '', address: '',
     ...TICKET_DEFAULTS,
+    ...ORDER_DEFAULTS,
   })
   const [importTarget, setImportTarget] = useState<string>('products')
   const [resetValue, setResetValue] = useState('1')
@@ -189,6 +190,36 @@ export function Settings() {
               Reiniciar Sequencia
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Pedidos */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <ClipboardList size={20} />
+          <h2>Pedidos</h2>
+        </div>
+        <div className="settings-card">
+          <p className="settings-desc">
+            O controle de status acompanha o preparo de cada pedido por
+            estagios (aceito, em preparo, a caminho, finalizado) e habilita
+            as telas de gestao (KDS) e o painel publico.
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+            <div className="form-field">
+              <label>Controle de Status</label>
+              <select
+                value={config.statusControlEnabled ? '1' : '0'}
+                onChange={e => setConfig(p => ({ ...p, statusControlEnabled: e.target.value === '1' }))}
+              >
+                <option value="0">Desligado</option>
+                <option value="1">Ligado - habilita KDS e painel</option>
+              </select>
+            </div>
+          </div>
+          <button className="btn btn-accent" onClick={handleSaveConfig} style={{ marginTop: 'var(--space-3)' }}>
+            Salvar
+          </button>
         </div>
       </div>
 
