@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, Trash2, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react'
-import { db, getConfig, claimTicket, type Product, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
+import { db, getConfig, claimTicket, findOrCreateCustomer, type Product, type Customer, type Order, type OrderItem, type CustomizationGroup, type CustomizationItem, type OrderCustomization } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
@@ -39,6 +39,13 @@ export function PDV() {
   // Numero da comanda mostrado como sugestao. Se o operador nao editar o campo,
   // a sequencia e reservada na finalizacao; se editar, vale o valor digitado.
   const [ticketPreview, setTicketPreview] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null)
+  const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([])
+  // Passo do modal de pagamento: 'option' (1o) ou 'method' (2o).
+  const [paymentStep, setPaymentStep] = useState<'option' | 'method'>('option')
+  const [payOption, setPayOption] = useState<'now' | 'tab' | 'delivery' | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
@@ -54,6 +61,25 @@ export function PDV() {
     const next = formatTicket(config.ticketCounter, config.ticketLimit)
     setTicket(next)
     setTicketPreview(next)
+  }
+
+  // Busca clientes cujo telefone contem o texto digitado (autocomplete).
+  async function onPhoneChange(value: string) {
+    setPhone(value)
+    setMatchedCustomer(null)
+    const q = value.trim()
+    if (q.length < 3) { setCustomerSuggestions([]); return }
+    const all = await db.customers.toArray()
+    setCustomerSuggestions(all.filter(c => c.phone.includes(q)).slice(0, 6))
+  }
+
+  // Seleciona um cliente da lista de sugestoes.
+  function selectCustomer(c: Customer) {
+    setMatchedCustomer(c)
+    setPhone(c.phone)
+    setCustomerName(c.name === 'Consumidor' ? '' : c.name)
+    setAddress(c.addresses[0] || '')
+    setCustomerSuggestions([])
   }
 
   useEffect(() => {
@@ -260,16 +286,27 @@ export function PDV() {
     setObsText('')
   }
 
-  async function finalizeSale() {
-    if (!selectedPayment || cart.length === 0) return
+  // Mapeia a opcao de pagamento para status do pedido.
+  function statusForOption(option: 'now' | 'tab' | 'delivery'): Order['status'] {
+    if (option === 'now') return 'paid'
+    if (option === 'delivery') return 'pending'
+    return 'open'
+  }
+
+  async function finalizeSale(option?: 'now' | 'tab' | 'delivery') {
+    const opt = option ?? payOption
+    if (cart.length === 0 || !opt) return
+    // Pagar agora / na entrega exigem meio de pagamento.
+    if ((opt === 'now' || opt === 'delivery') && !selectedPayment) return
 
     // Define a comanda do pedido: se o operador manteve a sugestao, reserva o
     // proximo numero da sequencia (avancando o contador). Se digitou outro
     // valor, usa o digitado e nao mexe na sequencia.
     const edited = ticket.trim() !== ticketPreview
-    const orderTicket = edited
-      ? (ticket.trim() || '-')
-      : await claimTicket()
+    const orderTicket = edited ? (ticket.trim() || '-') : await claimTicket()
+
+    const realAddress = address === '__new__' ? '' : address.trim()
+    const customerId = await findOrCreateCustomer(phone, customerName, realAddress)
 
     await db.orders.add({
       sessionId: activeSession!.id!,
@@ -277,10 +314,13 @@ export function PDV() {
         productId, name, salePrice, costPrice, qty, observation, customizations, customizationTotal,
       })),
       total,
-      paymentMethod: selectedPayment,
+      paymentMethod: opt === 'tab' ? null : selectedPayment,
       customerName: customerName.trim(),
+      customerId,
+      customerPhone: phone.trim(),
       ticket: orderTicket,
-      status: selectedPayment === 'pagar_depois' ? 'pending' : 'paid',
+      status: statusForOption(opt),
+      stage: 'aceito',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     })
@@ -295,7 +335,12 @@ export function PDV() {
     toast('Venda registrada!')
     setCart([])
     setCustomerName('')
+    setPhone('')
+    setAddress('')
+    setMatchedCustomer(null)
     setSelectedPayment(null)
+    setPayOption(null)
+    setPaymentStep('option')
     setPaymentOpen(false)
     setSummaryExpanded(false)
     suggestNextTicket()
@@ -345,8 +390,57 @@ export function PDV() {
       <div className="pdv-cart-desktop">
         <div className="cart-header"><h2>Carrinho</h2></div>
         <div className="cart-fields">
-          <input type="text" className="cart-input" placeholder="Nome do cliente (opcional)" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-          <input type="text" className="cart-input" placeholder="Comanda / Mesa" value={ticket} onChange={e => setTicket(e.target.value)} />
+          <div className="customer-phone-field">
+            <input
+              type="tel"
+              className="cart-input"
+              placeholder="Telefone do cliente"
+              value={phone}
+              onChange={e => onPhoneChange(e.target.value)}
+            />
+            {customerSuggestions.length > 0 && (
+              <div className="customer-suggestions">
+                {customerSuggestions.map(c => (
+                  <button key={c.id} className="customer-suggestion" onClick={() => selectCustomer(c)}>
+                    <span>{c.name}</span>
+                    <span className="customer-suggestion-phone">{c.phone}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <input
+            type="text"
+            className="cart-input"
+            placeholder="Nome do cliente (opcional)"
+            value={customerName}
+            onChange={e => setCustomerName(e.target.value)}
+          />
+          {matchedCustomer && matchedCustomer.addresses.length > 0 ? (
+            <select className="cart-input" value={address} onChange={e => setAddress(e.target.value)}>
+              <option value="">Sem endereco</option>
+              {matchedCustomer.addresses.map((a, i) => (
+                <option key={i} value={a}>{a}</option>
+              ))}
+              <option value="__new__">+ Novo endereco</option>
+            </select>
+          ) : null}
+          {(!matchedCustomer || address === '__new__') && (
+            <input
+              type="text"
+              className="cart-input"
+              placeholder="Endereco (opcional)"
+              value={address === '__new__' ? '' : address}
+              onChange={e => setAddress(e.target.value)}
+            />
+          )}
+          <input
+            type="text"
+            className="cart-input"
+            placeholder="Comanda / Mesa"
+            value={ticket}
+            onChange={e => setTicket(e.target.value)}
+          />
         </div>
         <div className="cart-items">
           {cart.length === 0 ? (
@@ -395,8 +489,46 @@ export function PDV() {
           {summaryExpanded && (
             <div className="summary-items">
               <div className="summary-fields">
-                <input type="text" className="cart-input" placeholder="Cliente (opcional)" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                <input type="text" className="cart-input" placeholder="Comanda / Mesa" value={ticket} onChange={e => setTicket(e.target.value)} />
+                <div className="customer-phone-field">
+                  <input
+                    type="tel"
+                    className="cart-input"
+                    placeholder="Telefone do cliente"
+                    value={phone}
+                    onChange={e => onPhoneChange(e.target.value)}
+                  />
+                  {customerSuggestions.length > 0 && (
+                    <div className="customer-suggestions">
+                      {customerSuggestions.map(c => (
+                        <button key={c.id} className="customer-suggestion" onClick={() => selectCustomer(c)}>
+                          <span>{c.name}</span>
+                          <span className="customer-suggestion-phone">{c.phone}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  className="cart-input"
+                  placeholder="Cliente (opcional)"
+                  value={customerName}
+                  onChange={e => setCustomerName(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="cart-input"
+                  placeholder="Endereco (opcional)"
+                  value={address === '__new__' ? '' : address}
+                  onChange={e => setAddress(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="cart-input"
+                  placeholder="Comanda / Mesa"
+                  value={ticket}
+                  onChange={e => setTicket(e.target.value)}
+                />
               </div>
               {cart.map(item => (
                 <div key={item.cartId} className="summary-item">
@@ -526,19 +658,58 @@ export function PDV() {
       </Modal>
 
       {/* Payment modal */}
-      <Modal open={paymentOpen} onClose={() => setPaymentOpen(false)} title="Forma de Pagamento">
+      <Modal
+        open={paymentOpen}
+        onClose={() => { setPaymentOpen(false); setPaymentStep('option'); setPayOption(null); setSelectedPayment(null) }}
+        title={paymentStep === 'option' ? 'Como deseja pagar?' : 'Forma de Pagamento'}
+      >
         <div className="payment-total tabular">{formatMoney(total)}</div>
-        <div className="payment-methods">
-          {PAYMENT_METHODS.map(pm => (
-            <button key={pm.key} className={`payment-method ${selectedPayment === pm.key ? 'selected' : ''} ${pm.key === 'pagar_depois' ? 'pay-later' : ''}`} onClick={() => setSelectedPayment(pm.key)}>
-              <span className="pm-icon">{pm.icon}</span>
-              <span className="pm-label">{pm.label}</span>
+
+        {paymentStep === 'option' ? (
+          <div className="payment-options">
+            <button
+              className="payment-option"
+              onClick={() => { setPayOption('now'); setPaymentStep('method') }}
+            >
+              Pagar agora
             </button>
-          ))}
-        </div>
-        <button className="btn btn-accent btn-full" disabled={!selectedPayment} onClick={finalizeSale} style={{ marginTop: 'var(--space-4)' }}>
-          Confirmar Pagamento
-        </button>
+            <button
+              className="payment-option"
+              onClick={() => finalizeSale('tab')}
+            >
+              Abrir comanda
+            </button>
+            <button
+              className="payment-option"
+              onClick={() => { setPayOption('delivery'); setPaymentStep('method') }}
+            >
+              Pagar na entrega
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="payment-methods">
+              {PAYMENT_METHODS.filter(pm => pm.key !== 'pagar_depois').map(pm => (
+                <button
+                  key={pm.key}
+                  className={`payment-method ${selectedPayment === pm.key ? 'selected' : ''}`}
+                  onClick={() => setSelectedPayment(pm.key)}
+                >
+                  <span className="pm-icon">{pm.icon}</span>
+                  <span className="pm-label">{pm.label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn btn-accent btn-full"
+              disabled={!selectedPayment}
+              onClick={() => finalizeSale()}
+              style={{ marginTop: 'var(--space-4)' }}
+            >
+              Confirmar Pagamento
+            </button>
+          </>
+        )}
       </Modal>
     </div>
   )
