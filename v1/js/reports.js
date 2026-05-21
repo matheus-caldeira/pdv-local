@@ -126,7 +126,7 @@ async function copyReport(sessionDate) {
   var openOrders = orders.filter(function(o) { return !o.paymentMethod; });
   var unpaidTotal = (byMethod.pagar_depois || 0) + openOrders.reduce(function(s, o) { return s + o.total; }, 0);
 
-  var text = '*CANTINA ESCOTEIRA*\n';
+  var text = '*PDV*\n';
   text += formatDate(sessionDate) + '\n\n';
   text += '*Total de pedidos:* ' + orders.length + '\n';
   text += '*Total geral:* ' + formatMoney(totalGeral) + '\n\n';

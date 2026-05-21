@@ -1,6 +1,6 @@
 import { todayStr } from './helpers.js';
 
-const DB_NAME = 'cantina_escoteira';
+const DB_NAME = 'pdv';
 const DB_VERSION = 1;
 let db;
 
