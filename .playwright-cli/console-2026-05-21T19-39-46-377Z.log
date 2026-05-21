@@ -1,0 +1,2 @@
+[     461ms] [WARNING] <Router basename="/escoteiros/v2"> is not able to match the URL "/pdv-local/v2/" because it does not start with the basename, so the <Router> won't render anything. @ https://matheus-caldeira.github.io/pdv-local/v2/assets/index-BRDAMZIV.js:8
+[     606ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://matheus-caldeira.github.io/favicon.ico:0

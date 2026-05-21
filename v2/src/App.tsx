@@ -10,7 +10,8 @@ import { Reports } from './pages/Reports'
 import { Settings } from './pages/Settings'
 import { Customizations } from './pages/Customizations'
 
-const BASE = '/escoteiros/v2'
+// Deriva o basename do `base` configurado no vite.config.ts (sem barra final).
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 export function App() {
   return (
