@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   Package,
   ClipboardList,
+  Users,
   Wallet,
   BarChart3,
   Settings,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { to: '/pdv', icon: ShoppingCart, label: 'Vender' },
   { to: '/products', icon: Package, label: 'Produtos' },
   { to: '/orders', icon: ClipboardList, label: 'Pedidos' },
+  { to: '/customers', icon: Users, label: 'Clientes' },
   { to: '/customizations', icon: SlidersHorizontal, label: 'Extras' },
   { to: '/cash', icon: Wallet, label: 'Caixa' },
   { to: '/reports', icon: BarChart3, label: 'Relatorios' },
@@ -31,7 +33,7 @@ const MOBILE_TABS = [
   NAV_ITEMS[0], // Inicio
   NAV_ITEMS[1], // Vender
   NAV_ITEMS[3], // Pedidos
-  NAV_ITEMS[5], // Caixa
+  NAV_ITEMS[6], // Caixa
 ]
 
 export function Layout() {
