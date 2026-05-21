@@ -338,6 +338,7 @@ export function PDV() {
     setPhone('')
     setAddress('')
     setMatchedCustomer(null)
+    setCustomerSuggestions([])
     setSelectedPayment(null)
     setPayOption(null)
     setPaymentStep('option')
@@ -515,13 +516,24 @@ export function PDV() {
                   value={customerName}
                   onChange={e => setCustomerName(e.target.value)}
                 />
-                <input
-                  type="text"
-                  className="cart-input"
-                  placeholder="Endereco (opcional)"
-                  value={address === '__new__' ? '' : address}
-                  onChange={e => setAddress(e.target.value)}
-                />
+                {matchedCustomer && matchedCustomer.addresses.length > 0 ? (
+                  <select className="cart-input" value={address} onChange={e => setAddress(e.target.value)}>
+                    <option value="">Sem endereco</option>
+                    {matchedCustomer.addresses.map((a, i) => (
+                      <option key={i} value={a}>{a}</option>
+                    ))}
+                    <option value="__new__">+ Novo endereco</option>
+                  </select>
+                ) : null}
+                {(!matchedCustomer || address === '__new__') && (
+                  <input
+                    type="text"
+                    className="cart-input"
+                    placeholder="Endereco (opcional)"
+                    value={address === '__new__' ? '' : address}
+                    onChange={e => setAddress(e.target.value)}
+                  />
+                )}
                 <input
                   type="text"
                   className="cart-input"
@@ -660,7 +672,7 @@ export function PDV() {
       {/* Payment modal */}
       <Modal
         open={paymentOpen}
-        onClose={() => { setPaymentOpen(false); setPaymentStep('option'); setPayOption(null); setSelectedPayment(null) }}
+        onClose={() => { setPaymentOpen(false); setPaymentStep('option'); setPayOption(null); setSelectedPayment(null); setCustomerSuggestions([]) }}
         title={paymentStep === 'option' ? 'Como deseja pagar?' : 'Forma de Pagamento'}
       >
         <div className="payment-total tabular">{formatMoney(total)}</div>
