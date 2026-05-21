@@ -1,0 +1,64 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Permite apenas um deploy concorrente; cancela execucoes em andamento.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: v2/package-lock.json
+
+      - name: Install dependencies (v2)
+        working-directory: v2
+        run: npm ci
+
+      - name: Build v2
+        working-directory: v2
+        run: npm run build
+
+      - name: Montar site para publicacao
+        run: |
+          mkdir -p _site/v1 _site/v2
+          # Landing page na raiz
+          cp index.html _site/index.html
+          # Versao 1 (HTML/CSS/JS puro) na integra
+          cp -r v1/. _site/v1/
+          # Versao 2 (build do Vite)
+          cp -r v2/dist/. _site/v2/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy para GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,179 +2,346 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Cantina Escoteira</title>
-<link rel="stylesheet" href="css/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="PDV Local — sistema de ponto de venda gratuito, mobile-first e offline. Pronto para uso por qualquer comunidade, sem servidor e sem mensalidade.">
+<title>PDV Local — Ponto de venda gratuito para o celular</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #181b22;
+    --surface-2: #20242e;
+    --border: #2a2f3a;
+    --text: #e8eaed;
+    --text-dim: #9aa0ab;
+    --accent: #4f9cff;
+    --accent-2: #7c5cff;
+    --ok: #34c77b;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 80px 20px 64px;
+    background:
+      radial-gradient(900px 400px at 50% -10%, rgba(79,156,255,0.18), transparent 70%),
+      radial-gradient(700px 360px at 80% 10%, rgba(124,92,255,0.14), transparent 70%);
+  }
+  .badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(79,156,255,0.12);
+    border: 1px solid rgba(79,156,255,0.3);
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 22px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .hero h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p.lead {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: var(--text-dim);
+    max-width: 640px;
+    margin: 0 auto 32px;
+  }
+
+  /* Buttons */
+  .cta-row {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 13px 24px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    color: #fff;
+  }
+  .btn-ghost {
+    background: var(--surface);
+    color: var(--text);
+  }
+  .btn-ghost:hover { border-color: var(--accent); }
+
+  /* Sections */
+  section { padding: 56px 0; }
+  .section-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--text-dim);
+    margin-bottom: 36px;
+  }
+
+  /* Features grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .card .ico {
+    font-size: 26px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .card h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .card p { color: var(--text-dim); font-size: 0.94rem; }
+
+  /* Versions */
+  .versions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .ver {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+  }
+  .ver.featured { border-color: var(--accent); background: var(--surface-2); }
+  .ver .tag {
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .ver.featured .tag { background: rgba(79,156,255,0.16); color: var(--accent); }
+  .ver:not(.featured) .tag { background: var(--surface-2); color: var(--text-dim); }
+  .ver h3 { font-size: 1.3rem; margin-bottom: 6px; }
+  .ver p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 16px; flex: 1; }
+  .ver ul { list-style: none; margin-bottom: 20px; }
+  .ver li { font-size: 0.9rem; color: var(--text-dim); padding: 3px 0 3px 22px; position: relative; }
+  .ver li::before { content: "✓"; color: var(--ok); position: absolute; left: 0; font-weight: 700; }
+
+  /* Steps */
+  .steps { counter-reset: step; display: grid; gap: 14px; }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    font-weight: 700;
+    border-radius: 50%;
+  }
+  .step h3 { font-size: 1rem; margin-bottom: 2px; }
+  .step p { color: var(--text-dim); font-size: 0.92rem; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <h1>Cantina Escoteira</h1>
-  <div class="session-info" id="headerSession"></div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<!-- PAGE: Pedidos (lista) -->
-<div class="page active" id="page-orders">
-  <div class="flex-between mb-8">
-    <h2 style="font-size:20px;font-weight:800">Pedidos</h2>
-    <button class="btn btn-primary btn-sm" id="btnNewOrder" style="width:auto">+ Nova Comanda</button>
-  </div>
-  <div class="input-group" style="margin-bottom:12px">
-    <input type="text" id="orderSearch" placeholder="Buscar por nome ou numero..." autocomplete="off">
-  </div>
-  <div id="ordersList"></div>
-</div>
-
-<!-- PAGE: Editar Pedido (comanda aberta) -->
-<div class="page" id="page-order-edit">
-  <div class="flex-between mb-8">
-    <h2 style="font-size:20px;font-weight:800" id="orderPageTitle">Comanda</h2>
-    <button class="btn btn-ghost" id="btnDeleteOrder" style="color:var(--red-500)">Excluir</button>
-  </div>
-  <div id="orderStatus" class="badge mb-16" style="display:none"></div>
-  <div class="card">
-    <div class="input-group" style="margin-bottom:12px">
-      <label>Comanda</label>
-      <input type="number" id="orderComanda" placeholder="N da comanda" inputmode="numeric">
-    </div>
-    <div class="input-group" style="margin-bottom:0">
-      <label>Responsavel</label>
-      <input type="text" id="orderResponsavel" placeholder="Nome do responsavel" autocomplete="off">
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">Gratuito &amp; open source</span>
+    <h1>Um <span class="grad">PDV completo</span> no seu celular,<br>sem servidor e sem mensalidade</h1>
+    <p class="lead">
+      PDV Local é um sistema de ponto de venda mobile-first que roda direto no navegador.
+      Funciona offline, guarda tudo no próprio aparelho e está pronto para qualquer
+      pessoa ou comunidade que precisa vender com agilidade — feiras, cantinas, bazares,
+      eventos e pequenos negócios.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="v2/">Abrir o PDV →</a>
+      <a class="btn btn-ghost" href="#versoes">Comparar versões</a>
     </div>
   </div>
-  <div class="section-title">Adicionar Itens</div>
-  <div class="product-grid" id="productGrid"></div>
-  <div class="section-title">Itens do Pedido</div>
-  <div class="card" id="orderItemsCard" style="display:none">
-    <div id="orderItemsList"></div>
-  </div>
-  <div id="orderItemsEmpty" class="empty-state"><p>Toque nos produtos acima para adicionar</p></div>
-</div>
+</header>
 
-<!-- Total bar -->
-<div class="total-bar" id="totalBar">
-  <div>
-    <div class="total-label">Total</div>
-    <div class="total-amount" id="totalAmount">R$ 0,00</div>
-  </div>
-  <button class="finish-btn" id="btnFinishOrder">Fechar Pedido</button>
-</div>
-
-<!-- PAGE: Produtos -->
-<div class="page" id="page-products">
-  <div class="flex-between mb-16">
-    <h2 style="font-size:20px;font-weight:800">Produtos</h2>
-    <button class="btn btn-primary btn-sm" id="btnNewProduct" style="width:auto">+ Novo</button>
-  </div>
-  <div id="productsList"></div>
-</div>
-
-<!-- PAGE: Relatorios -->
-<div class="page" id="page-reports">
-  <h2 style="font-size:20px;font-weight:800;margin-bottom:16px">Relatorios</h2>
-  <div class="section-title" style="margin-top:0">Sessao</div>
-  <div class="session-pills" id="reportSessions"></div>
-  <div id="reportContent"></div>
-</div>
-
-<!-- PAGE: Caixa -->
-<div class="page" id="page-cash">
-  <h2 style="font-size:20px;font-weight:800;margin-bottom:16px">Caixa</h2>
-  <div class="card">
-    <div class="section-title" style="margin-top:0">Sessao de Hoje</div>
-    <p class="text-sm text-muted mb-8" id="cashSessionDate"></p>
-    <div class="input-group">
-      <label>Dinheiro Inicial (R$)</label>
-      <input type="number" id="cashInitial" placeholder="0,00" inputmode="decimal" step="0.01">
-    </div>
-    <button class="btn btn-primary" id="btnSaveCash">Salvar</button>
-  </div>
-  <div class="card mt-16" id="cashSummaryCard" style="display:none">
-    <div class="section-title" style="margin-top:0">Resumo do Caixa</div>
-    <div id="cashSummary"></div>
-  </div>
-</div>
-
-<!-- Footer (rendered by component) -->
-<div id="footer"></div>
-
-<!-- MODAL: Nova Comanda -->
-<div class="modal-overlay" id="newOrderModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <h2>Nova Comanda</h2>
-    <div class="input-group">
-      <label>Numero da Comanda</label>
-      <input type="number" id="newOrderComanda" placeholder="N da comanda" inputmode="numeric">
-    </div>
-    <div class="input-group">
-      <label>Responsavel</label>
-      <input type="text" id="newOrderResponsavel" placeholder="Nome do responsavel" autocomplete="off">
-    </div>
-    <button class="btn btn-primary" id="btnConfirmNewOrder">Criar Comanda</button>
-    <button class="btn btn-ghost mt-8" id="cancelNewOrderBtn" style="width:100%;text-align:center">Cancelar</button>
-  </div>
-</div>
-
-<!-- MODAL: Payment -->
-<div class="modal-overlay" id="paymentModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <h2>Forma de Pagamento</h2>
-    <div style="text-align:center" class="mb-16">
-      <span style="font-size:28px;font-weight:800;color:var(--green-900)" id="paymentTotal"></span>
-    </div>
-    <div class="payment-grid">
-      <div class="payment-option" data-method="pix">
-        <div class="pay-icon">P</div>
-        <div class="pay-label">PIX</div>
+<section id="recursos">
+  <div class="wrap">
+    <h2 class="section-title">O que vem pronto</h2>
+    <p class="section-sub">Tudo que um ponto de venda de campo precisa, nada que atrapalhe.</p>
+    <div class="grid">
+      <div class="card">
+        <span class="ico">📱</span>
+        <h3>Mobile-first</h3>
+        <p>Interface pensada para a tela do celular: toques grandes, fluxo rápido de venda e leitura fácil em pé.</p>
       </div>
-      <div class="payment-option" data-method="credito">
-        <div class="pay-icon">C</div>
-        <div class="pay-label">Credito</div>
+      <div class="card">
+        <span class="ico">🛒</span>
+        <h3>Vendas e pedidos</h3>
+        <p>Monte o carrinho, acompanhe pedidos e feche a venda em poucos toques, com anotações por item.</p>
       </div>
-      <div class="payment-option" data-method="debito">
-        <div class="pay-icon">D</div>
-        <div class="pay-label">Debito</div>
+      <div class="card">
+        <span class="ico">🍔</span>
+        <h3>Customizações estilo iFood</h3>
+        <p>Grupos de opções, itens adicionais e observações — ideal para lanches, combos e variações.</p>
       </div>
-      <div class="payment-option" data-method="dinheiro">
-        <div class="pay-icon">$</div>
-        <div class="pay-label">Dinheiro</div>
+      <div class="card">
+        <span class="ico">💵</span>
+        <h3>Controle de caixa</h3>
+        <p>Abertura e fechamento de caixa, conferência de valores e histórico de movimentações.</p>
       </div>
-      <div class="payment-option pay-later" data-method="pagar_depois">
-        <div class="pay-label">Pagar Depois</div>
+      <div class="card">
+        <span class="ico">🖨️</span>
+        <h3>Impressão ESC/POS</h3>
+        <p>Imprime comandas e recibos em impressoras térmicas compatíveis com o padrão ESC/POS.</p>
+      </div>
+      <div class="card">
+        <span class="ico">📊</span>
+        <h3>Relatórios</h3>
+        <p>Resumo de vendas, produtos mais vendidos e desempenho do dia direto no aparelho.</p>
+      </div>
+      <div class="card">
+        <span class="ico">🔌</span>
+        <h3>100% offline</h3>
+        <p>Os dados ficam no próprio dispositivo. Sem internet, sem nuvem obrigatória, sem cadastro.</p>
+      </div>
+      <div class="card">
+        <span class="ico">💾</span>
+        <h3>Exportar e importar</h3>
+        <p>Faça backup dos seus dados e leve para outro aparelho quando precisar.</p>
       </div>
     </div>
-    <button class="btn btn-primary mt-16" id="confirmPaymentBtn" disabled>Confirmar Pagamento</button>
-    <button class="btn btn-ghost mt-8" id="cancelPaymentBtn" style="width:100%;text-align:center">Cancelar</button>
   </div>
-</div>
+</section>
 
-<!-- MODAL: Product -->
-<div class="modal-overlay" id="productModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <h2 id="productModalTitle">Novo Produto</h2>
-    <div class="input-group">
-      <label>Nome do Produto</label>
-      <input type="text" id="productName" placeholder="Ex: Cachorro-quente" autocomplete="off">
+<section id="versoes">
+  <div class="wrap">
+    <h2 class="section-title">Escolha a versão</h2>
+    <p class="section-sub">Duas versões disponíveis — comece pela V2.</p>
+    <div class="versions">
+      <div class="ver featured">
+        <span class="tag">Recomendada</span>
+        <h3>Versão 2</h3>
+        <p>Reescrita em React + TypeScript, com customizações de produto, fluxo mobile aprimorado e suporte a impressão ESC/POS.</p>
+        <ul>
+          <li>Interface mobile-first moderna</li>
+          <li>Customizações estilo iFood</li>
+          <li>Impressão de comandas ESC/POS</li>
+          <li>Em desenvolvimento ativo</li>
+        </ul>
+        <a class="btn btn-primary" href="v2/">Abrir Versão 2 →</a>
+      </div>
+      <div class="ver">
+        <span class="tag">Legado</span>
+        <h3>Versão 1</h3>
+        <p>A primeira versão, em HTML, CSS e JavaScript puro. Leve, simples e sem build — mantida como referência.</p>
+        <ul>
+          <li>Sem dependências, abre direto</li>
+          <li>PDV, produtos, caixa e relatórios</li>
+          <li>Ideal para uso básico</li>
+        </ul>
+        <a class="btn btn-ghost" href="v1/">Abrir Versão 1 →</a>
+      </div>
     </div>
-    <div class="input-group">
-      <label>Preco (R$)</label>
-      <input type="number" id="productPrice" placeholder="0,00" inputmode="decimal" step="0.01">
-    </div>
-    <input type="hidden" id="productEditId">
-    <button class="btn btn-primary" id="btnSaveProduct">Salvar</button>
-    <button class="btn btn-ghost mt-8" id="cancelProductBtn" style="width:100%;text-align:center">Cancelar</button>
   </div>
-</div>
+</section>
 
-<script type="module" src="js/app.js"></script>
+<section id="comecar">
+  <div class="wrap">
+    <h2 class="section-title">Como começar</h2>
+    <p class="section-sub">Pronto para usar em minutos, sem instalar nada.</p>
+    <div class="steps">
+      <div class="step">
+        <div>
+          <h3>Abra o PDV no celular</h3>
+          <p>Acesse a Versão 2 pelo navegador do aparelho que vai usar nas vendas.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Cadastre seus produtos</h3>
+          <p>Adicione itens, preços e customizações conforme o que você vende.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Abra o caixa e venda</h3>
+          <p>Registre as vendas, imprima comandas e acompanhe os pedidos em tempo real.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Confira e faça backup</h3>
+          <p>Feche o caixa, veja os relatórios do dia e exporte seus dados quando quiser.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    PDV Local — projeto aberto para a comunidade.
+    Código no <a href="https://github.com/matheus-caldeira/pdv-local">GitHub</a>.
+  </p>
+</footer>
+
 </body>
 </html>
