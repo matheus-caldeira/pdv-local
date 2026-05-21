@@ -6,6 +6,8 @@ import {
   Package,
   ClipboardList,
   Users,
+  MonitorPlay,
+  Tv,
   Wallet,
   BarChart3,
   Settings,
@@ -14,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { useSession } from '../hooks/useSession'
+import { getConfig } from '../db/database'
 import { formatTime } from '../utils/format'
 import './Layout.css'
 
@@ -41,6 +44,7 @@ export function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [statusControl, setStatusControl] = useState(false)
 
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -64,12 +68,25 @@ export function Layout() {
   // Close sidebar on navigation
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
+  useEffect(() => {
+    getConfig().then(c => setStatusControl(c.statusControlEnabled))
+  }, [location.pathname])
+
+  const navItems = statusControl
+    ? [
+        ...NAV_ITEMS.slice(0, 5), // ate Clientes (indices 0-4)
+        { to: '/kds', icon: MonitorPlay, label: 'KDS' },
+        { to: '/panel', icon: Tv, label: 'Painel' },
+        ...NAV_ITEMS.slice(5), // Extras em diante (indices 5+)
+      ]
+    : NAV_ITEMS
+
   return (
     <div className="layout">
       {/* Desktop rail */}
       <nav className="nav-rail">
         <div className="nav-rail-brand">PDV</div>
-        {NAV_ITEMS.map(item => (
+        {navItems.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -126,7 +143,7 @@ export function Layout() {
               </button>
             </div>
             <div className="sidebar-items">
-              {NAV_ITEMS.map(item => (
+              {navItems.map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
