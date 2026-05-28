@@ -6,7 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { PdvPage } from './ui/pages/PdvPage';
 import { ProductsPage } from './ui/pages/ProductsPage';
 import { Orders } from './pages/Orders';
-import { Cash } from './pages/Cash';
+import { CashPage } from './ui/pages/CashPage';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { CustomizationsPage } from './ui/pages/CustomizationsPage';
@@ -45,7 +45,7 @@ export function App() {
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/kds" element={<Kds />} />
                 <Route path="/panel" element={<Panel />} />
-                <Route path="/cash" element={<Cash />} />
+                <Route path="/cash" element={<CashPage />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route
                   path="/customizations"
