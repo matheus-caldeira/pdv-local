@@ -8,7 +8,7 @@ import { ProductsPage } from './ui/pages/ProductsPage';
 import { OrdersPage } from './ui/pages/OrdersPage';
 import { CashPage } from './ui/pages/CashPage';
 import { ReportsPage } from './ui/pages/ReportsPage';
-import { Settings } from './pages/Settings';
+import { SettingsPage } from './ui/pages/SettingsPage';
 import { CustomizationsPage } from './ui/pages/CustomizationsPage';
 import { CustomersPage } from './ui/pages/CustomersPage';
 import { KdsPage } from './ui/pages/KdsPage';
@@ -51,7 +51,7 @@ export function App() {
                   path="/customizations"
                   element={<CustomizationsPage />}
                 />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
