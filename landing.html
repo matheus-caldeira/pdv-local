@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="PDV Local — sistema de ponto de venda gratuito para o celular. Venda, controle o caixa, acompanhe a cozinha e imprima comandas. Funciona offline, sem mensalidade e sem cadastro.">
+<title>PDV Local — Ponto de venda gratuito para o seu celular</title>
+<link rel="icon" type="image/svg+xml" href="app/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface-0: #F5F2ED;
+    --surface-1: #F8F7F4;
+    --surface-2: #FFFFFF;
+    --surface-inset: #EDEAE4;
+    --dark-bg: #2C2C2E;
+    --dark-surface: #3A3A3C;
+    --dark-text: #F5F2ED;
+    --dark-muted: #A1A1A6;
+    --ink-primary: #1C1B1A;
+    --ink-secondary: #5C5A56;
+    --ink-tertiary: #8A8680;
+    --accent: #E8722A;
+    --accent-hover: #D4621F;
+    --accent-subtle: #FDF0E8;
+    --success: #3A8A5C;
+    --border: rgba(28, 27, 26, 0.10);
+    --border-emphasis: rgba(28, 27, 26, 0.18);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--surface-0);
+    color: var(--ink-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 88px 20px 72px;
+    background:
+      radial-gradient(900px 420px at 50% -10%, var(--accent-subtle), transparent 70%);
+  }
+  .badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border: 1px solid rgba(232, 114, 42, 0.28);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    font-weight: 800;
+    margin-bottom: 18px;
+  }
+  .hero h1 .grad { color: var(--accent); }
+  .hero p.lead {
+    font-size: clamp(1.02rem, 2.5vw, 1.22rem);
+    color: var(--ink-secondary);
+    max-width: 640px;
+    margin: 0 auto 34px;
+  }
+
+  /* Buttons */
+  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 26px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-emphasis);
+    transition: transform .12s ease, background .15s ease, border-color .15s ease;
+    cursor: pointer;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { background: var(--surface-2); color: var(--ink-primary); }
+  .btn-ghost:hover { border-color: var(--accent); }
+
+  /* Sections */
+  section { padding: 60px 0; }
+  .section-head { text-align: center; margin-bottom: 40px; }
+  .section-title {
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .section-sub { color: var(--ink-secondary); max-width: 560px; margin: 0 auto; }
+
+  /* Features grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+  }
+  .card .ico {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    font-size: 22px;
+    background: var(--accent-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+  }
+  .card h3 { font-size: 1.06rem; font-weight: 600; margin-bottom: 6px; }
+  .card p { color: var(--ink-secondary); font-size: 0.94rem; }
+
+  /* Highlights band (dark, chalkboard) */
+  .band { background: var(--dark-bg); }
+  .band .section-title { color: var(--dark-text); }
+  .band .section-sub { color: var(--dark-muted); }
+  .band .pill-row {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--dark-surface);
+    color: var(--dark-text);
+    border: 1px solid rgba(245, 242, 237, 0.10);
+    border-radius: var(--radius-full);
+    padding: 10px 18px;
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  /* Steps */
+  .steps { counter-reset: step; display: grid; gap: 14px; max-width: 720px; margin: 0 auto; }
+  .step {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 50%;
+  }
+  .step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 2px; }
+  .step p { color: var(--ink-secondary); font-size: 0.92rem; }
+
+  /* Final CTA */
+  .final { text-align: center; }
+  .final-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 48px 28px;
+  }
+  .final-box h2 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 700; margin-bottom: 10px; letter-spacing: -0.02em; }
+  .final-box p { color: var(--ink-secondary); margin-bottom: 26px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--ink-tertiary);
+    font-size: 0.9rem;
+  }
+  footer a { color: var(--accent); }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">Gratuito • Sem mensalidade • Sem cadastro</span>
+    <h1>Seu <span class="grad">ponto de venda completo</span><br>direto no celular</h1>
+    <p class="lead">
+      Monte o pedido, receba o pagamento, acompanhe a cozinha e imprima a comanda —
+      tudo em poucos toques. Pensado para feiras, cantinas, lanchonetes, bazares e
+      qualquer negócio que precisa vender com agilidade.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="app/">Abrir o PDV agora →</a>
+      <a class="btn btn-ghost" href="#recursos">Ver tudo que dá pra fazer</a>
+    </div>
+  </div>
+</header>
+
+<section id="recursos">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="section-title">Tudo que o seu balcão precisa</h2>
+      <p class="section-sub">Do primeiro pedido ao fechamento do dia, sem complicação.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="ico">🛒</div>
+        <h3>Venda rápida</h3>
+        <p>Monte o pedido em segundos, ajuste quantidades e finalize a venda com poucos toques.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🍔</div>
+        <h3>Adicionais e observações</h3>
+        <p>Combos, opções e itens extras como nos apps de delivery. Anote o ponto da carne, o sem cebola, o que o cliente pedir.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📋</div>
+        <h3>Pedidos organizados</h3>
+        <p>Acompanhe cada pedido por número de comanda e veja em que etapa ele está.</p>
+      </div>
+      <div class="card">
+        <div class="ico">👨‍🍳</div>
+        <h3>Tela da cozinha</h3>
+        <p>A cozinha vê os pedidos chegando em tempo real e marca o que já está pronto.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📺</div>
+        <h3>Painel para o cliente</h3>
+        <p>Mostre numa TV ou tablet os pedidos prontos para retirada, igual numa praça de alimentação.</p>
+      </div>
+      <div class="card">
+        <div class="ico">💵</div>
+        <h3>Controle de caixa</h3>
+        <p>Abra e feche o caixa, registre sangrias e suprimentos e confira os valores no fim do dia.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🖨️</div>
+        <h3>Impressão de comandas</h3>
+        <p>Imprima comandas e recibos direto em impressoras térmicas para a cozinha e o cliente.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📦</div>
+        <h3>Seus produtos</h3>
+        <p>Cadastre itens, preços e categorias do seu jeito, com os adicionais que cada produto aceita.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🧑‍🤝‍🧑</div>
+        <h3>Clientes</h3>
+        <p>Guarde os dados dos clientes para agilizar os próximos pedidos e a entrega.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📊</div>
+        <h3>Relatórios do dia</h3>
+        <p>Veja quanto vendeu, os produtos que mais saíram e o desempenho do dia num resumo claro.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📱</div>
+        <h3>Feito para a mão</h3>
+        <p>Botões grandes, leitura fácil em pé e um fluxo rápido pensado para a tela do celular.</p>
+      </div>
+      <div class="card">
+        <div class="ico">💾</div>
+        <h3>Backup quando quiser</h3>
+        <p>Exporte seus dados e leve para outro aparelho na hora que precisar, sem depender de ninguém.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="section-title">Sem pegadinhas</h2>
+      <p class="section-sub">O que você nunca vai precisar para começar a vender.</p>
+    </div>
+    <div class="pill-row">
+      <span class="pill"><span class="dot"></span> Funciona sem internet</span>
+      <span class="pill"><span class="dot"></span> Sem mensalidade</span>
+      <span class="pill"><span class="dot"></span> Sem cadastro</span>
+      <span class="pill"><span class="dot"></span> Sem instalar nada</span>
+      <span class="pill"><span class="dot"></span> Seus dados ficam no seu aparelho</span>
+    </div>
+  </div>
+</section>
+
+<section id="comecar">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="section-title">Comece a vender em minutos</h2>
+      <p class="section-sub">Quatro passos e pronto.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div>
+          <h3>Abra no celular</h3>
+          <p>Acesse pelo navegador do aparelho que vai usar no balcão. Não precisa instalar.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Cadastre seus produtos</h3>
+          <p>Adicione itens, preços e os adicionais que cada um aceita.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Abra o caixa e venda</h3>
+          <p>Registre as vendas, imprima comandas e acompanhe os pedidos da cozinha em tempo real.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Feche e confira</h3>
+          <p>Feche o caixa, veja o relatório do dia e faça backup dos seus dados.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <div class="final-box">
+      <h2>Pronto para o próximo pedido?</h2>
+      <p>É de graça e abre na hora. Comece agora mesmo.</p>
+      <a class="btn btn-primary" href="app/">Abrir o PDV →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    PDV Local — projeto aberto para a comunidade.
+    Código no <a href="https://github.com/matheus-caldeira/pdv-local">GitHub</a>.
+  </p>
+</footer>
+
+</body>
+</html>

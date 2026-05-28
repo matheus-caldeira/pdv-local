@@ -12,6 +12,7 @@ import { Customizations } from './pages/Customizations'
 import { Customers } from './pages/Customers'
 import { Kds } from './pages/Kds'
 import { Panel } from './pages/Panel'
+import { NotFound } from './pages/NotFound'
 
 // Deriva o basename do `base` configurado no vite.config.ts (sem barra final).
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
@@ -33,6 +34,7 @@ export function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/customizations" element={<Customizations />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Roteador de fallback do GitHub Pages.
+      // Servido para qualquer caminho inexistente sob /pdv-local/.
+      //   - /pdv-local/app/<rota>  -> deep link da SPA: vira /pdv-local/app/?/<rota>
+      //     para o index.html do app restaurar a rota original.
+      //   - qualquer outro caminho -> manda para a landing em /pdv-local/.
+      (function () {
+        var l = window.location;
+        var origin = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '');
+        var siteBase = '/pdv-local';
+        var appBase = siteBase + '/app';
+        var path = l.pathname;
+
+        var inApp = path === appBase || path.indexOf(appBase + '/') === 0;
+        if (!inApp) {
+          l.replace(origin + siteBase + '/');
+          return;
+        }
+
+        // Mantém os 2 primeiros segmentos: /pdv-local/app
+        var segmentsToKeep = 2;
+        l.replace(
+          origin +
+          path.split('/').slice(0, 1 + segmentsToKeep).join('/') + '/?/' +
+          path.slice(1).split('/').slice(segmentsToKeep).join('/').replace(/&/g, '~and~') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
