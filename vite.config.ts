@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { defineConfig, type Plugin } from 'vite';
+import { type Plugin } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 const BASE = '/pdv-local/app/';
 
@@ -92,8 +94,13 @@ function serveDocsInDev(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), serveLandingInDev(), serveDocsInDev()],
+  plugins: [react(), tailwindcss(), serveLandingInDev(), serveDocsInDev()],
   base: BASE,
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -103,5 +110,41 @@ export default defineConfig({
         landing: resolve(__dirname, 'landing.html'),
       },
     },
+  },
+  test: {
+    coverage: {
+      provider: 'v8',
+      include: [
+        'src/domain/**',
+        'src/application/**',
+        'src/infrastructure/**',
+        'src/ui/**',
+      ],
+      thresholds: { 100: true },
+    },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'core',
+          environment: 'node',
+          setupFiles: ['./src/test/setup.core.ts'],
+          include: [
+            'src/domain/**/*.test.ts',
+            'src/application/**/*.test.ts',
+            'src/infrastructure/**/*.test.ts',
+          ],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'ui',
+          environment: 'jsdom',
+          setupFiles: ['./src/test/setup.ui.ts'],
+          include: ['src/ui/**/*.test.{ts,tsx}'],
+        },
+      },
+    ],
   },
 });
