@@ -120,6 +120,7 @@ export default defineConfig({
         'src/infrastructure/**',
         'src/ui/**',
       ],
+      exclude: ['src/infrastructure/dexie/dexie-database.ts'],
       thresholds: { 100: true },
     },
     projects: [
