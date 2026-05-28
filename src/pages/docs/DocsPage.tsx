@@ -16,16 +16,20 @@ type State =
   | { kind: 'ready'; content: string }
   | { kind: 'error' }
 
+// Resolve o slug atual e remonta o conteúdo a cada troca (via `key`), o que
+// reinicia o estado para "loading" sem precisar de setState no efeito.
 export function DocsPage({ slug: slugProp }: DocsPageProps) {
   const params = useParams()
   const slug = slugProp ?? params.slug ?? FIRST_DOC_SLUG
+  return <DocsContent key={slug} slug={slug} />
+}
+
+function DocsContent({ slug }: { slug: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' })
 
   useEffect(() => {
     let cancelled = false
-    Promise.resolve()
-      .then(() => { if (!cancelled) setState({ kind: 'loading' }) })
-      .then(() => fetch(docsContentUrl(slug)))
+    fetch(docsContentUrl(slug))
       .then(res => {
         if (!res.ok) throw new Error(String(res.status))
         return res.text()
