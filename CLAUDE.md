@@ -160,10 +160,40 @@ Push na branch `main` dispara `.github/workflows/deploy.yml`: faz o build, monta
 `/docs-content`) e publica no GitHub Pages. **Push em `main` = deploy em
 produção** — tenha cuidado.
 
+## Princípios de código (obrigatórios)
+
+- **SOLID, DDD e Clean Architecture** orientam todo código novo. A regra de
+  dependência aponta para dentro (ver Arquitetura acima); cada unidade tem uma
+  responsabilidade única e é testável de forma isolada.
+- **Nunca escrever comentários em código.** O código deve ser autoexplicativo
+  (nomes claros, funções pequenas). Sem comentários de "o que faz", sem
+  docstrings, sem blocos explicativos. A única exceção é quando um comentário é
+  exigido por ferramenta (ex.: diretiva de lint).
+- **Todo código em inglês:** identificadores (variáveis, funções, tipos,
+  arquivos), e qualquer string interna. **Texto voltado ao usuário** (UI,
+  documentação, mensagens de erro exibidas) continua em **Português**.
+
+## Fluxo obrigatório antes de concluir
+
+Sempre rodar, e deixar verde, antes de considerar qualquer tarefa pronta:
+
+```bash
+npm run format   # prettier --write
+npm run lint     # eslint (sem erros)
+npm run test     # vitest (tudo passando, cobertura 100% nas camadas)
+```
+
+Atalho: `npm run check` roda os três em sequência. Nenhuma feature ou correção é
+concluída sem `format` + `lint` + `test` verdes.
+
 ## Convenções de trabalho
 
-- **Idioma:** todo texto de UI, documentação, mensagens de commit e comentários
-  em **Português** (com acentuação correta).
+- **Idioma:** texto de UI, documentação e mensagens de commit em **Português**
+  (com acentuação correta). **Código em inglês** (ver Princípios acima).
 - **Commits:** crie commits apenas quando solicitado. NÃO faça push sem pedido
   explícito (push em `main` publica em produção).
 - **Não instalar dependências/software** sem confirmação explícita do usuário.
+- **Specs/planos/brainstorm vivem em `.superpowers/`** (já no `.gitignore`),
+  **nunca** na pasta `docs/`. `docs/` é só documentação do projeto (arquitetura
+  interna + guia público). Artefatos de processo do superpowers não são
+  commitados.
