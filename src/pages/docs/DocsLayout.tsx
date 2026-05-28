@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, Outlet } from 'react-router-dom'
 import { Menu, X, ArrowLeft, ExternalLink } from 'lucide-react'
 import { DOCS_PAGES } from '../../../docs/guide/manifest'
 import { APP_BASE, SITE_BASE } from '../../lib/docsBase'
@@ -19,15 +19,8 @@ function groupBySection() {
 }
 
 export function DocsLayout() {
-  const location = useLocation()
   const [open, setOpen] = useState(false)
   const groups = groupBySection()
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.resolve().then(() => { if (!cancelled) setOpen(false) })
-    return () => { cancelled = true }
-  }, [location.pathname])
 
   return (
     <div className="docs-layout">
@@ -71,6 +64,7 @@ export function DocsLayout() {
                 key={page.slug}
                 to={`/${page.slug}`}
                 className={({ isActive }) => `docs-nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => setOpen(false)}
               >
                 {page.title}
               </NavLink>
