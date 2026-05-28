@@ -45,11 +45,11 @@ Tudo sob a base `/pdv-local/` no GitHub Pages. O **app e a documentação usam o
 mesmo bundle** — a SPA decide o `basename` do roteador em runtime conforme o
 prefixo da URL. Ver `src/lib/docsBase.ts` e `src/App.tsx`.
 
-| URL        | Conteúdo            | Origem                         |
-| ---------- | ------------------- | ------------------------------ |
-| `/`        | Landing page        | `landing.html`                 |
-| `/app/*`   | App React (SPA)     | build do Vite (`dist/`)        |
-| `/docs/*`  | Documentação (SPA)  | mesmo bundle, basename runtime |
+| URL       | Conteúdo           | Origem                         |
+| --------- | ------------------ | ------------------------------ |
+| `/`       | Landing page       | `landing.html`                 |
+| `/app/*`  | App React (SPA)    | build do Vite (`dist/`)        |
+| `/docs/*` | Documentação (SPA) | mesmo bundle, basename runtime |
 
 Detalhes em [`docs/site-structure.md`](./docs/site-structure.md).
 
@@ -90,7 +90,7 @@ Camadas e papéis completos: [`docs/architecture.md`](./docs/architecture.md).
 
 - **Atomic design** (Brad Frost) sobre **Tailwind + CVA + `cn()`**
   (clsx + tailwind-merge). Direção de dependência: `pages → templates →
-  organisms → molecules → atoms` (nunca o contrário).
+organisms → molecules → atoms` (nunca o contrário).
 - **Organisms** são os únicos cientes de feature: usam **hooks → use cases** e
   fazem `fold` no `Either`. **Nunca importam `db` nem repositories direto.**
 - **Design system "Balcão Digital":** cores/tipografia/espaço/raio vêm **sempre**
@@ -111,13 +111,13 @@ Referências: [`docs/atomic-design.md`](./docs/atomic-design.md) e
 
 Como testar cada camada (ver `docs/architecture.md` e `docs/atomic-design.md`):
 
-| Camada         | Como testar                                                              |
-| -------------- | ------------------------------------------------------------------------ |
-| Domain         | Funções puras — entrada/saída, **sem mocks**.                            |
-| Application    | Use cases com **repository fake em memória** (sem IndexedDB).            |
-| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).       |
+| Camada         | Como testar                                                                |
+| -------------- | -------------------------------------------------------------------------- |
+| Domain         | Funções puras — entrada/saída, **sem mocks**.                              |
+| Application    | Use cases com **repository fake em memória** (sem IndexedDB).              |
+| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).         |
 | UI (organisms) | Integração com **hooks/use cases mockados**; estados loading/erro/sucesso. |
-| UI (pages)     | Integração compondo template + organisms.                                |
+| UI (pages)     | Integração compondo template + organisms.                                  |
 
 - Como tudo retorna `Either`, os testes verificam `isLeft`/`isRight` e o `code`
   do erro — **sem `try/catch`**.

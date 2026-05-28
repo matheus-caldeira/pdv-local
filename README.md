@@ -40,11 +40,11 @@ Em dev:
 
 O site tem três áreas, todas sob a base `/pdv-local/` no GitHub Pages:
 
-| URL        | Conteúdo            | Origem                         |
-|------------|---------------------|--------------------------------|
-| `/`        | Landing page        | `landing.html`                 |
-| `/app/*`   | App React (SPA)     | build do Vite (`dist/`)        |
-| `/docs/*`  | Documentação (SPA)  | mesmo bundle, basename runtime |
+| URL       | Conteúdo           | Origem                         |
+| --------- | ------------------ | ------------------------------ |
+| `/`       | Landing page       | `landing.html`                 |
+| `/app/*`  | App React (SPA)    | build do Vite (`dist/`)        |
+| `/docs/*` | Documentação (SPA) | mesmo bundle, basename runtime |
 
 - **Bundle único:** o app e a documentação usam o mesmo build. A SPA decide o
   `basename` do roteador em tempo de execução conforme o prefixo da URL
@@ -95,11 +95,11 @@ Documentação canônica:
 > cobertura.** Nenhuma feature ou correção é concluída sem testes. Código novo
 > entra com seus testes.
 
-| Camada         | Como testar                                                       |
-|----------------|-------------------------------------------------------------------|
-| Domain         | Funções puras — entrada/saída, sem mocks.                         |
-| Application    | Use cases com repository fake em memória (sem IndexedDB).         |
-| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).|
+| Camada         | Como testar                                                          |
+| -------------- | -------------------------------------------------------------------- |
+| Domain         | Funções puras — entrada/saída, sem mocks.                            |
+| Application    | Use cases com repository fake em memória (sem IndexedDB).            |
+| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).   |
 | UI             | React Testing Library; hooks/use cases mockados; consultas por ARIA. |
 
 Como tudo retorna `Either`, os testes verificam `isLeft`/`isRight` e o `code` do

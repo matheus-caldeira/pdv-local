@@ -1,22 +1,30 @@
-import { type ReactNode, useEffect } from 'react'
+import { type ReactNode, useEffect } from 'react';
 
 interface ModalProps {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: ReactNode
-  width?: string
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  width?: string;
 }
 
-export function Modal({ open, onClose, title, children, width = '440px' }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  width = '440px',
+}: ModalProps) {
   useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
@@ -29,7 +37,9 @@ export function Modal({ open, onClose, title, children, width = '440px' }: Modal
         alignItems: 'flex-end',
         justifyContent: 'center',
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         style={{
@@ -40,7 +50,8 @@ export function Modal({ open, onClose, title, children, width = '440px' }: Modal
           maxHeight: '85dvh',
           overflowY: 'auto',
           padding: 'var(--space-6) var(--space-5)',
-          paddingBottom: 'calc(var(--space-6) + env(safe-area-inset-bottom, 0px))',
+          paddingBottom:
+            'calc(var(--space-6) + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <div
@@ -65,5 +76,5 @@ export function Modal({ open, onClose, title, children, width = '440px' }: Modal
         {children}
       </div>
     </div>
-  )
+  );
 }

@@ -58,7 +58,9 @@
   white-space: nowrap;
 }
 
-.cat-pill:hover { background: var(--surface-inset); }
+.cat-pill:hover {
+  background: var(--surface-inset);
+}
 
 .cat-pill.active {
   background: var(--cardapio-bg);
@@ -105,9 +107,13 @@
   background: var(--cardapio-surface);
 }
 
-.cardapio-item:active { transform: scale(0.97); }
+.cardapio-item:active {
+  transform: scale(0.97);
+}
 
-.cardapio-item.in-cart { border-color: var(--accent); }
+.cardapio-item.in-cart {
+  border-color: var(--accent);
+}
 
 .cardapio-name {
   font-size: var(--text-sm);
@@ -206,7 +212,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cart-item:last-child { border-bottom: none; }
+.cart-item:last-child {
+  border-bottom: none;
+}
 
 .cart-item-info {
   display: flex;
@@ -251,9 +259,16 @@
   transition: all var(--duration-fast);
 }
 
-.qty-btn:hover { background: var(--surface-inset); }
-.qty-btn:active { background: var(--control-bg); }
-.qty-btn-remove { border-color: var(--danger); color: var(--danger); }
+.qty-btn:hover {
+  background: var(--surface-inset);
+}
+.qty-btn:active {
+  background: var(--control-bg);
+}
+.qty-btn-remove {
+  border-color: var(--danger);
+  color: var(--danger);
+}
 
 .qty-display {
   font-size: var(--text-base);
@@ -419,9 +434,14 @@
   border-bottom: 1px solid var(--border);
 }
 
-.custom-modal-item:last-child { border-bottom: none; }
+.custom-modal-item:last-child {
+  border-bottom: none;
+}
 
-.custom-modal-item-info { flex: 1; min-width: 0; }
+.custom-modal-item-info {
+  flex: 1;
+  min-width: 0;
+}
 
 .custom-modal-item-name {
   font-size: var(--text-sm);
@@ -465,9 +485,18 @@
   color: var(--ink-secondary);
 }
 
-.qty-btn-sm:disabled { opacity: 0.3; pointer-events: none; }
-.qty-btn-sm.qty-btn-add { border-color: var(--accent); color: var(--accent); }
-.qty-btn-sm.qty-btn-remove { border-color: var(--danger); color: var(--danger); }
+.qty-btn-sm:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.qty-btn-sm.qty-btn-add {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.qty-btn-sm.qty-btn-remove {
+  border-color: var(--danger);
+  color: var(--danger);
+}
 
 .qty-sm {
   font-size: var(--text-sm);
@@ -543,14 +572,18 @@
   transition: all var(--duration-fast);
 }
 
-.payment-method:hover { background: var(--surface-inset); }
+.payment-method:hover {
+  background: var(--surface-inset);
+}
 
 .payment-method.selected {
   border-color: var(--accent);
   background: var(--accent-subtle);
 }
 
-.payment-method.pay-later { grid-column: 1 / -1; }
+.payment-method.pay-later {
+  grid-column: 1 / -1;
+}
 
 .pm-icon {
   font-size: var(--text-xl);
@@ -569,7 +602,9 @@
     padding-bottom: 0;
   }
 
-  .pdv-cart-desktop { display: none; }
+  .pdv-cart-desktop {
+    display: none;
+  }
 
   .pdv-summary-bar {
     display: block;
@@ -612,7 +647,9 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .summary-item:last-child { border-bottom: none; }
+  .summary-item:last-child {
+    border-bottom: none;
+  }
 
   .summary-item-left {
     display: flex;
@@ -709,7 +746,9 @@
   }
 }
 
-.customer-phone-field { position: relative; }
+.customer-phone-field {
+  position: relative;
+}
 
 .customer-suggestions {
   position: absolute;
@@ -722,7 +761,7 @@
   border-radius: var(--radius-md);
   margin-top: 2px;
   overflow: hidden;
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15));
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
 }
 .customer-suggestion {
   display: flex;
@@ -734,8 +773,13 @@
   text-align: left;
   cursor: pointer;
 }
-.customer-suggestion:hover { background: var(--surface-inset); }
-.customer-suggestion-phone { color: var(--ink-tertiary); font-size: var(--text-sm); }
+.customer-suggestion:hover {
+  background: var(--surface-inset);
+}
+.customer-suggestion-phone {
+  color: var(--ink-tertiary);
+  font-size: var(--text-sm);
+}
 
 .payment-options {
   display: flex;
@@ -752,4 +796,6 @@
   font-weight: var(--weight-semibold);
   cursor: pointer;
 }
-.payment-option:active { background: var(--surface-2); }
+.payment-option:active {
+  background: var(--surface-2);
+}

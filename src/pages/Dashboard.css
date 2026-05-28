@@ -65,14 +65,18 @@
   white-space: nowrap;
 }
 
-.btn:active { opacity: 0.8; }
+.btn:active {
+  opacity: 0.8;
+}
 
 .btn-accent {
   background: var(--accent);
   color: var(--accent-text);
 }
 
-.btn-accent:hover { background: var(--accent-hover); }
+.btn-accent:hover {
+  background: var(--accent-hover);
+}
 
 .btn-outline {
   background: transparent;
@@ -98,9 +102,14 @@
   min-height: 36px;
 }
 
-.btn-full { width: 100%; }
+.btn-full {
+  width: 100%;
+}
 
-.btn:disabled { opacity: 0.4; pointer-events: none; }
+.btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
 
 /* Stats grid */
 .stats-grid {
@@ -190,7 +199,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.top-product-row:last-child { border-bottom: none; }
+.top-product-row:last-child {
+  border-bottom: none;
+}
 
 .top-rank {
   width: 24px;
@@ -232,7 +243,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.recent-order-row:last-child { border-bottom: none; }
+.recent-order-row:last-child {
+  border-bottom: none;
+}
 
 .recent-ticket {
   font-size: var(--text-sm);

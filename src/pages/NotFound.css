@@ -20,7 +20,9 @@
   text-align: center;
 }
 
-.notfound-icon { color: var(--accent); }
+.notfound-icon {
+  color: var(--accent);
+}
 
 .notfound-card h1 {
   font-size: var(--text-xl);
@@ -43,7 +45,9 @@
   font-weight: var(--weight-semibold);
   border: none;
   cursor: pointer;
-  transition: opacity var(--duration-fast), background var(--duration-fast);
+  transition:
+    opacity var(--duration-fast),
+    background var(--duration-fast);
   min-height: 44px;
   white-space: nowrap;
   margin-top: var(--space-2);
@@ -54,4 +58,6 @@
   color: var(--accent-text);
 }
 
-.notfound-card .btn-accent:hover { background: var(--accent-hover); }
+.notfound-card .btn-accent:hover {
+  background: var(--accent-hover);
+}

@@ -2,53 +2,54 @@
   /* === Balcão Digital — Lanchonete PDV === */
 
   /* Surfaces — receipt paper warmth */
-  --surface-0: #F5F2ED;
-  --surface-1: #F8F7F4;
-  --surface-2: #FFFFFF;
-  --surface-inset: #EDEAE4;
+  --surface-0: #f5f2ed;
+  --surface-1: #f8f7f4;
+  --surface-2: #ffffff;
+  --surface-inset: #edeae4;
 
   /* Cardápio — chalkboard dark */
-  --cardapio-bg: #2C2C2E;
-  --cardapio-surface: #3A3A3C;
-  --cardapio-text: #F5F2ED;
-  --cardapio-muted: #A1A1A6;
+  --cardapio-bg: #2c2c2e;
+  --cardapio-surface: #3a3a3c;
+  --cardapio-text: #f5f2ed;
+  --cardapio-muted: #a1a1a6;
 
   /* Ink — warm grays */
-  --ink-primary: #1C1B1A;
-  --ink-secondary: #5C5A56;
-  --ink-tertiary: #8A8680;
-  --ink-muted: #B5B1AA;
+  --ink-primary: #1c1b1a;
+  --ink-secondary: #5c5a56;
+  --ink-tertiary: #8a8680;
+  --ink-muted: #b5b1aa;
 
   /* Accent — price tag amber/orange */
-  --accent: #E8722A;
-  --accent-hover: #D4621F;
-  --accent-subtle: #FDF0E8;
-  --accent-text: #FFFFFF;
+  --accent: #e8722a;
+  --accent-hover: #d4621f;
+  --accent-subtle: #fdf0e8;
+  --accent-text: #ffffff;
 
   /* Semantic */
-  --success: #3A8A5C;
-  --success-subtle: #E8F5EC;
-  --warning: #D4922A;
-  --warning-subtle: #FDF5E8;
-  --danger: #C43E3E;
-  --danger-subtle: #FCE8E8;
-  --info: #3A6B8A;
-  --info-subtle: #E8F0F5;
+  --success: #3a8a5c;
+  --success-subtle: #e8f5ec;
+  --warning: #d4922a;
+  --warning-subtle: #fdf5e8;
+  --danger: #c43e3e;
+  --danger-subtle: #fce8e8;
+  --info: #3a6b8a;
+  --info-subtle: #e8f0f5;
 
   /* Borders — warm, low opacity */
-  --border: rgba(28, 27, 26, 0.10);
+  --border: rgba(28, 27, 26, 0.1);
   --border-emphasis: rgba(28, 27, 26, 0.18);
   --border-strong: rgba(28, 27, 26, 0.28);
-  --border-focus: #E8722A;
+  --border-focus: #e8722a;
 
   /* Control tokens */
-  --control-bg: #EDEAE4;
-  --control-bg-hover: #E5E2DB;
+  --control-bg: #edeae4;
+  --control-bg-hover: #e5e2db;
   --control-border: rgba(28, 27, 26, 0.15);
   --control-focus-ring: rgba(232, 114, 42, 0.25);
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
   --text-xs: 11px;
@@ -100,7 +101,9 @@
 }
 
 /* === Reset & Base === */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -121,7 +124,10 @@ body {
   overflow-x: hidden;
 }
 
-input, button, select, textarea {
+input,
+button,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
@@ -147,5 +153,5 @@ a {
 /* Tabular numbers for prices */
 .tabular {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  font-feature-settings: 'tnum';
 }

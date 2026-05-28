@@ -27,15 +27,25 @@
   justify-content: space-between;
   align-items: center;
 }
-.panel-item.ready { border-color: var(--success); }
+.panel-item.ready {
+  border-color: var(--success);
+}
 .panel-item-ticket {
   font-size: var(--text-xl);
   font-weight: var(--weight-heavy);
 }
-.panel-item-name { color: var(--ink-tertiary); }
+.panel-item-name {
+  color: var(--ink-tertiary);
+}
 
-.panel-empty { text-align: center; color: var(--ink-tertiary); padding: var(--space-6); }
+.panel-empty {
+  text-align: center;
+  color: var(--ink-tertiary);
+  padding: var(--space-6);
+}
 
 @media (max-width: 768px) {
-  .panel-page { grid-template-columns: 1fr; }
+  .panel-page {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,4 +1,6 @@
-.orders-page { max-width: 900px; }
+.orders-page {
+  max-width: 900px;
+}
 
 .order-count {
   font-size: var(--text-sm);
@@ -38,7 +40,9 @@
   transition: background var(--duration-fast);
 }
 
-.order-row:active { background: var(--surface-1); }
+.order-row:active {
+  background: var(--surface-1);
+}
 
 .order-row-top {
   display: flex;
@@ -145,7 +149,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.detail-item-card:last-child { border-bottom: none; }
+.detail-item-card:last-child {
+  border-bottom: none;
+}
 
 .detail-item-top {
   display: flex;
@@ -274,7 +280,9 @@
     gap: var(--space-4);
   }
 
-  .order-row:hover { background: var(--surface-1); }
+  .order-row:hover {
+    background: var(--surface-1);
+  }
 
   .order-row-top {
     flex: 1;

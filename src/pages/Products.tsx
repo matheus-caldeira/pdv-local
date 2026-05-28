@@ -1,52 +1,63 @@
-import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, Settings2 } from 'lucide-react'
-import { db, type Product, type CustomizationGroup } from '../db/database'
-import { useToast } from '../components/Toast'
-import { Modal } from '../components/Modal'
-import { formatMoney } from '../utils/format'
-import './Products.css'
+import { useState, useEffect } from 'react';
+import { Plus, Pencil, Trash2, Search, Settings2 } from 'lucide-react';
+import { db, type Product, type CustomizationGroup } from '../db/database';
+import { useToast } from '../components/Toast';
+import { Modal } from '../components/Modal';
+import { formatMoney } from '../utils/format';
+import './Products.css';
 
 const EMPTY_PRODUCT = {
-  name: '', category: '', costPrice: 0, salePrice: 0, stock: 0, active: true, customizationGroupIds: [] as number[],
-}
+  name: '',
+  category: '',
+  costPrice: 0,
+  salePrice: 0,
+  stock: 0,
+  active: true,
+  customizationGroupIds: [] as number[],
+};
 
 export function Products() {
-  const toast = useToast()
-  const [products, setProducts] = useState<Product[]>([])
-  const [search, setSearch] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Partial<Product> & { id?: number }>(EMPTY_PRODUCT)
-  const [allGroups, setAllGroups] = useState<CustomizationGroup[]>([])
+  const toast = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Partial<Product> & { id?: number }>(
+    EMPTY_PRODUCT,
+  );
+  const [allGroups, setAllGroups] = useState<CustomizationGroup[]>([]);
 
-  useEffect(() => { loadProducts(); loadGroups() }, [])
+  useEffect(() => {
+    loadProducts();
+    loadGroups();
+  }, []);
 
   async function loadGroups() {
-    setAllGroups(await db.customizationGroups.toArray())
+    setAllGroups(await db.customizationGroups.toArray());
   }
 
   async function loadProducts() {
-    const all = await db.products.toArray()
-    setProducts(all.sort((a, b) => a.name.localeCompare(b.name)))
+    const all = await db.products.toArray();
+    setProducts(all.sort((a, b) => a.name.localeCompare(b.name)));
   }
 
   function openNew() {
-    setEditing({ ...EMPTY_PRODUCT })
-    setModalOpen(true)
+    setEditing({ ...EMPTY_PRODUCT });
+    setModalOpen(true);
   }
 
   function openEdit(p: Product) {
-    setEditing({ ...p })
-    setModalOpen(true)
+    setEditing({ ...p });
+    setModalOpen(true);
   }
 
   async function save() {
     if (!editing.name?.trim() || !editing.salePrice) {
-      toast('Preencha nome e preco de venda', 'error')
-      return
+      toast('Preencha nome e preco de venda', 'error');
+      return;
     }
 
     const data: Product = {
-      ...editing as Product,
+      ...(editing as Product),
       name: editing.name!.trim(),
       category: editing.category?.trim() || '',
       costPrice: Number(editing.costPrice) || 0,
@@ -56,37 +67,40 @@ export function Products() {
       customizationGroupIds: editing.customizationGroupIds || [],
       updatedAt: Date.now(),
       createdAt: editing.createdAt || Date.now(),
-    }
+    };
 
     if (editing.id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await db.products.update(editing.id, data as any)
-      toast('Produto atualizado')
+      await db.products.update(editing.id, data as any);
+      toast('Produto atualizado');
     } else {
-      delete (data as Partial<Product>).id
-      await db.products.add(data)
-      toast('Produto criado')
+      delete (data as Partial<Product>).id;
+      await db.products.add(data);
+      toast('Produto criado');
     }
 
-    setModalOpen(false)
-    loadProducts()
+    setModalOpen(false);
+    loadProducts();
   }
 
   async function remove(id: number) {
-    if (!confirm('Remover este produto?')) return
-    await db.products.delete(id)
-    toast('Produto removido')
-    loadProducts()
+    if (!confirm('Remover este produto?')) return;
+    await db.products.delete(id);
+    toast('Produto removido');
+    loadProducts();
   }
 
   const filtered = search
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.category.toLowerCase().includes(search.toLowerCase())
+    ? products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search.toLowerCase()) ||
+          p.category.toLowerCase().includes(search.toLowerCase()),
       )
-    : products
+    : products;
 
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort()
+  const categories = [
+    ...new Set(products.map((p) => p.category).filter(Boolean)),
+  ].sort();
 
   return (
     <div className="products-page">
@@ -103,30 +117,43 @@ export function Products() {
           type="text"
           placeholder="Buscar por nome ou categoria..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       {filtered.length === 0 ? (
         <div className="empty-hint" style={{ padding: 'var(--space-10) 0' }}>
-          {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado'}
+          {products.length === 0
+            ? 'Nenhum produto cadastrado'
+            : 'Nenhum produto encontrado'}
         </div>
       ) : (
         <div className="product-list">
-          {filtered.map(p => (
-            <div key={p.id} className={`product-row ${!p.active ? 'inactive' : ''}`}>
+          {filtered.map((p) => (
+            <div
+              key={p.id}
+              className={`product-row ${!p.active ? 'inactive' : ''}`}
+            >
               <div className="product-main">
                 <span className="product-name">{p.name}</span>
-                <span className="product-category">{p.category || 'Sem categoria'}</span>
+                <span className="product-category">
+                  {p.category || 'Sem categoria'}
+                </span>
               </div>
               <div className="product-prices">
-                <span className="product-sale tabular">{formatMoney(p.salePrice)}</span>
+                <span className="product-sale tabular">
+                  {formatMoney(p.salePrice)}
+                </span>
                 {p.costPrice > 0 && (
-                  <span className="product-cost tabular">Custo: {formatMoney(p.costPrice)}</span>
+                  <span className="product-cost tabular">
+                    Custo: {formatMoney(p.costPrice)}
+                  </span>
                 )}
               </div>
               <div className="product-stock">
-                <span className={`stock-badge ${p.stock <= 0 ? 'out' : p.stock <= 5 ? 'low' : ''}`}>
+                <span
+                  className={`stock-badge ${p.stock <= 0 ? 'out' : p.stock <= 5 ? 'low' : ''}`}
+                >
                   {p.stock <= 0 ? 'Sem estoque' : p.stock + ' un.'}
                 </span>
                 {(p.customizationGroupIds?.length || 0) > 0 && (
@@ -139,7 +166,11 @@ export function Products() {
                 <button className="btn btn-ghost" onClick={() => openEdit(p)}>
                   <Pencil size={16} />
                 </button>
-                <button className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => remove(p.id!)}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ color: 'var(--danger)' }}
+                  onClick={() => remove(p.id!)}
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -159,7 +190,9 @@ export function Products() {
             <input
               type="text"
               value={editing.name || ''}
-              onChange={e => setEditing(p => ({ ...p, name: e.target.value }))}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, name: e.target.value }))
+              }
               placeholder="Ex: Cachorro-quente"
             />
           </div>
@@ -169,11 +202,15 @@ export function Products() {
               type="text"
               list="cat-list"
               value={editing.category || ''}
-              onChange={e => setEditing(p => ({ ...p, category: e.target.value }))}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, category: e.target.value }))
+              }
               placeholder="Ex: Lanches, Bebidas..."
             />
             <datalist id="cat-list">
-              {categories.map(c => <option key={c} value={c} />)}
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
             </datalist>
           </div>
           <div className="form-field">
@@ -183,7 +220,12 @@ export function Products() {
               inputMode="decimal"
               step="0.01"
               value={editing.costPrice || ''}
-              onChange={e => setEditing(p => ({ ...p, costPrice: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setEditing((p) => ({
+                  ...p,
+                  costPrice: parseFloat(e.target.value) || 0,
+                }))
+              }
               placeholder="0,00"
             />
           </div>
@@ -194,7 +236,12 @@ export function Products() {
               inputMode="decimal"
               step="0.01"
               value={editing.salePrice || ''}
-              onChange={e => setEditing(p => ({ ...p, salePrice: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setEditing((p) => ({
+                  ...p,
+                  salePrice: parseFloat(e.target.value) || 0,
+                }))
+              }
               placeholder="0,00"
             />
           </div>
@@ -204,7 +251,12 @@ export function Products() {
               type="number"
               inputMode="numeric"
               value={editing.stock || ''}
-              onChange={e => setEditing(p => ({ ...p, stock: parseInt(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setEditing((p) => ({
+                  ...p,
+                  stock: parseInt(e.target.value) || 0,
+                }))
+              }
               placeholder="0"
             />
           </div>
@@ -212,7 +264,9 @@ export function Products() {
             <label>Status</label>
             <select
               value={editing.active !== false ? '1' : '0'}
-              onChange={e => setEditing(p => ({ ...p, active: e.target.value === '1' }))}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, active: e.target.value === '1' }))
+              }
             >
               <option value="1">Ativo</option>
               <option value="0">Inativo</option>
@@ -221,38 +275,53 @@ export function Products() {
         </div>
         {allGroups.length > 0 && (
           <div style={{ marginTop: 'var(--space-3)' }}>
-            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--ink-secondary)', display: 'block', marginBottom: 'var(--space-2)' }}>
+            <label
+              style={{
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--weight-semibold)',
+                color: 'var(--ink-secondary)',
+                display: 'block',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
               Grupos de Customizacao
             </label>
             <div className="custom-group-picker">
-              {allGroups.map(g => {
-                const selected = editing.customizationGroupIds?.includes(g.id!) || false
+              {allGroups.map((g) => {
+                const selected =
+                  editing.customizationGroupIds?.includes(g.id!) || false;
                 return (
                   <button
                     key={g.id}
                     type="button"
                     className={`custom-group-chip ${selected ? 'selected' : ''}`}
                     onClick={() => {
-                      setEditing(p => ({
+                      setEditing((p) => ({
                         ...p,
                         customizationGroupIds: selected
-                          ? (p.customizationGroupIds || []).filter(id => id !== g.id!)
-                          : [...(p.customizationGroupIds || []), g.id!]
-                      }))
+                          ? (p.customizationGroupIds || []).filter(
+                              (id) => id !== g.id!,
+                            )
+                          : [...(p.customizationGroupIds || []), g.id!],
+                      }));
                     }}
                   >
                     {g.name}
                     {g.required && <span className="chip-required">*</span>}
                   </button>
-                )
+                );
               })}
             </div>
           </div>
         )}
-        <button className="btn btn-accent btn-full" onClick={save} style={{ marginTop: 'var(--space-4)' }}>
+        <button
+          className="btn btn-accent btn-full"
+          onClick={save}
+          style={{ marginTop: 'var(--space-4)' }}
+        >
           Salvar
         </button>
       </Modal>
     </div>
-  )
+  );
 }

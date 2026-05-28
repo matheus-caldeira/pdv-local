@@ -1,4 +1,6 @@
-.cash-page { max-width: 700px; }
+.cash-page {
+  max-width: 700px;
+}
 
 /* Open card */
 .cash-open-card {
@@ -87,7 +89,9 @@
   color: var(--cardapio-text);
 }
 
-.cash-sum-total .cash-sum-label { color: var(--cardapio-muted); }
+.cash-sum-total .cash-sum-label {
+  color: var(--cardapio-muted);
+}
 
 .cash-sum-value-lg {
   font-size: var(--text-2xl);
@@ -115,7 +119,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cash-method-row:last-child { border-bottom: none; }
+.cash-method-row:last-child {
+  border-bottom: none;
+}
 
 /* Movements */
 .cash-movement-actions {
@@ -144,8 +150,12 @@
   font-weight: var(--weight-semibold);
 }
 
-.movement-type.sangria { color: var(--danger); }
-.movement-type.suprimento { color: var(--info); }
+.movement-type.sangria {
+  color: var(--danger);
+}
+.movement-type.suprimento {
+  color: var(--info);
+}
 
 .movement-reason {
   font-size: var(--text-xs);
@@ -153,7 +163,9 @@
   margin-left: var(--space-2);
 }
 
-.movement-right { text-align: right; }
+.movement-right {
+  text-align: right;
+}
 
 .movement-amount {
   display: block;
@@ -161,8 +173,12 @@
   font-size: var(--text-sm);
 }
 
-.movement-amount.sangria { color: var(--danger); }
-.movement-amount.suprimento { color: var(--info); }
+.movement-amount.sangria {
+  color: var(--danger);
+}
+.movement-amount.suprimento {
+  color: var(--info);
+}
 
 .movement-time {
   font-size: var(--text-xs);
@@ -196,9 +212,12 @@
   color: var(--ink-tertiary);
 }
 
-.past-cash { text-align: right; }
+.past-cash {
+  text-align: right;
+}
 
-.past-initial, .past-final {
+.past-initial,
+.past-final {
   display: block;
   font-size: var(--text-xs);
   color: var(--ink-secondary);
@@ -210,7 +229,9 @@
     grid-template-columns: 1fr;
   }
 
-  .cash-sum-total { grid-column: auto; }
+  .cash-sum-total {
+    grid-column: auto;
+  }
 
   .cash-movement-actions {
     flex-direction: column;

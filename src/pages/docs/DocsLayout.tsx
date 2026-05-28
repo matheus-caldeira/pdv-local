@@ -1,26 +1,29 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { Menu, X, ArrowLeft, ExternalLink } from 'lucide-react'
-import { DOCS_PAGES } from '../../../docs/guide/manifest'
-import { APP_BASE, SITE_BASE } from '../../lib/docsBase'
-import './DocsLayout.css'
+import { useState } from 'react';
+import { NavLink, Outlet } from 'react-router-dom';
+import { Menu, X, ArrowLeft, ExternalLink } from 'lucide-react';
+import { DOCS_PAGES } from '../../../docs/guide/manifest';
+import { APP_BASE, SITE_BASE } from '../../lib/docsBase';
+import './DocsLayout.css';
 
-const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`
+const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`;
 
 // Agrupa as páginas por seção preservando a ordem do manifesto.
 function groupBySection() {
-  const groups: { section: string; pages: typeof DOCS_PAGES }[] = []
+  const groups: { section: string; pages: typeof DOCS_PAGES }[] = [];
   for (const page of DOCS_PAGES) {
-    let group = groups.find(g => g.section === page.section)
-    if (!group) { group = { section: page.section, pages: [] }; groups.push(group) }
-    group.pages.push(page)
+    let group = groups.find((g) => g.section === page.section);
+    if (!group) {
+      group = { section: page.section, pages: [] };
+      groups.push(group);
+    }
+    group.pages.push(page);
   }
-  return groups
+  return groups;
 }
 
 export function DocsLayout() {
-  const [open, setOpen] = useState(false)
-  const groups = groupBySection()
+  const [open, setOpen] = useState(false);
+  const groups = groupBySection();
 
   return (
     <div className="docs-layout">
@@ -28,7 +31,11 @@ export function DocsLayout() {
         <a className="docs-topbar-brand" href={`${SITE_BASE}/`}>
           <img src={LOGO_URL} alt="PDV Local" /> Documentação
         </a>
-        <button className="docs-menu-btn" onClick={() => setOpen(true)} aria-label="Abrir menu">
+        <button
+          className="docs-menu-btn"
+          onClick={() => setOpen(true)}
+          aria-label="Abrir menu"
+        >
           <Menu size={22} />
         </button>
       </header>
@@ -56,14 +63,16 @@ export function DocsLayout() {
             <ArrowLeft size={15} /> Voltar ao site
           </a>
         </div>
-        {groups.map(group => (
+        {groups.map((group) => (
           <div key={group.section}>
             <div className="docs-nav-section">{group.section}</div>
-            {group.pages.map(page => (
+            {group.pages.map((page) => (
               <NavLink
                 key={page.slug}
                 to={`/${page.slug}`}
-                className={({ isActive }) => `docs-nav-link ${isActive ? 'active' : ''}`}
+                className={({ isActive }) =>
+                  `docs-nav-link ${isActive ? 'active' : ''}`
+                }
                 onClick={() => setOpen(false)}
               >
                 {page.title}
@@ -77,5 +86,5 @@ export function DocsLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

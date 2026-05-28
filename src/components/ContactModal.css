@@ -39,5 +39,10 @@
   transition: border-color var(--duration-fast);
 }
 
-.contact-modal-link:hover { border-color: var(--accent); }
-.contact-modal-link svg { color: var(--accent); flex-shrink: 0; }
+.contact-modal-link:hover {
+  border-color: var(--accent);
+}
+.contact-modal-link svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}

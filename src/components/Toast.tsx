@@ -1,35 +1,54 @@
-import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  type ReactNode,
+} from 'react';
 
-type ToastType = 'success' | 'error' | 'info'
+type ToastType = 'success' | 'error' | 'info';
 
 interface ToastState {
-  message: string
-  type: ToastType
-  visible: boolean
+  message: string;
+  type: ToastType;
+  visible: boolean;
 }
 
-const ToastContext = createContext<(message: string, type?: ToastType) => void>(() => {})
+const ToastContext = createContext<(message: string, type?: ToastType) => void>(
+  () => {},
+);
 
 export function useToast() {
-  return useContext(ToastContext)
+  return useContext(ToastContext);
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', visible: false })
+  const [toast, setToast] = useState<ToastState>({
+    message: '',
+    type: 'info',
+    visible: false,
+  });
 
   const show = useCallback((message: string, type: ToastType = 'success') => {
-    setToast({ message, type, visible: true })
-  }, [])
+    setToast({ message, type, visible: true });
+  }, []);
 
   useEffect(() => {
-    if (!toast.visible) return
-    const timer = setTimeout(() => setToast(t => ({ ...t, visible: false })), 2500)
-    return () => clearTimeout(timer)
-  }, [toast.visible, toast.message])
+    if (!toast.visible) return;
+    const timer = setTimeout(
+      () => setToast((t) => ({ ...t, visible: false })),
+      2500,
+    );
+    return () => clearTimeout(timer);
+  }, [toast.visible, toast.message]);
 
-  const bgColor = toast.type === 'error' ? 'var(--danger)'
-    : toast.type === 'success' ? 'var(--success)'
-    : 'var(--cardapio-bg)'
+  const bgColor =
+    toast.type === 'error'
+      ? 'var(--danger)'
+      : toast.type === 'success'
+        ? 'var(--success)'
+        : 'var(--cardapio-bg)';
 
   return (
     <ToastContext.Provider value={show}>
@@ -56,5 +75,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toast.message}
       </div>
     </ToastContext.Provider>
-  )
+  );
 }

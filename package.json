@@ -7,6 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest --passWithNoTests",
+    "test:cov": "vitest run --coverage --passWithNoTests",
+    "check": "npm run format && npm run lint && npm run test:cov",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
-import { Home, Compass } from 'lucide-react'
-import './NotFound.css'
+import { Link } from 'react-router-dom';
+import { Home, Compass } from 'lucide-react';
+import './NotFound.css';
 
 export function NotFound() {
   return (
@@ -14,5 +14,5 @@ export function NotFound() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

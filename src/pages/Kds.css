@@ -1,4 +1,9 @@
-.kds-page { display: flex; flex-direction: column; gap: var(--space-3); height: 100%; }
+.kds-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+}
 
 .kds-board {
   display: grid;
@@ -12,7 +17,9 @@
   padding: var(--space-2);
   min-height: 200px;
 }
-.kds-col.drag-over { outline: 2px dashed var(--accent); }
+.kds-col.drag-over {
+  outline: 2px dashed var(--accent);
+}
 .kds-col-title {
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
@@ -34,7 +41,9 @@
   justify-content: space-between;
   font-weight: var(--weight-semibold);
 }
-.kds-card-ticket { color: var(--accent); }
+.kds-card-ticket {
+  color: var(--accent);
+}
 .kds-card-items {
   font-size: var(--text-sm);
   color: var(--ink-tertiary);
@@ -49,7 +58,9 @@
 .kds-tabs {
   display: none;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: var(--surface-2);
   border-top: 1px solid var(--border);
   z-index: 90;
@@ -64,13 +75,27 @@
   background: none;
   border: none;
 }
-.kds-tab.active { color: var(--accent); }
+.kds-tab.active {
+  color: var(--accent);
+}
 
-.kds-empty { text-align: center; color: var(--ink-tertiary); padding: var(--space-6); }
+.kds-empty {
+  text-align: center;
+  color: var(--ink-tertiary);
+  padding: var(--space-6);
+}
 
 @media (max-width: 768px) {
-  .kds-board { grid-template-columns: 1fr; }
-  .kds-col:not(.kds-col-active) { display: none; }
-  .kds-tabs { display: flex; }
-  .kds-page { padding-bottom: calc(var(--nav-bottom-height) + 56px); }
+  .kds-board {
+    grid-template-columns: 1fr;
+  }
+  .kds-col:not(.kds-col-active) {
+    display: none;
+  }
+  .kds-tabs {
+    display: flex;
+  }
+  .kds-page {
+    padding-bottom: calc(var(--nav-bottom-height) + 56px);
+  }
 }

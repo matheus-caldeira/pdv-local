@@ -1,4 +1,6 @@
-.reports-page { max-width: 800px; }
+.reports-page {
+  max-width: 800px;
+}
 
 .session-selector {
   margin-bottom: var(--space-4);
@@ -32,8 +34,12 @@
   color: var(--cardapio-text);
 }
 
-.report-card-main .report-card-label { color: var(--cardapio-muted); }
-.report-card-main .report-card-value { color: var(--accent); }
+.report-card-main .report-card-label {
+  color: var(--cardapio-muted);
+}
+.report-card-main .report-card-value {
+  color: var(--accent);
+}
 
 .report-card-value {
   display: block;
@@ -73,7 +79,9 @@
   font-size: var(--text-sm);
 }
 
-.report-table-row:last-child { border-bottom: none; }
+.report-table-row:last-child {
+  border-bottom: none;
+}
 
 .report-rank {
   width: 24px;
@@ -136,5 +144,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .report-bar-container { display: none; }
+  .report-bar-container {
+    display: none;
+  }
 }
