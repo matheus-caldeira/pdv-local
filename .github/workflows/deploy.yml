@@ -37,12 +37,16 @@ jobs:
 
       - name: Montar site para publicacao
         run: |
-          mkdir -p _site/app
+          mkdir -p _site/app _site/docs _site/docs-content
           # App React em /app
           cp -r dist/. _site/app/
+          # Documentacao: mesma SPA (basename /docs decidido em runtime)
+          cp dist/index.html _site/docs/index.html
+          # Conteudo markdown da documentacao em /docs-content (apenas os .md)
+          cp docs/guide/*.md _site/docs-content/
           # Landing page na raiz
           cp landing.html _site/index.html
-          # Fallback de rota do GitHub Pages (decide landing vs app)
+          # Fallback de rota do GitHub Pages (decide landing vs app vs docs)
           cp public/404.html _site/404.html
 
       - name: Upload artifact

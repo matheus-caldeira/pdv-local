@@ -74,6 +74,7 @@
     letter-spacing: -0.01em;
   }
   .site-brand img { width: 32px; height: 32px; object-fit: contain; }
+  .site-nav { display: flex; align-items: center; gap: 10px; }
 
   /* Hero */
   .hero {
@@ -273,7 +274,10 @@
       <img src="app/logo.png" alt="PDV Local">
       <span>PDV Local</span>
     </a>
-    <a class="btn btn-primary btn-sm" href="app/">Iniciar →</a>
+    <nav class="site-nav">
+      <a class="btn btn-ghost btn-sm" href="docs/">Documentação</a>
+      <a class="btn btn-primary btn-sm" href="app/">Iniciar →</a>
+    </nav>
   </div>
 </header>
 
@@ -430,6 +434,10 @@
     <p class="footer-author">Feito por <strong>Matheus Caldeira</strong></p>
     <p class="footer-tagline">Dúvidas, sugestões ou um novo projeto? Fala comigo.</p>
     <div class="footer-contacts">
+      <a class="footer-contact" href="docs/">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Documentação</span>
+      </a>
       <a class="footer-contact" href="mailto:matheuscardozo4@gmail.com">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
         <span>matheuscardozo4@gmail.com</span>

@@ -1,5 +1,6 @@
-import { Mail, Phone, Linkedin } from 'lucide-react'
+import { Mail, Phone, Linkedin, BookOpen } from 'lucide-react'
 import { Modal } from './Modal'
+import { DOCS_BASE } from '../lib/docsBase'
 import './ContactModal.css'
 
 interface ContactModalProps {
@@ -17,6 +18,10 @@ export function ContactModal({ open, onClose }: ContactModalProps) {
           Desenvolvido por <strong>Matheus Caldeira</strong>.
         </p>
         <div className="contact-modal-links">
+          <a className="contact-modal-link" href={`${DOCS_BASE}/`}>
+            <BookOpen size={18} />
+            <span>Documentação / Ajuda</span>
+          </a>
           <a className="contact-modal-link" href="mailto:matheuscardozo4@gmail.com">
             <Mail size={18} />
             <span>matheuscardozo4@gmail.com</span>
