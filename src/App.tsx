@@ -5,14 +5,14 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { PdvPage } from './ui/pages/PdvPage';
 import { ProductsPage } from './ui/pages/ProductsPage';
-import { Orders } from './pages/Orders';
+import { OrdersPage } from './ui/pages/OrdersPage';
 import { CashPage } from './ui/pages/CashPage';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { CustomizationsPage } from './ui/pages/CustomizationsPage';
 import { CustomersPage } from './ui/pages/CustomersPage';
-import { Kds } from './pages/Kds';
-import { Panel } from './pages/Panel';
+import { KdsPage } from './ui/pages/KdsPage';
+import { PanelPage } from './ui/pages/PanelPage';
 import { NotFound } from './pages/NotFound';
 import { DocsLayout } from './pages/docs/DocsLayout';
 import { DocsPage } from './pages/docs/DocsPage';
@@ -41,10 +41,10 @@ export function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/pdv" element={<PdvPage />} />
                 <Route path="/products" element={<ProductsPage />} />
-                <Route path="/orders" element={<Orders />} />
+                <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/kds" element={<Kds />} />
-                <Route path="/panel" element={<Panel />} />
+                <Route path="/kds" element={<KdsPage />} />
+                <Route path="/panel" element={<PanelPage />} />
                 <Route path="/cash" element={<CashPage />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route
