@@ -47,19 +47,40 @@
   }
   a { color: inherit; text-decoration: none; }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+  html { scroll-padding-top: 80px; }
+
+  /* Header */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(245, 242, 237, 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .site-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .site-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+  .site-brand img { width: 32px; height: 32px; object-fit: contain; }
 
   /* Hero */
   .hero {
     text-align: center;
-    padding: 88px 20px 72px;
+    padding: 48px 20px 64px;
     background:
       radial-gradient(900px 420px at 50% -10%, var(--accent-subtle), transparent 70%);
-  }
-  .hero-logo {
-    width: 88px;
-    height: 88px;
-    object-fit: contain;
-    margin-bottom: 8px;
   }
   .badge {
     display: inline-block;
@@ -110,6 +131,7 @@
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-ghost { background: var(--surface-2); color: var(--ink-primary); }
   .btn-ghost:hover { border-color: var(--accent); }
+  .btn-sm { padding: 9px 18px; font-size: 14px; }
 
   /* Sections */
   section { padding: 60px 0; }
@@ -200,21 +222,63 @@
 
   /* Footer */
   footer {
-    border-top: 1px solid var(--border);
-    padding: 32px 20px;
+    background: var(--dark-bg);
+    padding: 56px 20px 40px;
     text-align: center;
-    color: var(--ink-tertiary);
-    font-size: 0.9rem;
+    color: var(--dark-muted);
   }
-  footer a { color: var(--accent); }
-  footer a:hover { text-decoration: underline; }
+  .footer-author {
+    font-size: 1.15rem;
+    color: var(--dark-text);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .footer-author strong { color: var(--accent); }
+  .footer-tagline { font-size: 0.95rem; margin-bottom: 24px; }
+  .footer-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .footer-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--dark-surface);
+    color: var(--dark-text);
+    border: 1px solid rgba(245, 242, 237, 0.10);
+    border-radius: var(--radius-full);
+    padding: 11px 18px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: transform .12s ease, border-color .15s ease;
+  }
+  .footer-contact:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .footer-contact svg { color: var(--accent); flex-shrink: 0; }
+  .footer-copy {
+    font-size: 0.85rem;
+    color: var(--ink-tertiary);
+    padding-top: 24px;
+    border-top: 1px solid rgba(245, 242, 237, 0.08);
+  }
 </style>
 </head>
 <body>
 
-<header class="hero">
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="site-brand" href="#topo">
+      <img src="app/logo.png" alt="PDV Local">
+      <span>PDV Local</span>
+    </a>
+    <a class="btn btn-primary btn-sm" href="app/">Iniciar →</a>
+  </div>
+</header>
+
+<section id="topo" class="hero">
   <div class="wrap">
-    <img src="app/logo.png" alt="PDV Local" class="hero-logo">
     <span class="badge">Gratuito • Sem mensalidade • Sem cadastro</span>
     <h1>Seu <span class="grad">ponto de venda completo</span><br>direto no celular</h1>
     <p class="lead">
@@ -227,7 +291,7 @@
       <a class="btn btn-ghost" href="#recursos">Ver tudo que dá pra fazer</a>
     </div>
   </div>
-</header>
+</section>
 
 <section id="recursos">
   <div class="wrap">
@@ -361,11 +425,26 @@
   </div>
 </section>
 
-<footer>
-  <p>
-    PDV Local — projeto aberto para a comunidade.
-    Código no <a href="https://github.com/matheus-caldeira/pdv-local">GitHub</a>.
-  </p>
+<footer id="contato">
+  <div class="wrap">
+    <p class="footer-author">Feito por <strong>Matheus Caldeira</strong></p>
+    <p class="footer-tagline">Dúvidas, sugestões ou um novo projeto? Fala comigo.</p>
+    <div class="footer-contacts">
+      <a class="footer-contact" href="mailto:matheuscardozo4@gmail.com">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+        <span>matheuscardozo4@gmail.com</span>
+      </a>
+      <a class="footer-contact" href="tel:+5541995245271">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>+55 41 99524-5271</span>
+      </a>
+      <a class="footer-contact" href="https://www.linkedin.com/in/caldeiramatheus/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+        <span>in/caldeiramatheus</span>
+      </a>
+    </div>
+    <p class="footer-copy">PDV Local — ponto de venda gratuito para o seu celular.</p>
+  </div>
 </footer>
 
 </body>

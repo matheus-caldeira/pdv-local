@@ -14,10 +14,12 @@ import {
   SlidersHorizontal,
   Menu,
   X,
+  Info,
 } from 'lucide-react'
 import { useSession } from '../hooks/useSession'
 import { getConfig } from '../db/database'
 import { formatTime } from '../utils/format'
+import { ContactModal } from './ContactModal'
 import './Layout.css'
 
 const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`
@@ -47,6 +49,7 @@ export function Layout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [statusControl, setStatusControl] = useState(false)
+  const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -101,12 +104,22 @@ export function Layout() {
             <span>{item.label}</span>
           </NavLink>
         ))}
-        {activeSession && (
-          <div className="nav-rail-session">
-            <div className="session-dot" />
-            <span>{formatTime(activeSession.openedAt)}</span>
-          </div>
-        )}
+        <div className="nav-rail-footer">
+          {activeSession && (
+            <div className="nav-rail-session">
+              <div className="session-dot" />
+              <span>{formatTime(activeSession.openedAt)}</span>
+            </div>
+          )}
+          <button
+            className="nav-rail-info"
+            onClick={() => setInfoOpen(true)}
+            aria-label="Sobre e contato"
+            title="Sobre e contato"
+          >
+            <Info size={18} strokeWidth={2} />
+          </button>
+        </div>
       </nav>
 
       {/* Main content */}
@@ -169,9 +182,18 @@ export function Layout() {
                 Sessao aberta desde {formatTime(activeSession.openedAt)}
               </div>
             )}
+            <button
+              className="sidebar-item"
+              onClick={() => { setSidebarOpen(false); setInfoOpen(true) }}
+            >
+              <Info size={20} strokeWidth={2} />
+              <span>Sobre e contato</span>
+            </button>
           </div>
         </div>
       )}
+
+      <ContactModal open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   )
 }
