@@ -43,6 +43,26 @@ export class DexieConfigRepository implements ConfigRepository {
     }
   }
 
+  async save(
+    patch: Partial<BusinessConfig>,
+  ): Promise<Either<InfrastructureError, BusinessConfig>> {
+    try {
+      const merged = await this.db.transaction(
+        'rw',
+        this.db.config,
+        async () => {
+          const stored = await this.db.config.get(CONFIG_ID);
+          const next = { ...withDefaults(stored), ...patch, id: CONFIG_ID };
+          await this.db.config.put(next);
+          return next;
+        },
+      );
+      return right(merged);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
   async claimTicket(): Promise<Either<InfrastructureError, string>> {
     try {
       const ticket = await this.db.transaction(

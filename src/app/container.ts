@@ -6,6 +6,8 @@ import { DexieCustomerRepository } from '../infrastructure/dexie/repositories/de
 import { DexieCashRepository } from '../infrastructure/dexie/repositories/dexie-cash.repository';
 import { DexieOrderRepository } from '../infrastructure/dexie/repositories/dexie-order.repository';
 import { DexieConfigRepository } from '../infrastructure/dexie/repositories/dexie-config.repository';
+import { DexieBackupRepository } from '../infrastructure/dexie/repositories/dexie-backup.repository';
+import { browserFileSaver } from '../infrastructure/dexie/browser-file-saver';
 import {
   makeFinalizeOrder,
   type FinalizeOrderInput,
@@ -45,12 +47,22 @@ import {
   makeObserveSessionOrders,
   makeSetOrderStage,
 } from '../application/order/order-management.usecases';
-import { makeReadConfig } from '../application/config/config.usecases';
+import {
+  makeReadConfig,
+  makeResetTicketSequence,
+  makeSaveConfig,
+} from '../application/config/config.usecases';
 import {
   makeListReportSessions,
   makeLoadDashboard,
   makeLoadSessionReport,
 } from '../application/report/report.usecases';
+import {
+  makeExportBackup,
+  makeExportEntity,
+  makeImportBackup,
+  makeWipeData,
+} from '../application/backup/backup.usecases';
 
 export function createContainer() {
   const db = getDatabase();
@@ -61,6 +73,7 @@ export function createContainer() {
   const cash = new DexieCashRepository(db);
   const orders = new DexieOrderRepository(db);
   const config = new DexieConfigRepository(db);
+  const backup = new DexieBackupRepository(db, browserFileSaver);
 
   return {
     finalizeOrder: makeFinalizeOrder(uow),
@@ -90,9 +103,15 @@ export function createContainer() {
     cancelOrder: makeCancelOrder(orders),
     setOrderStage: makeSetOrderStage(orders),
     readConfig: makeReadConfig(config),
+    saveConfig: makeSaveConfig(config),
+    resetTicketSequence: makeResetTicketSequence(config),
     listReportSessions: makeListReportSessions(cash),
     loadSessionReport: makeLoadSessionReport(orders),
     loadDashboard: makeLoadDashboard(orders),
+    exportBackup: makeExportBackup(backup),
+    exportEntity: makeExportEntity(backup),
+    importBackup: makeImportBackup(backup),
+    wipeData: makeWipeData(backup),
   };
 }
 

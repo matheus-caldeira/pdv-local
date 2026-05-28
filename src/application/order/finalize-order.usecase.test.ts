@@ -94,6 +94,7 @@ class FakeRepositories implements Repositories {
 
   config = {
     read: async () => right(null as never),
+    save: async () => right(null as never),
     claimTicket: async () => {
       this.claimedTicket = true;
       return this.claimTicketResult;

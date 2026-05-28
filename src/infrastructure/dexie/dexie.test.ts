@@ -63,6 +63,24 @@ describe('DexieConfigRepository', () => {
     const config = await repo.read();
     expect(isRight(config) && config.right.ticketCounter).toBe(3);
   });
+
+  it('saves a config patch merged over the defaults', async () => {
+    const repo = new DexieConfigRepository(db);
+    const saved = await repo.save({ name: 'Bar', ticketLimit: 100 });
+    expect(isRight(saved)).toBe(true);
+    if (isRight(saved)) {
+      expect(saved.right.name).toBe('Bar');
+      expect(saved.right.ticketLimit).toBe(100);
+    }
+    const reread = await repo.read();
+    expect(isRight(reread) && reread.right.name).toBe('Bar');
+  });
+
+  it('returns Left when saving fails', async () => {
+    const repo = new DexieConfigRepository(db);
+    db.close();
+    expect(isLeft(await repo.save({ name: 'X' }))).toBe(true);
+  });
 });
 
 describe('DexieCustomerRepository', () => {
