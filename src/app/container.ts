@@ -2,6 +2,7 @@ import { DexieUnitOfWork } from '../infrastructure/dexie/dexie-unit-of-work';
 import { getDatabase } from '../infrastructure/dexie/provider-registry';
 import { DexieProductRepository } from '../infrastructure/dexie/repositories/dexie-product.repository';
 import { DexieCustomizationRepository } from '../infrastructure/dexie/repositories/dexie-customization.repository';
+import { DexieCustomerRepository } from '../infrastructure/dexie/repositories/dexie-customer.repository';
 import {
   makeFinalizeOrder,
   type FinalizeOrderInput,
@@ -22,12 +23,18 @@ import {
   makeUpdateGroup,
   makeUpdateItem,
 } from '../application/customization/customization.usecases';
+import {
+  makeListCustomers,
+  makeRemoveCustomer,
+  makeSaveCustomer,
+} from '../application/customer/customer.usecases';
 
 export function createContainer() {
   const db = getDatabase();
   const uow = new DexieUnitOfWork(db);
   const products = new DexieProductRepository(db);
   const customizations = new DexieCustomizationRepository(db);
+  const customers = new DexieCustomerRepository(db);
 
   return {
     finalizeOrder: makeFinalizeOrder(uow),
@@ -43,6 +50,9 @@ export function createContainer() {
     createItem: makeCreateItem(customizations),
     updateItem: makeUpdateItem(customizations),
     removeItem: makeRemoveItem(customizations),
+    listCustomers: makeListCustomers(customers),
+    saveCustomer: makeSaveCustomer(customers),
+    removeCustomer: makeRemoveCustomer(customers),
   };
 }
 
