@@ -2,12 +2,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import { ToastProvider as UiToastProvider } from './ui/molecules/Toast';
 import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
+import { DashboardPage } from './ui/pages/DashboardPage';
 import { PdvPage } from './ui/pages/PdvPage';
 import { ProductsPage } from './ui/pages/ProductsPage';
 import { OrdersPage } from './ui/pages/OrdersPage';
 import { CashPage } from './ui/pages/CashPage';
-import { Reports } from './pages/Reports';
+import { ReportsPage } from './ui/pages/ReportsPage';
 import { Settings } from './pages/Settings';
 import { CustomizationsPage } from './ui/pages/CustomizationsPage';
 import { CustomersPage } from './ui/pages/CustomersPage';
@@ -38,7 +38,7 @@ export function App() {
           ) : (
             <Routes>
               <Route element={<Layout />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<DashboardPage />} />
                 <Route path="/pdv" element={<PdvPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
@@ -46,7 +46,7 @@ export function App() {
                 <Route path="/kds" element={<KdsPage />} />
                 <Route path="/panel" element={<PanelPage />} />
                 <Route path="/cash" element={<CashPage />} />
-                <Route path="/reports" element={<Reports />} />
+                <Route path="/reports" element={<ReportsPage />} />
                 <Route
                   path="/customizations"
                   element={<CustomizationsPage />}
