@@ -19,6 +19,7 @@ import type {
 } from '../../domain/cash/cash.entity';
 import type { CashRepository } from '../../domain/cash/cash.repository';
 import type { OrderRepository } from '../../domain/order/order.repository';
+import type { Observable } from '../../domain/shared/observable';
 import type { NewOrder, Order } from '../../domain/order/order.entity';
 import {
   ConnectorError,
@@ -115,11 +116,35 @@ class FakeOrderRepository implements OrderRepository {
     return right(stored);
   }
 
+  async listAll(): Promise<Either<InfrastructureError, Order[]>> {
+    return right(this.orders);
+  }
+
   async listBySession(
     sessionId: number,
   ): Promise<Either<InfrastructureError, Order[]>> {
     if (this.listResult) return this.listResult;
     return right(this.orders.filter((o) => o.sessionId === sessionId));
+  }
+
+  observeBySession(): Observable<Order[]> {
+    return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+
+  observeActiveStages(): Observable<Order[]> {
+    return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+
+  async markAsPaid(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
+
+  async cancel(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
+
+  async setStage(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
   }
 }
 

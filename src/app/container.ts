@@ -5,6 +5,7 @@ import { DexieCustomizationRepository } from '../infrastructure/dexie/repositori
 import { DexieCustomerRepository } from '../infrastructure/dexie/repositories/dexie-customer.repository';
 import { DexieCashRepository } from '../infrastructure/dexie/repositories/dexie-cash.repository';
 import { DexieOrderRepository } from '../infrastructure/dexie/repositories/dexie-order.repository';
+import { DexieConfigRepository } from '../infrastructure/dexie/repositories/dexie-config.repository';
 import {
   makeFinalizeOrder,
   type FinalizeOrderInput,
@@ -36,6 +37,15 @@ import {
   makeLoadCashSummary,
   makeOpenSession,
 } from '../application/cash/cash.usecases';
+import {
+  makeCancelOrder,
+  makeListOrders,
+  makeMarkOrderPaid,
+  makeObserveActiveOrders,
+  makeObserveSessionOrders,
+  makeSetOrderStage,
+} from '../application/order/order-management.usecases';
+import { makeReadConfig } from '../application/config/config.usecases';
 
 export function createContainer() {
   const db = getDatabase();
@@ -45,6 +55,7 @@ export function createContainer() {
   const customers = new DexieCustomerRepository(db);
   const cash = new DexieCashRepository(db);
   const orders = new DexieOrderRepository(db);
+  const config = new DexieConfigRepository(db);
 
   return {
     finalizeOrder: makeFinalizeOrder(uow),
@@ -67,6 +78,13 @@ export function createContainer() {
     openSession: makeOpenSession(cash),
     closeSession: makeCloseSession(cash),
     addCashMovement: makeAddCashMovement(cash),
+    listOrders: makeListOrders(orders),
+    observeSessionOrders: makeObserveSessionOrders(orders),
+    observeActiveOrders: makeObserveActiveOrders(orders),
+    markOrderPaid: makeMarkOrderPaid(orders),
+    cancelOrder: makeCancelOrder(orders),
+    setOrderStage: makeSetOrderStage(orders),
+    readConfig: makeReadConfig(config),
   };
 }
 

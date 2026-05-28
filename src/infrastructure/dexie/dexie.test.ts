@@ -190,6 +190,72 @@ describe('DexieOrderRepository', () => {
     const result = await repo.listBySession(1);
     expect(isRight(result) && result.right).toHaveLength(2);
   });
+
+  it('lists all orders sorted by recency', async () => {
+    const repo = new DexieOrderRepository(db);
+    await repo.create(newOrder({ createdAt: 1 }));
+    await repo.create(newOrder({ createdAt: 5 }));
+    const result = await repo.listAll();
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) {
+      expect(result.right.map((o) => o.createdAt)).toEqual([5, 1]);
+    }
+  });
+
+  it('marks an order as paid', async () => {
+    const repo = new DexieOrderRepository(db);
+    const created = await repo.create(newOrder({ status: 'open' }));
+    if (!isRight(created)) throw new Error('setup');
+    const result = await repo.markAsPaid(created.right.id!, 'dinheiro');
+    expect(isRight(result)).toBe(true);
+    const stored = await db.orders.get(created.right.id!);
+    expect(stored?.status).toBe('paid');
+    expect(stored?.paymentMethod).toBe('dinheiro');
+  });
+
+  it('cancels an order', async () => {
+    const repo = new DexieOrderRepository(db);
+    const created = await repo.create(newOrder());
+    if (!isRight(created)) throw new Error('setup');
+    await repo.cancel(created.right.id!);
+    const stored = await db.orders.get(created.right.id!);
+    expect(stored?.status).toBe('cancelled');
+  });
+
+  it('sets an order stage', async () => {
+    const repo = new DexieOrderRepository(db);
+    const created = await repo.create(newOrder({ stage: 'aceito' }));
+    if (!isRight(created)) throw new Error('setup');
+    await repo.setStage(created.right.id!, 'em_preparo');
+    const stored = await db.orders.get(created.right.id!);
+    expect(stored?.stage).toBe('em_preparo');
+  });
+
+  it('observes the orders of a session reactively', async () => {
+    const repo = new DexieOrderRepository(db);
+    await repo.create(newOrder({ sessionId: 1 }));
+    const first = await new Promise<number>((resolve) => {
+      const sub = repo.observeBySession(1).subscribe((orders) => {
+        sub.unsubscribe();
+        resolve(orders.length);
+      });
+    });
+    expect(first).toBe(1);
+  });
+
+  it('observes active stages excluding cancelled orders', async () => {
+    const repo = new DexieOrderRepository(db);
+    await repo.create(newOrder({ stage: 'aceito', status: 'open' }));
+    await repo.create(newOrder({ stage: 'a_caminho', status: 'cancelled' }));
+    await repo.create(newOrder({ stage: 'finalizado', status: 'paid' }));
+    const count = await new Promise<number>((resolve) => {
+      const sub = repo.observeActiveStages().subscribe((orders) => {
+        sub.unsubscribe();
+        resolve(orders.length);
+      });
+    });
+    expect(count).toBe(1);
+  });
 });
 
 describe('DexieUnitOfWork', () => {
@@ -269,6 +335,10 @@ describe('repository error paths', () => {
     const repo = new DexieOrderRepository(db);
     db.close();
     expect(isLeft(await repo.listBySession(1))).toBe(true);
+    expect(isLeft(await repo.listAll())).toBe(true);
+    expect(isLeft(await repo.markAsPaid(1, 'pix'))).toBe(true);
+    expect(isLeft(await repo.cancel(1))).toBe(true);
+    expect(isLeft(await repo.setStage(1, 'aceito'))).toBe(true);
   });
 
   it('DexieProductRepository returns Left when the table fails', async () => {

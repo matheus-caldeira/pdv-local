@@ -42,7 +42,15 @@ class FakeRepositories implements Repositories {
       this.createdOrder = order;
       return this.createResult ?? right({ ...order, id: 99 } as Order);
     },
+    listAll: async () => right([] as Order[]),
     listBySession: async () => right([] as Order[]),
+    observeBySession: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+    observeActiveStages: () => ({
+      subscribe: () => ({ unsubscribe: () => {} }),
+    }),
+    markAsPaid: async () => right(undefined),
+    cancel: async () => right(undefined),
+    setStage: async () => right(undefined),
   };
 
   cash = {
