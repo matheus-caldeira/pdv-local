@@ -61,3 +61,31 @@ export class DuplicatePhoneError extends DomainError {
     super('Já existe um cliente com esse telefone.');
   }
 }
+
+export class InvalidCashAmountError extends DomainError {
+  readonly code = 'INVALID_CASH_AMOUNT';
+
+  constructor() {
+    super('Informe um valor válido.');
+  }
+}
+
+export class InvalidCashMovementError extends DomainError {
+  readonly code = 'INVALID_CASH_MOVEMENT';
+}
+
+export class NoOpenSessionError extends DomainError {
+  readonly code = 'NO_OPEN_SESSION';
+
+  constructor() {
+    super('Não há caixa aberto.');
+  }
+}
+
+export class SessionAlreadyOpenError extends DomainError {
+  readonly code = 'SESSION_ALREADY_OPEN';
+
+  constructor() {
+    super('Já existe um caixa aberto.');
+  }
+}

@@ -42,6 +42,16 @@ class FakeRepositories implements Repositories {
       this.createdOrder = order;
       return this.createResult ?? right({ ...order, id: 99 } as Order);
     },
+    listBySession: async () => right([] as Order[]),
+  };
+
+  cash = {
+    findOpenSession: async () => right(undefined),
+    listSessions: async () => right([] as never),
+    openSession: async () => right(null as never),
+    closeSession: async () => right(null as never),
+    listMovements: async () => right([] as never),
+    addMovement: async () => right(null as never),
   };
 
   customers = {

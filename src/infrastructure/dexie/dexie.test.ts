@@ -181,6 +181,15 @@ describe('DexieOrderRepository', () => {
     }
     expect(await db.orders.count()).toBe(1);
   });
+
+  it('lists only the orders of a given session', async () => {
+    const repo = new DexieOrderRepository(db);
+    await repo.create(newOrder({ sessionId: 1 }));
+    await repo.create(newOrder({ sessionId: 1 }));
+    await repo.create(newOrder({ sessionId: 2 }));
+    const result = await repo.listBySession(1);
+    expect(isRight(result) && result.right).toHaveLength(2);
+  });
 });
 
 describe('DexieUnitOfWork', () => {
@@ -254,6 +263,12 @@ describe('repository error paths', () => {
     const result = await repo.create(newOrder());
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left).toBeInstanceOf(ConnectorError);
+  });
+
+  it('DexieOrderRepository returns Left when listing fails', async () => {
+    const repo = new DexieOrderRepository(db);
+    db.close();
+    expect(isLeft(await repo.listBySession(1))).toBe(true);
   });
 
   it('DexieProductRepository returns Left when the table fails', async () => {

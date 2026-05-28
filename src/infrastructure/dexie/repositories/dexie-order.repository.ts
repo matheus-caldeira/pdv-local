@@ -20,4 +20,18 @@ export class DexieOrderRepository implements OrderRepository {
       return left(toInfrastructureError(cause));
     }
   }
+
+  async listBySession(
+    sessionId: number,
+  ): Promise<Either<InfrastructureError, Order[]>> {
+    try {
+      const orders = await this.db.orders
+        .where('sessionId')
+        .equals(sessionId)
+        .toArray();
+      return right(orders);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
 }

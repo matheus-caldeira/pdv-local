@@ -7,29 +7,14 @@ import type {
   CustomizationGroup,
   CustomizationItem,
 } from '../../domain/customization/customization.entity';
+import type { Session, CashMovement } from '../../domain/cash/cash.entity';
 
 export type {
   CustomizationGroup,
   CustomizationItem,
 } from '../../domain/customization/customization.entity';
 
-export interface Session {
-  id?: number;
-  openedAt: number;
-  closedAt: number | null;
-  cashInitial: number;
-  cashFinal: number | null;
-  notes: string;
-}
-
-export interface CashMovement {
-  id?: number;
-  sessionId: number;
-  type: 'sangria' | 'suprimento';
-  amount: number;
-  reason: string;
-  createdAt: number;
-}
+export type { Session, CashMovement } from '../../domain/cash/cash.entity';
 
 export const TICKET_DEFAULTS = {
   ticketCounter: 1,

@@ -3,6 +3,8 @@ import { getDatabase } from '../infrastructure/dexie/provider-registry';
 import { DexieProductRepository } from '../infrastructure/dexie/repositories/dexie-product.repository';
 import { DexieCustomizationRepository } from '../infrastructure/dexie/repositories/dexie-customization.repository';
 import { DexieCustomerRepository } from '../infrastructure/dexie/repositories/dexie-customer.repository';
+import { DexieCashRepository } from '../infrastructure/dexie/repositories/dexie-cash.repository';
+import { DexieOrderRepository } from '../infrastructure/dexie/repositories/dexie-order.repository';
 import {
   makeFinalizeOrder,
   type FinalizeOrderInput,
@@ -28,6 +30,12 @@ import {
   makeRemoveCustomer,
   makeSaveCustomer,
 } from '../application/customer/customer.usecases';
+import {
+  makeAddCashMovement,
+  makeCloseSession,
+  makeLoadCashSummary,
+  makeOpenSession,
+} from '../application/cash/cash.usecases';
 
 export function createContainer() {
   const db = getDatabase();
@@ -35,6 +43,8 @@ export function createContainer() {
   const products = new DexieProductRepository(db);
   const customizations = new DexieCustomizationRepository(db);
   const customers = new DexieCustomerRepository(db);
+  const cash = new DexieCashRepository(db);
+  const orders = new DexieOrderRepository(db);
 
   return {
     finalizeOrder: makeFinalizeOrder(uow),
@@ -53,6 +63,10 @@ export function createContainer() {
     listCustomers: makeListCustomers(customers),
     saveCustomer: makeSaveCustomer(customers),
     removeCustomer: makeRemoveCustomer(customers),
+    loadCashSummary: makeLoadCashSummary(cash, orders),
+    openSession: makeOpenSession(cash),
+    closeSession: makeCloseSession(cash),
+    addCashMovement: makeAddCashMovement(cash),
   };
 }
 
