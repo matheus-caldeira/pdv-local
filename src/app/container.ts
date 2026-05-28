@@ -46,6 +46,11 @@ import {
   makeSetOrderStage,
 } from '../application/order/order-management.usecases';
 import { makeReadConfig } from '../application/config/config.usecases';
+import {
+  makeListReportSessions,
+  makeLoadDashboard,
+  makeLoadSessionReport,
+} from '../application/report/report.usecases';
 
 export function createContainer() {
   const db = getDatabase();
@@ -85,6 +90,9 @@ export function createContainer() {
     cancelOrder: makeCancelOrder(orders),
     setOrderStage: makeSetOrderStage(orders),
     readConfig: makeReadConfig(config),
+    listReportSessions: makeListReportSessions(cash),
+    loadSessionReport: makeLoadSessionReport(orders),
+    loadDashboard: makeLoadDashboard(orders),
   };
 }
 
