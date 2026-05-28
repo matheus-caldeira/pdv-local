@@ -10,7 +10,7 @@ import { Cash } from './pages/Cash';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { CustomizationsPage } from './ui/pages/CustomizationsPage';
-import { Customers } from './pages/Customers';
+import { CustomersPage } from './ui/pages/CustomersPage';
 import { Kds } from './pages/Kds';
 import { Panel } from './pages/Panel';
 import { NotFound } from './pages/NotFound';
@@ -42,7 +42,7 @@ export function App() {
                 <Route path="/pdv" element={<PdvPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/orders" element={<Orders />} />
-                <Route path="/customers" element={<Customers />} />
+                <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/kds" element={<Kds />} />
                 <Route path="/panel" element={<Panel />} />
                 <Route path="/cash" element={<Cash />} />

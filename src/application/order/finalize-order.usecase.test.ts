@@ -45,6 +45,11 @@ class FakeRepositories implements Repositories {
   };
 
   customers = {
+    list: async () => right([] as never),
+    findByPhone: async () => right(undefined),
+    create: async () => right(null as never),
+    update: async () => right(null as never),
+    remove: async () => right(undefined),
     findOrCreate: async (input: {
       phone: string;
       name: string;

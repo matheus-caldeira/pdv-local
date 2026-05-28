@@ -49,3 +49,15 @@ export class InvalidProductError extends DomainError {
 export class InvalidCustomizationError extends DomainError {
   readonly code = 'INVALID_CUSTOMIZATION';
 }
+
+export class InvalidCustomerError extends DomainError {
+  readonly code = 'INVALID_CUSTOMER';
+}
+
+export class DuplicatePhoneError extends DomainError {
+  readonly code = 'DUPLICATE_PHONE';
+
+  constructor() {
+    super('Já existe um cliente com esse telefone.');
+  }
+}
