@@ -1,0 +1,54 @@
+.docs-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-5) var(--space-16);
+}
+.docs-prose { color: var(--ink-primary); line-height: 1.7; font-size: 1rem; }
+.docs-prose h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 var(--space-4); }
+.docs-prose h2 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; margin: var(--space-10) 0 var(--space-3); }
+.docs-prose h3 { font-size: 1.1rem; font-weight: 600; margin: var(--space-6) 0 var(--space-2); }
+.docs-prose p { margin: 0 0 var(--space-4); color: var(--ink-secondary); }
+.docs-prose ul, .docs-prose ol { margin: 0 0 var(--space-4); padding-left: var(--space-6); color: var(--ink-secondary); }
+.docs-prose li { margin-bottom: var(--space-2); }
+.docs-prose strong { color: var(--ink-primary); font-weight: 600; }
+.docs-prose a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.docs-prose a:hover { color: var(--accent-hover); }
+.docs-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-inset, var(--surface-1));
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+}
+.docs-prose pre {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+.docs-prose pre code { background: none; padding: 0; }
+.docs-prose blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-subtle);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-4);
+}
+.docs-prose blockquote p { margin: 0; color: var(--ink-primary); }
+.docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-4);
+  font-size: 0.94rem;
+}
+.docs-prose th, .docs-prose td {
+  border: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+.docs-prose th { background: var(--surface-1); font-weight: 600; color: var(--ink-primary); }
+.docs-prose img { max-width: 100%; height: auto; border-radius: var(--radius-md); border: 1px solid var(--border); }
+.docs-status { color: var(--ink-tertiary); padding: var(--space-8) 0; text-align: center; }
+.docs-status a { color: var(--accent); }
