@@ -1,6 +1,8 @@
 node_modules
 dist
 
+assets-src/
+
 .playwright-cli/
 .playwright-mcp/
 .superpowers/

@@ -20,6 +20,8 @@ import { getConfig } from '../db/database'
 import { formatTime } from '../utils/format'
 import './Layout.css'
 
+const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`
+
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Inicio', end: true },
   { to: '/pdv', icon: ShoppingCart, label: 'Vender' },
@@ -85,7 +87,9 @@ export function Layout() {
     <div className="layout">
       {/* Desktop rail */}
       <nav className="nav-rail">
-        <div className="nav-rail-brand">PDV</div>
+        <div className="nav-rail-brand">
+          <img src={LOGO_URL} alt="PDV Local" className="nav-rail-logo" />
+        </div>
         {navItems.map(item => (
           <NavLink
             key={item.to}
@@ -137,7 +141,10 @@ export function Layout() {
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}>
           <div className="sidebar" onClick={e => e.stopPropagation()}>
             <div className="sidebar-header">
-              <span className="sidebar-title">Menu</span>
+              <span className="sidebar-title">
+                <img src={LOGO_URL} alt="PDV Local" className="sidebar-logo" />
+                Menu
+              </span>
               <button className="btn btn-ghost" onClick={() => setSidebarOpen(false)}>
                 <X size={20} />
               </button>

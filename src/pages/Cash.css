@@ -13,7 +13,11 @@
   text-align: center;
 }
 
-.cash-open-icon { color: var(--accent); }
+.cash-open-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
 
 .cash-open-card h2 {
   font-size: var(--text-xl);

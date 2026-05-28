@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { DoorOpen, DoorClosed, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { DoorClosed, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { db, type Session, type CashMovement } from '../db/database'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
 import { formatMoney, formatTime, formatDate } from '../utils/format'
 import './Cash.css'
+
+const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX', credito: 'Credito', debito: 'Debito',
@@ -104,7 +106,7 @@ export function Cash() {
       {!activeSession ? (
         /* Open session */
         <div className="cash-open-card">
-          <DoorOpen size={32} className="cash-open-icon" />
+          <img src={LOGO_URL} alt="PDV Local" className="cash-open-logo" />
           <h2>Abrir Caixa</h2>
           <p>Informe o valor inicial em dinheiro</p>
           <div className="form-field" style={{ width: '100%', maxWidth: 280 }}>

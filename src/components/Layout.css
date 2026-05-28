@@ -21,13 +21,25 @@
 }
 
 .nav-rail-brand {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-heavy);
-  color: var(--accent);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--space-4);
   padding: var(--space-2) 0;
+}
+
+.nav-rail-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: var(--space-2);
 }
 
 .nav-rail-item {
@@ -162,6 +174,8 @@
 }
 
 .sidebar-title {
+  display: flex;
+  align-items: center;
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
 }
