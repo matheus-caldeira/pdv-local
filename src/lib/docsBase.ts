@@ -8,8 +8,11 @@ export const DOCS_BASE = `${SITE_BASE}/docs` // ex: /pdv-local/docs
 
 // Decide o basename do BrowserRouter conforme a URL atual. A docs e o app
 // compartilham o mesmo bundle; o prefixo do caminho diz qual área está ativa.
+// Casa exatamente /pdv-local/docs ou /pdv-local/docs/... — nunca /docs-content.
 export function resolveBasename(pathname: string): string {
-  return pathname.startsWith(DOCS_BASE) ? DOCS_BASE : APP_BASE
+  return pathname === DOCS_BASE || pathname.startsWith(`${DOCS_BASE}/`)
+    ? DOCS_BASE
+    : APP_BASE
 }
 
 // URL absoluta (relativa ao site) de um arquivo de conteúdo da docs.

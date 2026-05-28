@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentPropsWithoutRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import { docsContentUrl } from '../../lib/docsBase'
@@ -15,6 +15,22 @@ type State =
   | { kind: 'loading' }
   | { kind: 'ready'; content: string }
   | { kind: 'error' }
+
+// Links internos (relativos, ex: `[Caixa](caixa)`) viram navegação da SPA com
+// destino absoluto `/caixa`, independente da URL atual ter barra final. Links
+// externos, âncoras (#) e mailto continuam como <a> nativo.
+function isInternalDocLink(href: string): boolean {
+  return !/^([a-z]+:|\/\/|#|\/)/i.test(href)
+}
+
+const markdownComponents: Components = {
+  a({ href, children, ...props }: ComponentPropsWithoutRef<'a'>) {
+    if (href && isInternalDocLink(href)) {
+      return <Link to={`/${href}`}>{children}</Link>
+    }
+    return <a href={href} {...props}>{children}</a>
+  },
+}
 
 // Resolve o slug atual e remonta o conteúdo a cada troca (via `key`), o que
 // reinicia o estado para "loading" sem precisar de setState no efeito.
@@ -49,7 +65,11 @@ function DocsContent({ slug }: { slug: string }) {
       )}
       {state.kind === 'ready' && (
         <div className="docs-prose">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSlug]}
+            components={markdownComponents}
+          >
             {state.content}
           </ReactMarkdown>
         </div>
