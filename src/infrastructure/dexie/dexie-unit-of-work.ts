@@ -7,6 +7,7 @@ import { DexieOrderRepository } from './repositories/dexie-order.repository';
 import { DexieCustomerRepository } from './repositories/dexie-customer.repository';
 import { DexieProductRepository } from './repositories/dexie-product.repository';
 import { DexieConfigRepository } from './repositories/dexie-config.repository';
+import { DexieCustomizationRepository } from './repositories/dexie-customization.repository';
 import type { PDVDatabase } from './dexie-database';
 
 class Rollback {
@@ -28,6 +29,7 @@ export class DexieUnitOfWork implements UnitOfWork {
       customers: new DexieCustomerRepository(db),
       products: new DexieProductRepository(db),
       config: new DexieConfigRepository(db),
+      customizations: new DexieCustomizationRepository(db),
     };
   }
 
@@ -37,10 +39,14 @@ export class DexieUnitOfWork implements UnitOfWork {
     try {
       const value = await this.db.transaction(
         'rw',
-        this.db.orders,
-        this.db.customers,
-        this.db.products,
-        this.db.config,
+        [
+          this.db.orders,
+          this.db.customers,
+          this.db.products,
+          this.db.config,
+          this.db.customizationGroups,
+          this.db.customizationItems,
+        ],
         async () => {
           const result = await work(this.repositories);
           if (isLeft(result)) {

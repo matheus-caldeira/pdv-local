@@ -3,25 +3,15 @@ import type { Product } from '../../domain/product/product.entity';
 import type { Order } from '../../domain/order/order.entity';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { BusinessConfig } from '../../domain/config/config.entity';
+import type {
+  CustomizationGroup,
+  CustomizationItem,
+} from '../../domain/customization/customization.entity';
 
-export interface CustomizationItem {
-  id?: number;
-  groupId: number;
-  name: string;
-  price: number;
-  maxQty: number;
-  chargeAfter: number;
-  active: boolean;
-}
-
-export interface CustomizationGroup {
-  id?: number;
-  name: string;
-  required: boolean;
-  minQty: number;
-  maxQty: number;
-  chargeAfter: number;
-}
+export type {
+  CustomizationGroup,
+  CustomizationItem,
+} from '../../domain/customization/customization.entity';
 
 export interface Session {
   id?: number;

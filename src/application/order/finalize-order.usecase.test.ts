@@ -56,6 +56,11 @@ class FakeRepositories implements Repositories {
   };
 
   products = {
+    list: async () => right([] as never),
+    create: async () => right(null as never),
+    update: async () => right(null as never),
+    remove: async () => right(undefined),
+    removeCustomizationGroup: async () => right(undefined),
     decrementStock: async (
       decrements: { productId: number; qty: number }[],
     ) => {
@@ -70,6 +75,17 @@ class FakeRepositories implements Repositories {
       this.claimedTicket = true;
       return this.claimTicketResult;
     },
+  };
+
+  customizations = {
+    listGroups: async () => right([] as never),
+    listItems: async () => right([] as never),
+    createGroup: async () => right(null as never),
+    updateGroup: async () => right(null as never),
+    removeGroup: async () => right(undefined),
+    createItem: async () => right(null as never),
+    updateItem: async () => right(null as never),
+    removeItem: async () => right(undefined),
   };
 }
 

@@ -41,3 +41,11 @@ export class TicketLimitReachedError extends DomainError {
     super('O limite de comandas foi atingido.');
   }
 }
+
+export class InvalidProductError extends DomainError {
+  readonly code = 'INVALID_PRODUCT';
+}
+
+export class InvalidCustomizationError extends DomainError {
+  readonly code = 'INVALID_CUSTOMIZATION';
+}

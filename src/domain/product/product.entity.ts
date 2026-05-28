@@ -10,3 +10,5 @@ export interface Product {
   createdAt: number;
   updatedAt: number;
 }
+
+export type NewProduct = Omit<Product, 'id'>;
