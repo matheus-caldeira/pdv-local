@@ -4,12 +4,12 @@ import { ToastProvider as UiToastProvider } from './ui/molecules/Toast';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { PdvPage } from './ui/pages/PdvPage';
-import { Products } from './pages/Products';
+import { ProductsPage } from './ui/pages/ProductsPage';
 import { Orders } from './pages/Orders';
 import { Cash } from './pages/Cash';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
-import { Customizations } from './pages/Customizations';
+import { CustomizationsPage } from './ui/pages/CustomizationsPage';
 import { Customers } from './pages/Customers';
 import { Kds } from './pages/Kds';
 import { Panel } from './pages/Panel';
@@ -40,14 +40,17 @@ export function App() {
               <Route element={<Layout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/pdv" element={<PdvPage />} />
-                <Route path="/products" element={<Products />} />
+                <Route path="/products" element={<ProductsPage />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/kds" element={<Kds />} />
                 <Route path="/panel" element={<Panel />} />
                 <Route path="/cash" element={<Cash />} />
                 <Route path="/reports" element={<Reports />} />
-                <Route path="/customizations" element={<Customizations />} />
+                <Route
+                  path="/customizations"
+                  element={<CustomizationsPage />}
+                />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
