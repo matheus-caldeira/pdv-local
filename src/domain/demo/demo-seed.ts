@@ -295,7 +295,6 @@ function orderTotal(items: OrderItem[]): number {
 }
 
 function buildOrders(
-  now: number,
   products: Product[],
   groups: CustomizationGroup[],
   items: CustomizationItem[],
@@ -341,7 +340,7 @@ function buildOrders(
   return orders;
 }
 
-function buildCashMovements(now: number, sessions: Session[]): CashMovement[] {
+function buildCashMovements(sessions: Session[]): CashMovement[] {
   const rng = createRng(424242);
   const movements: CashMovement[] = [];
   let id = 1;
@@ -368,8 +367,8 @@ export function generateDemoSeed(now: number): BackupSnapshot {
   const items = buildItems();
   const customers = buildCustomers(now);
   const sessions = buildSessions(now);
-  const orders = buildOrders(now, products, groups, items, customers, sessions);
-  const cashMovements = buildCashMovements(now, sessions);
+  const orders = buildOrders(products, groups, items, customers, sessions);
+  const cashMovements = buildCashMovements(sessions);
 
   return {
     config: [
