@@ -3,6 +3,7 @@ import type {
   BackupEntity,
   BackupFormat,
   BackupRepository,
+  BackupSnapshot,
 } from '../../../domain/backup/backup.repository';
 import type { InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
@@ -15,6 +16,24 @@ const CSV_ENTITIES: BackupEntity[] = [
   'orders',
   'sessions',
   'cashMovements',
+];
+
+const DATA_TABLES = [
+  'products',
+  'orders',
+  'sessions',
+  'cashMovements',
+  'customers',
+  'customizationGroups',
+  'customizationItems',
+] as const;
+
+const SNAPSHOT_TABLES: (keyof BackupSnapshot)[] = [
+  'products',
+  'orders',
+  'sessions',
+  'cashMovements',
+  'config',
 ];
 
 export interface FileSaver {
@@ -100,6 +119,36 @@ export class DexieBackupRepository implements BackupRepository {
       });
       await this.db.table(entity).bulkAdd(cleaned);
       return right(cleaned.length);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async hasData(): Promise<Either<InfrastructureError, boolean>> {
+    try {
+      const counts = await Promise.all(
+        DATA_TABLES.map((table) => this.db.table(table).count()),
+      );
+      return right(counts.some((count) => count > 0));
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async importDemo(
+    data: BackupSnapshot,
+  ): Promise<Either<InfrastructureError, void>> {
+    try {
+      await this.db.transaction('rw', this.db.tables, async () => {
+        await Promise.all(this.db.tables.map((table) => table.clear()));
+        for (const name of SNAPSHOT_TABLES) {
+          const items = data[name];
+          if (items && items.length > 0) {
+            await this.db.table(name).bulkPut(items);
+          }
+        }
+      });
+      return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }

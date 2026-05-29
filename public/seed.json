@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "exportedAt": 1748390400000,
+  "config": [
+    {
+      "id": 1,
+      "name": "Lanchonete do Balcão",
+      "document": "12.345.678/0001-90",
+      "phone": "(11) 98888-1234",
+      "address": "Rua das Palmeiras, 120 - Centro",
+      "ticketCounter": 8,
+      "ticketLimit": 9999,
+      "ticketAutoReset": true,
+      "statusControlEnabled": true
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "X-Burguer",
+      "category": "Lanches",
+      "costPrice": 6.5,
+      "salePrice": 16.0,
+      "stock": 40,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 2,
+      "name": "X-Salada",
+      "category": "Lanches",
+      "costPrice": 7.5,
+      "salePrice": 18.0,
+      "stock": 35,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 3,
+      "name": "X-Bacon",
+      "category": "Lanches",
+      "costPrice": 9.0,
+      "salePrice": 22.0,
+      "stock": 30,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 4,
+      "name": "Batata Frita Média",
+      "category": "Acompanhamentos",
+      "costPrice": 3.0,
+      "salePrice": 10.0,
+      "stock": 50,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 5,
+      "name": "Refrigerante Lata",
+      "category": "Bebidas",
+      "costPrice": 2.5,
+      "salePrice": 6.0,
+      "stock": 80,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 6,
+      "name": "Suco Natural 500ml",
+      "category": "Bebidas",
+      "costPrice": 3.5,
+      "salePrice": 9.0,
+      "stock": 25,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 7,
+      "name": "Milkshake 400ml",
+      "category": "Sobremesas",
+      "costPrice": 5.0,
+      "salePrice": 14.0,
+      "stock": 20,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    },
+    {
+      "id": 8,
+      "name": "Combo X-Bacon + Batata + Refri",
+      "category": "Combos",
+      "costPrice": 14.0,
+      "salePrice": 32.0,
+      "stock": 0,
+      "active": true,
+      "customizationGroupIds": [],
+      "createdAt": 1748304000000,
+      "updatedAt": 1748304000000
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "openedAt": 1748343600000,
+      "closedAt": 1748379600000,
+      "cashInitial": 200.0,
+      "cashFinal": 458.0,
+      "notes": "Turno do almoço"
+    }
+  ],
+  "cashMovements": [
+    {
+      "id": 1,
+      "sessionId": 1,
+      "type": "suprimento",
+      "amount": 50.0,
+      "reason": "Troco extra para o caixa",
+      "createdAt": 1748350800000
+    },
+    {
+      "id": 2,
+      "sessionId": 1,
+      "type": "sangria",
+      "amount": 100.0,
+      "reason": "Depósito no cofre",
+      "createdAt": 1748365200000
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "sessionId": 1,
+      "items": [
+        {
+          "productId": 1,
+          "name": "X-Burguer",
+          "salePrice": 16.0,
+          "costPrice": 6.5,
+          "qty": 2
+        },
+        {
+          "productId": 5,
+          "name": "Refrigerante Lata",
+          "salePrice": 6.0,
+          "costPrice": 2.5,
+          "qty": 2
+        }
+      ],
+      "total": 44.0,
+      "paymentMethod": "dinheiro",
+      "customerName": "Cliente Balcão",
+      "ticket": "0001",
+      "customerPhone": "",
+      "stage": "finalizado",
+      "status": "paid",
+      "createdAt": 1748347200000,
+      "updatedAt": 1748347500000
+    },
+    {
+      "id": 2,
+      "sessionId": 1,
+      "items": [
+        {
+          "productId": 8,
+          "name": "Combo X-Bacon + Batata + Refri",
+          "salePrice": 32.0,
+          "costPrice": 14.0,
+          "qty": 1
+        }
+      ],
+      "total": 32.0,
+      "paymentMethod": "pix",
+      "customerName": "Maria Souza",
+      "ticket": "0002",
+      "customerPhone": "(11) 97777-4321",
+      "stage": "finalizado",
+      "status": "paid",
+      "createdAt": 1748350800000,
+      "updatedAt": 1748351100000
+    },
+    {
+      "id": 3,
+      "sessionId": 1,
+      "items": [
+        {
+          "productId": 3,
+          "name": "X-Bacon",
+          "salePrice": 22.0,
+          "costPrice": 9.0,
+          "qty": 1,
+          "observation": "Sem cebola"
+        },
+        {
+          "productId": 4,
+          "name": "Batata Frita Média",
+          "salePrice": 10.0,
+          "costPrice": 3.0,
+          "qty": 1
+        },
+        {
+          "productId": 7,
+          "name": "Milkshake 400ml",
+          "salePrice": 14.0,
+          "costPrice": 5.0,
+          "qty": 1
+        }
+      ],
+      "total": 46.0,
+      "paymentMethod": "credito",
+      "customerName": "João Lima",
+      "ticket": "0003",
+      "customerPhone": "(11) 96666-9090",
+      "stage": "finalizado",
+      "status": "paid",
+      "createdAt": 1748358000000,
+      "updatedAt": 1748358300000
+    },
+    {
+      "id": 4,
+      "sessionId": 1,
+      "items": [
+        {
+          "productId": 2,
+          "name": "X-Salada",
+          "salePrice": 18.0,
+          "costPrice": 7.5,
+          "qty": 1
+        },
+        {
+          "productId": 6,
+          "name": "Suco Natural 500ml",
+          "salePrice": 9.0,
+          "costPrice": 3.5,
+          "qty": 1
+        }
+      ],
+      "total": 27.0,
+      "paymentMethod": null,
+      "customerName": "Pedro Alves",
+      "ticket": "0004",
+      "customerPhone": "",
+      "stage": "em_preparo",
+      "status": "open",
+      "createdAt": 1748377200000,
+      "updatedAt": 1748377200000
+    }
+  ]
+}

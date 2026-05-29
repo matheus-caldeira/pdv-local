@@ -6,6 +6,7 @@ import {
   Printer,
   Hash,
   ClipboardList,
+  Database,
 } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Modal } from '../molecules/Modal';
@@ -81,14 +82,24 @@ function Section({
 
 export function SettingsPage() {
   const toast = useToast();
-  const { config, save, resetSequence, exportAll, exportOne, importOne, wipe } =
-    useSettings();
+  const {
+    config,
+    save,
+    resetSequence,
+    exportAll,
+    exportOne,
+    importOne,
+    checkHasData,
+    importDemo,
+    wipe,
+  } = useSettings();
   const [form, setForm] = useState<FormState | null>(null);
   const [importTarget, setImportTarget] = useState<BackupEntity>('products');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState(0);
   const [resetValue, setResetValue] = useState('1');
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [demoConfirmStep, setDemoConfirmStep] = useState<0 | 1 | 2>(0);
   const [seenConfig, setSeenConfig] = useState<BusinessConfig | null>(null);
 
   if (config && config !== seenConfig) {
@@ -150,6 +161,21 @@ export function SettingsPage() {
     if (!window.confirm('Esta acao NAO pode ser desfeita. Continuar?')) return;
     const ok = await wipe();
     if (ok) window.location.reload();
+  }
+
+  async function runDemoImport() {
+    setDemoConfirmStep(0);
+    const ok = await importDemo();
+    if (ok) window.location.reload();
+  }
+
+  async function handleDemoClick() {
+    const populated = await checkHasData();
+    if (populated) {
+      setDemoConfirmStep(1);
+      return;
+    }
+    await runDemoImport();
   }
 
   return (
@@ -348,6 +374,20 @@ export function SettingsPage() {
         </Button>
       </Section>
 
+      <Section icon={<Database size={20} />} title="Demonstracao">
+        <p className="text-sm text-ink-tertiary">
+          Carregue um conjunto de dados de exemplo (produtos, vendas e caixa)
+          para experimentar o sistema. Isto substitui todos os dados atuais.
+        </p>
+        <Button
+          variant="ghost"
+          className="self-start"
+          onClick={handleDemoClick}
+        >
+          Carregar dados de demonstracao
+        </Button>
+      </Section>
+
       <Section icon={<Printer size={20} />} title="Impressora (ESC/POS)">
         <p className="text-sm text-ink-tertiary">
           Configure uma impressora termica via USB ou Bluetooth para imprimir
@@ -418,6 +458,44 @@ export function SettingsPage() {
             Cancelar
           </Button>
           <Button onClick={handleReset}>Reiniciar</Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={demoConfirmStep === 1}
+        onClose={() => setDemoConfirmStep(0)}
+        title="Carregar dados de demonstracao"
+      >
+        <p className="text-sm text-ink-secondary">
+          Isto vai <strong className="text-ink-primary">apagar</strong> todos os
+          dados atuais e substitui-los pelos dados de demonstracao.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => setDemoConfirmStep(2)}>
+            Continuar
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={demoConfirmStep === 2}
+        onClose={() => setDemoConfirmStep(0)}
+        title="Esta acao nao pode ser desfeita"
+      >
+        <p className="text-sm text-ink-secondary">
+          Os dados atuais serao perdidos permanentemente. Tem certeza que deseja
+          carregar a demonstracao?
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={runDemoImport}>
+            Carregar Demonstracao
+          </Button>
         </div>
       </Modal>
     </div>

@@ -5,6 +5,14 @@ export type BackupEntity = 'products' | 'orders' | 'sessions' | 'cashMovements';
 
 export type BackupFormat = 'json' | 'csv';
 
+export interface BackupSnapshot {
+  products?: unknown[];
+  orders?: unknown[];
+  sessions?: unknown[];
+  cashMovements?: unknown[];
+  config?: unknown[];
+}
+
 export interface BackupRepository {
   exportAll(format: BackupFormat): Promise<Either<InfrastructureError, void>>;
   exportEntity(
@@ -15,5 +23,7 @@ export interface BackupRepository {
     entity: BackupEntity,
     file: File,
   ): Promise<Either<InfrastructureError, number>>;
+  hasData(): Promise<Either<InfrastructureError, boolean>>;
+  importDemo(data: BackupSnapshot): Promise<Either<InfrastructureError, void>>;
   wipeAll(): Promise<Either<InfrastructureError, void>>;
 }

@@ -118,6 +118,37 @@ export function useSettings() {
     );
   }, [toast]);
 
+  const checkHasData = useCallback(async () => {
+    const result = await container.hasData();
+    return fold(
+      result,
+      () => false,
+      (value) => value,
+    );
+  }, []);
+
+  const importDemo = useCallback(async () => {
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}seed.json`);
+      const data = await response.json();
+      const result = await container.importDemo(data);
+      return fold(
+        result,
+        (error) => {
+          toast(error.message, 'error');
+          return false;
+        },
+        () => {
+          toast('Dados de demonstracao importados');
+          return true;
+        },
+      );
+    } catch {
+      toast('Nao foi possivel carregar a demonstracao', 'error');
+      return false;
+    }
+  }, [toast]);
+
   return {
     config,
     load,
@@ -126,6 +157,8 @@ export function useSettings() {
     exportAll,
     exportOne,
     importOne,
+    checkHasData,
+    importDemo,
     wipe,
   };
 }

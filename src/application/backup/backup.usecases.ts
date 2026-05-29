@@ -4,6 +4,7 @@ import type {
   BackupEntity,
   BackupFormat,
   BackupRepository,
+  BackupSnapshot,
 } from '../../domain/backup/backup.repository';
 
 export function makeExportBackup(repository: BackupRepository) {
@@ -23,6 +24,15 @@ export function makeImportBackup(repository: BackupRepository) {
     entity: BackupEntity,
     file: File,
   ): Promise<Either<AppError, number>> => repository.importEntity(entity, file);
+}
+
+export function makeHasData(repository: BackupRepository) {
+  return (): Promise<Either<AppError, boolean>> => repository.hasData();
+}
+
+export function makeImportDemo(repository: BackupRepository) {
+  return (data: BackupSnapshot): Promise<Either<AppError, void>> =>
+    repository.importDemo(data);
 }
 
 export function makeWipeData(repository: BackupRepository) {

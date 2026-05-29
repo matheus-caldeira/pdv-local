@@ -192,12 +192,50 @@ describe('DexieBackupRepository', () => {
     expect(await db.orders.count()).toBe(0);
   });
 
+  it('reports no data when only config exists', async () => {
+    await db.config.add({ id: 1 } as never);
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const result = await repo.hasData();
+    expect(isRight(result) && result.right).toBe(false);
+  });
+
+  it('reports data when a data table is populated', async () => {
+    await db.products.add(product());
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const result = await repo.hasData();
+    expect(isRight(result) && result.right).toBe(true);
+  });
+
+  it('imports a demo snapshot preserving ids and replacing data', async () => {
+    await db.products.add(product({ name: 'Old' }));
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const result = await repo.importDemo({
+      products: [{ id: 7, ...product({ name: 'Seed' }) }],
+      config: [{ id: 1, name: 'Demo' } as never],
+    });
+    expect(isRight(result)).toBe(true);
+    const stored = await db.products.toArray();
+    expect(stored).toHaveLength(1);
+    expect(stored[0].id).toBe(7);
+    expect(stored[0].name).toBe('Seed');
+    expect((await db.config.toArray())[0].name).toBe('Demo');
+  });
+
+  it('ignores entities missing from the demo snapshot', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const result = await repo.importDemo({ products: [] });
+    expect(isRight(result)).toBe(true);
+    expect(await db.orders.count()).toBe(0);
+  });
+
   it('returns Left when the database fails', async () => {
     const repo = new DexieBackupRepository(db, new FakeFileSaver());
     db.close();
     expect(isLeft(await repo.exportAll('json'))).toBe(true);
     expect(isLeft(await repo.exportEntity('products', 'json'))).toBe(true);
     expect(isLeft(await repo.wipeAll())).toBe(true);
+    expect(isLeft(await repo.hasData())).toBe(true);
+    expect(isLeft(await repo.importDemo({ products: [] }))).toBe(true);
     const file = new File(['[]'], 'p.json');
     expect(isLeft(await repo.importEntity('products', file))).toBe(true);
   });

@@ -4,12 +4,15 @@ import type {
   BackupEntity,
   BackupFormat,
   BackupRepository,
+  BackupSnapshot,
 } from '../../domain/backup/backup.repository';
 import type { InfrastructureError } from '../../infrastructure/errors';
 import {
   makeExportBackup,
   makeExportEntity,
+  makeHasData,
   makeImportBackup,
+  makeImportDemo,
   makeWipeData,
 } from './backup.usecases';
 
@@ -17,6 +20,7 @@ class FakeBackupRepository implements BackupRepository {
   exportedAll: BackupFormat | null = null;
   exportedEntity: { entity: BackupEntity; format: BackupFormat } | null = null;
   imported: { entity: BackupEntity; file: File } | null = null;
+  importedDemo: BackupSnapshot | null = null;
   wiped = false;
 
   async exportAll(
@@ -38,6 +42,15 @@ class FakeBackupRepository implements BackupRepository {
   ): Promise<Either<InfrastructureError, number>> {
     this.imported = { entity, file };
     return right(3);
+  }
+  async hasData(): Promise<Either<InfrastructureError, boolean>> {
+    return right(true);
+  }
+  async importDemo(
+    data: BackupSnapshot,
+  ): Promise<Either<InfrastructureError, void>> {
+    this.importedDemo = data;
+    return right(undefined);
   }
   async wipeAll(): Promise<Either<InfrastructureError, void>> {
     this.wiped = true;
@@ -70,5 +83,18 @@ describe('backup use cases', () => {
     const repo = new FakeBackupRepository();
     await makeWipeData(repo)();
     expect(repo.wiped).toBe(true);
+  });
+
+  it('checks whether there is data', async () => {
+    const repo = new FakeBackupRepository();
+    const result = await makeHasData(repo)();
+    expect(isRight(result) && result.right).toBe(true);
+  });
+
+  it('imports a demo snapshot', async () => {
+    const repo = new FakeBackupRepository();
+    const snapshot = { products: [{ id: 1 }] };
+    await makeImportDemo(repo)(snapshot);
+    expect(repo.importedDemo).toBe(snapshot);
   });
 });

@@ -60,7 +60,9 @@ import {
 import {
   makeExportBackup,
   makeExportEntity,
+  makeHasData,
   makeImportBackup,
+  makeImportDemo,
   makeWipeData,
 } from '../application/backup/backup.usecases';
 
@@ -111,6 +113,8 @@ export function createContainer() {
     exportBackup: makeExportBackup(backup),
     exportEntity: makeExportEntity(backup),
     importBackup: makeImportBackup(backup),
+    hasData: makeHasData(backup),
+    importDemo: makeImportDemo(backup),
     wipeData: makeWipeData(backup),
   };
 }
