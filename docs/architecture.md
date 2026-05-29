@@ -117,14 +117,19 @@ contrato; não sabe quem implementa.
 
 ```ts
 // domain/order/order.repository.ts
-import type { Either } from '../shared/either'
-import type { InfrastructureError } from '../../infrastructure/errors'
-import type { Order } from './order.entity'
+import type { Either } from '../shared/either';
+import type { InfrastructureError } from '../../infrastructure/errors';
+import type { Order } from './order.entity';
 
 export interface OrderRepository {
-  create(order: NewOrder): Promise<Either<InfrastructureError, Order>>
-  update(id: number, patch: Partial<Order>): Promise<Either<InfrastructureError, Order>>
-  findBySession(sessionId: number): Promise<Either<InfrastructureError, Order[]>>
+  create(order: NewOrder): Promise<Either<InfrastructureError, Order>>;
+  update(
+    id: number,
+    patch: Partial<Order>,
+  ): Promise<Either<InfrastructureError, Order>>;
+  findBySession(
+    sessionId: number,
+  ): Promise<Either<InfrastructureError, Order[]>>;
 }
 ```
 
@@ -136,20 +141,21 @@ Use cases retornam `Either`.
 
 ```ts
 // application/order/finalizar-pedido.usecase.ts
-import { calcularTotalPedido } from '../../domain/order/order.rules'
-import type { UnitOfWork } from '../../domain/shared/unit-of-work'
+import { calcularTotalPedido } from '../../domain/order/order.rules';
+import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 
 export function makeFinalizarPedido(uow: UnitOfWork) {
   return async (input: FinalizarPedidoInput) => {
-    const total = calcularTotalPedido(input.items)          // regra pura (domain)
-    return uow.run(async (repos) => {                        // tudo-ou-nada
-      const ticket = await repos.config.claimTicket()
-      const customerId = await repos.customers.findOrCreate(input.customer)
-      await repos.products.decrementStock(input.items)
-      return repos.orders.create({ ...input, total, ticket, customerId })
-    })
+    const total = calcularTotalPedido(input.items); // regra pura (domain)
+    return uow.run(async (repos) => {
+      // tudo-ou-nada
+      const ticket = await repos.config.claimTicket();
+      const customerId = await repos.customers.findOrCreate(input.customer);
+      await repos.products.decrementStock(input.items);
+      return repos.orders.create({ ...input, total, ticket, customerId });
+    });
     // → Either<InfrastructureError | DomainError | ApplicationError, Order>
-  }
+  };
 }
 ```
 
@@ -181,7 +187,7 @@ resolvido pelo container.
 
 ```ts
 // ui/hooks/useFinalizarPedido.ts
-const finalizar = useUseCase((c) => c.finalizarPedido)
+const finalizar = useUseCase((c) => c.finalizarPedido);
 ```
 
 ### Composition root — `app/container.ts`
@@ -204,18 +210,18 @@ meio (ou queda de rede) deixa o estado inconsistente.
 export interface UnitOfWork {
   run<A>(
     work: (repos: Repositories) => Promise<Either<AppError, A>>,
-  ): Promise<Either<AppError, A>>
+  ): Promise<Either<AppError, A>>;
 }
 ```
 
 Cada provider implementa `run` à sua maneira:
 
-| Provider          | Implementação de `run`                 |
-| ----------------- | -------------------------------------- |
-| Dexie (IndexedDB) | `db.transaction('rw', ...)`            |
-| Postgres/Supabase | `BEGIN ... COMMIT / ROLLBACK`          |
-| Firebase          | `runTransaction()` / batched writes    |
-| Mongo             | sessão com transação                   |
+| Provider          | Implementação de `run`              |
+| ----------------- | ----------------------------------- |
+| Dexie (IndexedDB) | `db.transaction('rw', ...)`         |
+| Postgres/Supabase | `BEGIN ... COMMIT / ROLLBACK`       |
+| Firebase          | `runTransaction()` / batched writes |
+| Mongo             | sessão com transação                |
 
 **UoW + Either:** dentro do `uow.run`, retornar um `Left` **aborta a transação e
 dispara rollback** — sem `throw` no fluxo de negócio. O `run` propaga esse
@@ -236,13 +242,18 @@ Usamos uma **implementação própria mínima** (sem dependência nova):
 
 ```ts
 // domain/shared/either.ts
-export type Either<E, A> = Left<E> | Right<A>
+export type Either<E, A> = Left<E> | Right<A>;
 
-export const left  = <E>(e: E): Either<E, never> => ({ _tag: 'Left', left: e })
-export const right = <A>(a: A): Either<never, A> => ({ _tag: 'Right', right: a })
+export const left = <E>(e: E): Either<E, never> => ({ _tag: 'Left', left: e });
+export const right = <A>(a: A): Either<never, A> => ({
+  _tag: 'Right',
+  right: a,
+});
 
-export const isLeft  = <E, A>(e: Either<E, A>): e is Left<E>  => e._tag === 'Left'
-export const isRight = <E, A>(e: Either<E, A>): e is Right<A> => e._tag === 'Right'
+export const isLeft = <E, A>(e: Either<E, A>): e is Left<E> =>
+  e._tag === 'Left';
+export const isRight = <E, A>(e: Either<E, A>): e is Right<A> =>
+  e._tag === 'Right';
 
 // map, flatMap, fold — encadeamento sem desempacotar manualmente
 ```
@@ -255,9 +266,12 @@ erro inesperado — o caso "500".
 ```ts
 // domain/shared/errors.ts
 export abstract class AppError {
-  abstract readonly code: string                              // 'DB_CONNECTOR', 'AUTH_WRONG_PASSWORD'...
-  abstract readonly layer: 'domain' | 'application' | 'infrastructure'
-  constructor(readonly message: string, readonly cause?: unknown) {}
+  abstract readonly code: string; // 'DB_CONNECTOR', 'AUTH_WRONG_PASSWORD'...
+  abstract readonly layer: 'domain' | 'application' | 'infrastructure';
+  constructor(
+    readonly message: string,
+    readonly cause?: unknown,
+  ) {}
 }
 ```
 
@@ -268,25 +282,25 @@ granular, melhor o tratamento na UI.
 
 ```ts
 // infrastructure/errors.ts — InfrastructureError extends AppError
-ConnectorError            // não conectou ao provider
-WrongPasswordError        // credencial inválida
-ConnectionTimeoutError
-ProviderUnavailableError
-RecordNotFoundError
-UniqueConstraintError     // ex: telefone de cliente duplicado
-TransactionFailedError    // UoW rollback
+ConnectorError; // não conectou ao provider
+WrongPasswordError; // credencial inválida
+ConnectionTimeoutError;
+ProviderUnavailableError;
+RecordNotFoundError;
+UniqueConstraintError; // ex: telefone de cliente duplicado
+TransactionFailedError; // UoW rollback
 
 // domain/errors.ts — DomainError extends AppError
-InvalidOrderError
-EmptyCartError
-RequiredCustomizationMissingError
-InsufficientStockError
-TicketLimitReachedError
+InvalidOrderError;
+EmptyCartError;
+RequiredCustomizationMissingError;
+InsufficientStockError;
+TicketLimitReachedError;
 
 // application/errors.ts — ApplicationError extends AppError
-SessionClosedError
-NoActiveSessionError
-OperationNotAllowedError
+SessionClosedError;
+NoActiveSessionError;
+OperationNotAllowedError;
 ```
 
 ### Fluxo do erro pelas camadas
@@ -302,11 +316,12 @@ OperationNotAllowedError
 ```ts
 fold(
   result,
-  (err) => err instanceof AppError
-    ? toast.error(mensagemPara(err.code))   // tratado
-    : reportUnexpected(err),                // "500"
+  (err) =>
+    err instanceof AppError
+      ? toast.error(mensagemPara(err.code)) // tratado
+      : reportUnexpected(err), // "500"
   (order) => navigate(`/orders/${order.id}`),
-)
+);
 ```
 
 ---
@@ -351,11 +366,11 @@ agregado**:
 
 ## Testes
 
-| Camada         | Como testar                                                            |
-| -------------- | ---------------------------------------------------------------------- |
-| Domain         | Funções puras — entrada/saída, sem mocks.                              |
-| Application    | Use cases com **repository fake em memória** (sem IndexedDB).          |
-| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).     |
+| Camada         | Como testar                                                              |
+| -------------- | ------------------------------------------------------------------------ |
+| Domain         | Funções puras — entrada/saída, sem mocks.                                |
+| Application    | Use cases com **repository fake em memória** (sem IndexedDB).            |
+| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).       |
 | UI             | Ver [`atomic-design.md`](./atomic-design.md) — hooks/use cases mockados. |
 
 Como tudo retorna `Either`, os testes verificam `isLeft`/`isRight` e o `code` do

@@ -36,8 +36,8 @@ direção é sempre de cima (pages) para baixo (atoms).
 
 ```tsx
 // ui/atoms/Button.tsx
-import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/ui/lib/cn';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center rounded-md font-medium transition-colors',
@@ -45,19 +45,26 @@ const buttonVariants = cva(
     variants: {
       variant: {
         accent: 'bg-accent text-accent-text hover:bg-accent-hover',
-        ghost:  'bg-surface-2 text-ink-primary border border-border hover:border-accent',
+        ghost:
+          'bg-surface-2 text-ink-primary border border-border hover:border-accent',
         danger: 'bg-danger-subtle text-danger',
       },
       size: { sm: 'h-8 px-3 text-sm', md: 'h-10 px-4 text-base' },
     },
     defaultVariants: { variant: 'accent', size: 'md' },
   },
-)
+);
 
-type ButtonProps = React.ComponentProps<'button'> & VariantProps<typeof buttonVariants>
+type ButtonProps = React.ComponentProps<'button'> &
+  VariantProps<typeof buttonVariants>;
 
 export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return <button className={cn(buttonVariants({ variant, size, className }))} {...props} />
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
 }
 ```
 
@@ -66,9 +73,9 @@ design system):
 
 ```tsx
 // ui/atoms/Money.tsx
-import { formatMoney } from '@/domain/shared/format'   // regra pura
+import { formatMoney } from '@/domain/shared/format'; // regra pura
 export function Money({ value }: { value: number }) {
-  return <span className="font-mono tabular-nums">{formatMoney(value)}</span>
+  return <span className="font-mono tabular-nums">{formatMoney(value)}</span>;
 }
 ```
 
@@ -90,20 +97,20 @@ Exemplos do projeto: `Modal`, `Toast`, `FormField`.
 
 ```tsx
 // ui/organisms/PaymentPanel.tsx (esboço)
-'use no-op — React 19'
-import { useFinalizarPedido } from '@/ui/hooks/useFinalizarPedido'
-import { fold } from '@/domain/shared/either'
+'use no-op — React 19';
+import { useFinalizarPedido } from '@/ui/hooks/useFinalizarPedido';
+import { fold } from '@/domain/shared/either';
 
 export function PaymentPanel({ cart, customer }: PaymentPanelProps) {
-  const finalizar = useFinalizarPedido()
+  const finalizar = useFinalizarPedido();
 
   async function onConfirm(method: string) {
-    const result = await finalizar({ items: cart, customer, method })
+    const result = await finalizar({ items: cart, customer, method });
     fold(
       result,
-      (err) => toast.error(mensagemPara(err)),   // erro tipado (AppError) ou "500"
+      (err) => toast.error(mensagemPara(err)), // erro tipado (AppError) ou "500"
       (order) => toast.success(`Comanda ${order.ticket}`),
-    )
+    );
   }
   // ...compõe molecules (Modal, MethodGrid) e atoms (Button, Money)
 }
@@ -125,17 +132,19 @@ export function PaymentPanel({ cart, customer }: PaymentPanelProps) {
 
 ```tsx
 // ui/pages/PdvPage.tsx
-import { AppShell } from '@/ui/templates/AppShell'
-import { ProductGrid } from '@/ui/organisms/ProductGrid'
-import { Cart } from '@/ui/organisms/Cart'
-import { PaymentPanel } from '@/ui/organisms/PaymentPanel'
+import { AppShell } from '@/ui/templates/AppShell';
+import { ProductGrid } from '@/ui/organisms/ProductGrid';
+import { Cart } from '@/ui/organisms/Cart';
+import { PaymentPanel } from '@/ui/organisms/PaymentPanel';
 
 export function PdvPage() {
   return (
     <AppShell>
-      <ProductGrid /><Cart /><PaymentPanel />
+      <ProductGrid />
+      <Cart />
+      <PaymentPanel />
     </AppShell>
-  )
+  );
 }
 ```
 
@@ -163,15 +172,15 @@ export function PdvPage() {
 Hoje cada página tem seu `.css` (`PDV.css`, `Panel.css`...) e os componentes
 estão soltos em `src/components/`. Mapeamento-alvo:
 
-| Atual                       | Vai para                          | Camada     |
-| --------------------------- | --------------------------------- | ---------- |
-| `components/Modal.tsx`      | `ui/molecules/Modal`              | molecule   |
-| `components/Toast.tsx`      | `ui/molecules/Toast`              | molecule   |
-| `components/ContactModal`   | `ui/organisms/ContactModal`       | organism   |
-| `components/Layout.tsx`     | `ui/templates/AppShell`           | template   |
-| `pages/PDV.tsx`             | `ui/pages/PdvPage` + organisms    | page       |
-| `pages/*.tsx` (demais)      | `ui/pages/*Page` + organisms      | page       |
-| `utils/format.ts`           | `domain/shared/format` (regra)    | (domain)   |
+| Atual                     | Vai para                       | Camada   |
+| ------------------------- | ------------------------------ | -------- |
+| `components/Modal.tsx`    | `ui/molecules/Modal`           | molecule |
+| `components/Toast.tsx`    | `ui/molecules/Toast`           | molecule |
+| `components/ContactModal` | `ui/organisms/ContactModal`    | organism |
+| `components/Layout.tsx`   | `ui/templates/AppShell`        | template |
+| `pages/PDV.tsx`           | `ui/pages/PdvPage` + organisms | page     |
+| `pages/*.tsx` (demais)    | `ui/pages/*Page` + organisms   | page     |
+| `utils/format.ts`         | `domain/shared/format` (regra) | (domain) |
 
 A migração é incremental: portar uma página por vez, extraindo seus organisms e
 movendo a regra de negócio para use cases (ver `architecture.md`). O CSS de cada
@@ -196,13 +205,13 @@ Monta template + organisms numa rota?           → page
 
 ## Testes
 
-| Camada     | Abordagem                                                            |
-| ---------- | -------------------------------------------------------------------- |
-| Atoms      | Testes leves ou cobertos via molecules/organisms.                    |
-| Molecules  | Render por props, exibição condicional, encaminhamento de callbacks. |
-| Organisms  | Integração com **hooks/use cases mockados**; estados de loading/erro/sucesso (via `fold`). |
-| Templates  | Geralmente cobertos por testes de page.                              |
-| Pages      | Integração compondo template + organisms.                            |
+| Camada    | Abordagem                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------ |
+| Atoms     | Testes leves ou cobertos via molecules/organisms.                                          |
+| Molecules | Render por props, exibição condicional, encaminhamento de callbacks.                       |
+| Organisms | Integração com **hooks/use cases mockados**; estados de loading/erro/sucesso (via `fold`). |
+| Templates | Geralmente cobertos por testes de page.                                                    |
+| Pages     | Integração compondo template + organisms.                                                  |
 
 Testes usam React Testing Library, consultando por papéis ARIA e labels
 (`getByRole`, `getByLabelText`).

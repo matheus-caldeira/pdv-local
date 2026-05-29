@@ -17,6 +17,9 @@ adicionais, clientes, relatórios e backup — tudo salvo localmente no aparelho
 - [react-markdown](https://github.com/remarkjs/react-markdown) para a documentação
 - [lucide-react](https://lucide.dev/) para ícones
 
+Para contribuir, leia o [`CLAUDE.md`](./CLAUDE.md) (guia de arquitetura, padrão
+de testes e convenções) antes de tocar no código.
+
 ## Rodando localmente
 
 ```bash
@@ -33,15 +36,15 @@ Em dev:
 - App: http://localhost:5173/pdv-local/app/
 - Documentação: http://localhost:5173/pdv-local/docs/
 
-## Arquitetura
+## As três áreas de URL
 
 O site tem três áreas, todas sob a base `/pdv-local/` no GitHub Pages:
 
-| URL        | Conteúdo            | Origem                         |
-|------------|---------------------|--------------------------------|
-| `/`        | Landing page        | `landing.html`                 |
-| `/app/*`   | App React (SPA)     | build do Vite (`dist/`)        |
-| `/docs/*`  | Documentação (SPA)  | mesmo bundle, basename runtime |
+| URL       | Conteúdo           | Origem                         |
+| --------- | ------------------ | ------------------------------ |
+| `/`       | Landing page       | `landing.html`                 |
+| `/app/*`  | App React (SPA)    | build do Vite (`dist/`)        |
+| `/docs/*` | Documentação (SPA) | mesmo bundle, basename runtime |
 
 - **Bundle único:** o app e a documentação usam o mesmo build. A SPA decide o
   `basename` do roteador em tempo de execução conforme o prefixo da URL
@@ -52,6 +55,55 @@ O site tem três áreas, todas sob a base `/pdv-local/` no GitHub Pages:
 - **Roteamento no GitHub Pages:** como o Pages não conhece rotas de SPA, o
   `public/404.html` reescreve deep links de `/app` e `/docs` para o `index.html`
   restaurar a rota (técnica do `?/`).
+
+Detalhes em [`docs/site-structure.md`](./docs/site-structure.md).
+
+## Arquitetura da SPA
+
+A SPA segue **DDD em quatro camadas** com **Repository + Unit of Work** para
+persistência, **use cases** para a regra de negócio e **`Either` + erros
+tipados** para o tratamento de falhas. O objetivo é poder trocar o provider de
+persistência (Dexie hoje; Supabase/Postgres/Firebase/Mongo no futuro) sem tocar
+no domínio nem na aplicação.
+
+```
+domain/          núcleo puro: entidades, regras, INTERFACES de repository
+application/     use cases (orquestram domínio + repos + UoW), retornam Either
+infrastructure/  providers concretos (dexie/, ...) + tradução de erros tipados
+ui/              atomic design: atoms/molecules/organisms/templates/pages + hooks/styles
+app/             composition root: rotas, providers React, container (DI)
+```
+
+**Princípio central:** a UI nunca fala com o banco — ela chama use cases, que
+orquestram repositories via Unit of Work, que delega ao provider ativo. A regra
+de dependência aponta para dentro: `domain` não conhece ninguém; `domain/` e
+`application/` não importam React nem Dexie.
+
+A UI segue **Atomic Design** sobre **Tailwind + CVA + `cn()`**, consumindo os
+tokens do design system **"Balcão Digital"** (`src/styles/tokens.css`) — sem
+`#hex` ou cor genérica em componente.
+
+Documentação canônica:
+
+- [`docs/architecture.md`](./docs/architecture.md) — camadas DDD, UoW, Either, erros.
+- [`docs/atomic-design.md`](./docs/atomic-design.md) — organização da UI.
+- [`docs/design-system.md`](./docs/design-system.md) — identidade visual e tokens.
+
+## Testes
+
+> ✅ **Padrão obrigatório: todo código deve ser testado, mirando 100% de
+> cobertura.** Nenhuma feature ou correção é concluída sem testes. Código novo
+> entra com seus testes.
+
+| Camada         | Como testar                                                          |
+| -------------- | -------------------------------------------------------------------- |
+| Domain         | Funções puras — entrada/saída, sem mocks.                            |
+| Application    | Use cases com repository fake em memória (sem IndexedDB).            |
+| Infrastructure | Implementações reais contra o driver (Dexie em ambiente de teste).   |
+| UI             | React Testing Library; hooks/use cases mockados; consultas por ARIA. |
+
+Como tudo retorna `Either`, os testes verificam `isLeft`/`isRight` e o `code` do
+erro, sem `try/catch`.
 
 ## Estrutura de pastas
 

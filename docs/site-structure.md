@@ -15,11 +15,11 @@ Relacionados: [`architecture.md`](./architecture.md) (a arquitetura DDD da SPA d
 
 Sob a base do GitHub Pages (`/pdv-local/`):
 
-| URL        | Conteúdo                | Origem                          |
-| ---------- | ----------------------- | ------------------------------- |
-| `/`        | Landing page            | `landing.html`                  |
-| `/app/*`   | Aplicação (SPA React)   | `dist/`                         |
-| `/docs/*`  | Documentação (SPA React)| mesma build do app + markdown   |
+| URL       | Conteúdo                 | Origem                        |
+| --------- | ------------------------ | ----------------------------- |
+| `/`       | Landing page             | `landing.html`                |
+| `/app/*`  | Aplicação (SPA React)    | `dist/`                       |
+| `/docs/*` | Documentação (SPA React) | mesma build do app + markdown |
 
 A landing é HTML estático. O app e a documentação são **a mesma SPA React** —
 não há um segundo build.
@@ -37,11 +37,11 @@ A SPA escolhe o `basename` do `BrowserRouter` em **runtime**, conforme o prefixo
 da URL atual:
 
 ```ts
-const path = window.location.pathname
-const SITE_BASE = '/pdv-local'
+const path = window.location.pathname;
+const SITE_BASE = '/pdv-local';
 const basename = path.startsWith(`${SITE_BASE}/docs`)
   ? `${SITE_BASE}/docs`
-  : `${SITE_BASE}/app`
+  : `${SITE_BASE}/app`;
 ```
 
 - Em `/pdv-local/app/*` → basename `/pdv-local/app` → rotas do app ativas.
@@ -77,7 +77,7 @@ docs/
 ### Caminho de fetch único (dev + prod)
 
 ```ts
-const url = `/pdv-local/docs-content/${slug}.md`
+const url = `/pdv-local/docs-content/${slug}.md`;
 ```
 
 - **Prod:** o workflow copia `docs/guide/` para `_site/docs-content/`, e a URL
@@ -107,9 +107,9 @@ O GitHub Pages devolve `404.html` para caminhos sem arquivo físico. Ele
 reconhece **dois** prefixos como deep-link da SPA e reencaminha mantendo os dois
 segmentos de base:
 
-- `/pdv-local/app/<rota>`  → SPA (área app).
+- `/pdv-local/app/<rota>` → SPA (área app).
 - `/pdv-local/docs/<rota>` → SPA (área docs).
-- qualquer outro caminho   → landing em `/pdv-local/`.
+- qualquer outro caminho → landing em `/pdv-local/`.
 
 ---
 

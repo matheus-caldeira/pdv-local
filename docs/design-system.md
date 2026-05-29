@@ -18,11 +18,11 @@ consomem estes tokens) e [`architecture.md`](./architecture.md).
 Um PDV de lanchonete não deveria parecer um dashboard SaaS azul. A identidade
 parte de três **metáforas físicas** do balcão, cada uma com um papel:
 
-| Metáfora               | Superfície            | Papel no produto                         |
-| ---------------------- | --------------------- | ---------------------------------------- |
-| **Papel de recibo**    | off-white quente      | Chrome do app: navegação, cards, formulários |
-| **Quadro-negro / cardápio** | dark `#2C2C2E`   | Exibição: cardápio, painel do cliente, KDS |
-| **Etiqueta de preço**  | âmbar `#E8722A`       | Ação e dinheiro: botões, totais, destaques |
+| Metáfora                    | Superfície       | Papel no produto                             |
+| --------------------------- | ---------------- | -------------------------------------------- |
+| **Papel de recibo**         | off-white quente | Chrome do app: navegação, cards, formulários |
+| **Quadro-negro / cardápio** | dark `#2C2C2E`   | Exibição: cardápio, painel do cliente, KDS   |
+| **Etiqueta de preço**       | âmbar `#E8722A`  | Ação e dinheiro: botões, totais, destaques   |
 
 O contraste **papel ↔ chalkboard** com toques de **âmbar** é a assinatura. Tom
 quente em tudo — nada de cinza frio neutro.
@@ -33,39 +33,39 @@ quente em tudo — nada de cinza frio neutro.
 
 ### Superfícies (papel de recibo)
 
-| Token             | Valor       | Uso                                  |
-| ----------------- | ----------- | ------------------------------------ |
-| `--surface-0`     | `#F5F2ED`   | Fundo da aplicação                   |
-| `--surface-1`     | `#F8F7F4`   | Cards, painéis                       |
-| `--surface-2`     | `#FFFFFF`   | Elementos elevados, inputs           |
-| `--surface-inset` | `#EDEAE4`   | Campos rebaixados, trilhos           |
+| Token             | Valor     | Uso                        |
+| ----------------- | --------- | -------------------------- |
+| `--surface-0`     | `#F5F2ED` | Fundo da aplicação         |
+| `--surface-1`     | `#F8F7F4` | Cards, painéis             |
+| `--surface-2`     | `#FFFFFF` | Elementos elevados, inputs |
+| `--surface-inset` | `#EDEAE4` | Campos rebaixados, trilhos |
 
 ### Cardápio (chalkboard dark)
 
-| Token                | Valor       | Uso                                  |
-| -------------------- | ----------- | ------------------------------------ |
-| `--cardapio-bg`      | `#2C2C2E`   | Fundo do cardápio / painel cliente   |
-| `--cardapio-surface` | `#3A3A3C`   | Cards sobre o chalkboard             |
-| `--cardapio-text`    | `#F5F2ED`   | Texto sobre o escuro                 |
-| `--cardapio-muted`   | `#A1A1A6`   | Texto secundário sobre o escuro      |
+| Token                | Valor     | Uso                                |
+| -------------------- | --------- | ---------------------------------- |
+| `--cardapio-bg`      | `#2C2C2E` | Fundo do cardápio / painel cliente |
+| `--cardapio-surface` | `#3A3A3C` | Cards sobre o chalkboard           |
+| `--cardapio-text`    | `#F5F2ED` | Texto sobre o escuro               |
+| `--cardapio-muted`   | `#A1A1A6` | Texto secundário sobre o escuro    |
 
 ### Ink (warm grays — texto e ícones)
 
-| Token              | Valor       | Uso                          |
-| ------------------ | ----------- | ---------------------------- |
-| `--ink-primary`    | `#1C1B1A`   | Texto principal              |
-| `--ink-secondary`  | `#5C5A56`   | Texto secundário             |
-| `--ink-tertiary`   | `#8A8680`   | Legendas, placeholders       |
-| `--ink-muted`      | `#B5B1AA`   | Desabilitado, scrollbar      |
+| Token             | Valor     | Uso                     |
+| ----------------- | --------- | ----------------------- |
+| `--ink-primary`   | `#1C1B1A` | Texto principal         |
+| `--ink-secondary` | `#5C5A56` | Texto secundário        |
+| `--ink-tertiary`  | `#8A8680` | Legendas, placeholders  |
+| `--ink-muted`     | `#B5B1AA` | Desabilitado, scrollbar |
 
 ### Accent (etiqueta de preço)
 
-| Token              | Valor       | Uso                          |
-| ------------------ | ----------- | ---------------------------- |
-| `--accent`         | `#E8722A`   | Ação primária, total, preço  |
-| `--accent-hover`   | `#D4621F`   | Hover da ação primária       |
-| `--accent-subtle`  | `#FDF0E8`   | Fundo suave de destaque      |
-| `--accent-text`    | `#FFFFFF`   | Texto sobre o âmbar          |
+| Token             | Valor     | Uso                         |
+| ----------------- | --------- | --------------------------- |
+| `--accent`        | `#E8722A` | Ação primária, total, preço |
+| `--accent-hover`  | `#D4621F` | Hover da ação primária      |
+| `--accent-subtle` | `#FDF0E8` | Fundo suave de destaque     |
+| `--accent-text`   | `#FFFFFF` | Texto sobre o âmbar         |
 
 ### Semânticos
 
@@ -106,12 +106,12 @@ Os tokens são expostos ao Tailwind via `@theme`, gerando utilitários. Exemplo:
 
 ```css
 @theme {
-  --color-surface-0: #F5F2ED;
-  --color-surface-1: #F8F7F4;
-  --color-ink-primary: #1C1B1A;
-  --color-accent: #E8722A;
-  --color-accent-subtle: #FDF0E8;
-  --color-cardapio-bg: #2C2C2E;
+  --color-surface-0: #f5f2ed;
+  --color-surface-1: #f8f7f4;
+  --color-ink-primary: #1c1b1a;
+  --color-accent: #e8722a;
+  --color-accent-subtle: #fdf0e8;
+  --color-cardapio-bg: #2c2c2e;
   /* ...todos os tokens de cor... */
 
   --font-sans: 'Inter', -apple-system, sans-serif;
