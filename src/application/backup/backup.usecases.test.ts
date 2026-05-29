@@ -12,7 +12,7 @@ import {
   makeExportEntity,
   makeHasData,
   makeImportBackup,
-  makeImportDemo,
+  makeLoadDemo,
   makeWipeData,
 } from './backup.usecases';
 
@@ -91,10 +91,11 @@ describe('backup use cases', () => {
     expect(isRight(result) && result.right).toBe(true);
   });
 
-  it('imports a demo snapshot', async () => {
+  it('generates and imports a demo snapshot for the given time', async () => {
     const repo = new FakeBackupRepository();
-    const snapshot = { products: [{ id: 1 }] };
-    await makeImportDemo(repo)(snapshot);
-    expect(repo.importedDemo).toBe(snapshot);
+    const now = new Date('2026-05-28T12:00:00Z').getTime();
+    await makeLoadDemo(repo)(now);
+    expect(repo.importedDemo?.products?.length).toBeGreaterThan(0);
+    expect(repo.importedDemo?.orders?.length).toBeGreaterThan(0);
   });
 });

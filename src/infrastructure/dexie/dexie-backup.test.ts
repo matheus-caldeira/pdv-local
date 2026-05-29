@@ -228,6 +228,19 @@ describe('DexieBackupRepository', () => {
     expect(await db.orders.count()).toBe(0);
   });
 
+  it('imports customers and customizations preserving ids', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const result = await repo.importDemo({
+      customers: [{ id: 5, name: 'Ana', phone: '1', addresses: [] } as never],
+      customizationGroups: [{ id: 2, name: 'Adicionais' } as never],
+      customizationItems: [{ id: 3, groupId: 2, name: 'Bacon' } as never],
+    });
+    expect(isRight(result)).toBe(true);
+    expect((await db.customers.toArray())[0].id).toBe(5);
+    expect((await db.customizationGroups.toArray())[0].id).toBe(2);
+    expect((await db.customizationItems.toArray())[0].id).toBe(3);
+  });
+
   it('returns Left when the database fails', async () => {
     const repo = new DexieBackupRepository(db, new FakeFileSaver());
     db.close();

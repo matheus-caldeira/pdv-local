@@ -11,6 +11,9 @@ export interface BackupSnapshot {
   sessions?: unknown[];
   cashMovements?: unknown[];
   config?: unknown[];
+  customers?: unknown[];
+  customizationGroups?: unknown[];
+  customizationItems?: unknown[];
 }
 
 export interface BackupRepository {

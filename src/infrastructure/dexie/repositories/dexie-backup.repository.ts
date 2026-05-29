@@ -34,6 +34,9 @@ const SNAPSHOT_TABLES: (keyof BackupSnapshot)[] = [
   'sessions',
   'cashMovements',
   'config',
+  'customers',
+  'customizationGroups',
+  'customizationItems',
 ];
 
 export interface FileSaver {

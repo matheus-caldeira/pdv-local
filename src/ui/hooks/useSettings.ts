@@ -128,25 +128,18 @@ export function useSettings() {
   }, []);
 
   const importDemo = useCallback(async () => {
-    try {
-      const response = await fetch(`${import.meta.env.BASE_URL}seed.json`);
-      const data = await response.json();
-      const result = await container.importDemo(data);
-      return fold(
-        result,
-        (error) => {
-          toast(error.message, 'error');
-          return false;
-        },
-        () => {
-          toast('Dados de demonstracao importados');
-          return true;
-        },
-      );
-    } catch {
-      toast('Nao foi possivel carregar a demonstracao', 'error');
-      return false;
-    }
+    const result = await container.loadDemo(Date.now());
+    return fold(
+      result,
+      (error) => {
+        toast(error.message, 'error');
+        return false;
+      },
+      () => {
+        toast('Dados de demonstracao importados');
+        return true;
+      },
+    );
   }, [toast]);
 
   return {

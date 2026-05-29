@@ -21,7 +21,7 @@ const exportBackup = vi.fn();
 const exportEntity = vi.fn();
 const importBackup = vi.fn();
 const hasData = vi.fn();
-const importDemo = vi.fn();
+const loadDemo = vi.fn();
 const wipeData = vi.fn();
 
 vi.mock('../../app/container', () => ({
@@ -34,7 +34,7 @@ vi.mock('../../app/container', () => ({
       exportEntity(entity, format),
     importBackup: (entity: string, file: File) => importBackup(entity, file),
     hasData: () => hasData(),
-    importDemo: (data: unknown) => importDemo(data),
+    loadDemo: (now: number) => loadDemo(now),
     wipeData: () => wipeData(),
   },
 }));
@@ -73,7 +73,7 @@ describe('SettingsPage', () => {
     exportEntity.mockReset();
     importBackup.mockReset();
     hasData.mockReset();
-    importDemo.mockReset();
+    loadDemo.mockReset();
     wipeData.mockReset();
     readConfig.mockResolvedValue(right(CONFIG));
   });
@@ -536,12 +536,6 @@ describe('SettingsPage', () => {
     expect(wipeData).not.toHaveBeenCalled();
   });
 
-  function mockSeedFetch() {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      json: async () => ({ products: [] }),
-    } as Response);
-  }
-
   function mockReload() {
     const reloadSpy = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -551,10 +545,9 @@ describe('SettingsPage', () => {
     return reloadSpy;
   }
 
-  it('imports the demo directly when there is no data', async () => {
+  it('loads the demo directly when there is no data', async () => {
     hasData.mockResolvedValue(right(false));
-    importDemo.mockResolvedValue(right(undefined));
-    mockSeedFetch();
+    loadDemo.mockResolvedValue(right(undefined));
     const reloadSpy = mockReload();
     renderPage();
     await waitFor(() =>
@@ -565,15 +558,14 @@ describe('SettingsPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
     );
-    await waitFor(() => expect(importDemo).toHaveBeenCalled());
+    await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await waitFor(() => expect(reloadSpy).toHaveBeenCalled());
   });
 
-  it('imports the demo after both confirmations when data exists', async () => {
+  it('loads the demo after both confirmations when data exists', async () => {
     hasData.mockResolvedValue(right(true));
-    importDemo.mockResolvedValue(right(undefined));
-    mockSeedFetch();
+    loadDemo.mockResolvedValue(right(undefined));
     const reloadSpy = mockReload();
     renderPage();
     await waitFor(() =>
@@ -585,7 +577,7 @@ describe('SettingsPage', () => {
       screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    expect(importDemo).not.toHaveBeenCalled();
+    expect(loadDemo).not.toHaveBeenCalled();
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
         name: 'Continuar',
@@ -596,7 +588,7 @@ describe('SettingsPage', () => {
         name: 'Carregar Demonstracao',
       }),
     );
-    await waitFor(() => expect(importDemo).toHaveBeenCalled());
+    await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     await waitFor(() => expect(reloadSpy).toHaveBeenCalled());
   });
 
@@ -620,7 +612,7 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(importDemo).not.toHaveBeenCalled();
+    expect(loadDemo).not.toHaveBeenCalled();
   });
 
   it('aborts the demo when the second confirmation is cancelled', async () => {
@@ -647,13 +639,12 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(importDemo).not.toHaveBeenCalled();
+    expect(loadDemo).not.toHaveBeenCalled();
   });
 
-  it('toasts when the demo import fails', async () => {
+  it('toasts when the demo load fails', async () => {
     hasData.mockResolvedValue(right(false));
-    importDemo.mockResolvedValue(left(new FakeError('falha demo')));
-    mockSeedFetch();
+    loadDemo.mockResolvedValue(left(new FakeError('falha demo')));
     const reloadSpy = mockReload();
     renderPage();
     await waitFor(() =>
@@ -686,7 +677,7 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(importDemo).not.toHaveBeenCalled();
+    expect(loadDemo).not.toHaveBeenCalled();
   });
 
   it('closes the second demo modal via the backdrop', async () => {
@@ -709,13 +700,12 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(importDemo).not.toHaveBeenCalled();
+    expect(loadDemo).not.toHaveBeenCalled();
   });
 
   it('treats a failed data check as empty', async () => {
     hasData.mockResolvedValue(left(new FakeError('falha check')));
-    importDemo.mockResolvedValue(right(undefined));
-    mockSeedFetch();
+    loadDemo.mockResolvedValue(right(undefined));
     mockReload();
     renderPage();
     await waitFor(() =>
@@ -726,27 +716,7 @@ describe('SettingsPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
     );
-    await waitFor(() => expect(importDemo).toHaveBeenCalled());
+    await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
-
-  it('toasts when the seed cannot be fetched', async () => {
-    hasData.mockResolvedValue(right(false));
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
-    renderPage();
-    await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
-      ).toBeInTheDocument(),
-    );
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
-    );
-    await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Nao foi possivel carregar a demonstracao',
-      ),
-    );
-    expect(importDemo).not.toHaveBeenCalled();
   });
 });
