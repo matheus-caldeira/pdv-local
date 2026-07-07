@@ -1,5 +1,6 @@
 export interface CustomizationGroup {
   id?: number;
+  uid: string;
   name: string;
   required: boolean;
   minQty: number;
@@ -9,7 +10,8 @@ export interface CustomizationGroup {
 
 export interface CustomizationItem {
   id?: number;
-  groupId: number;
+  uid: string;
+  groupUid: string;
   name: string;
   price: number;
   maxQty: number;

@@ -1,5 +1,6 @@
 export interface Session {
   id?: number;
+  uid: string;
   openedAt: number;
   closedAt: number | null;
   cashInitial: number;
@@ -13,7 +14,8 @@ export type CashMovementType = 'sangria' | 'suprimento';
 
 export interface CashMovement {
   id?: number;
-  sessionId: number;
+  uid: string;
+  sessionUid: string;
   type: CashMovementType;
   amount: number;
   reason: string;
