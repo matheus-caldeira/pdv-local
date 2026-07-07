@@ -7,7 +7,11 @@ describe('registry', () => {
     expect(def?.rules).toEqual({ ordering: 'required', payment: 'deferred' });
     expect(def?.fields.business).toEqual([{ key: 'group', kind: 'text' }]);
     expect(def?.fields.customer).toEqual([
-      { key: 'section', kind: 'select', options: ['lobinho', 'escoteiro', 'senior', 'pioneiro'] },
+      {
+        key: 'section',
+        kind: 'select',
+        options: ['lobinho', 'escoteiro', 'senior', 'pioneiro'],
+      },
       { key: 'guardian', kind: 'text' },
     ]);
   });
@@ -19,7 +23,10 @@ describe('registry', () => {
   });
 
   it('resolve tab', () => {
-    expect(getBusinessType('tab')?.rules).toEqual({ ordering: 'optional', payment: 'deferred' });
+    expect(getBusinessType('tab')?.rules).toEqual({
+      ordering: 'optional',
+      payment: 'deferred',
+    });
   });
 
   it('retorna undefined para id desconhecido', () => {

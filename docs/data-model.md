@@ -28,7 +28,7 @@ Documentos relacionados:
   exportação/sync: o merge no master é um **upsert por `uid`**. Dois aparelhos
   nunca geram o mesmo `uid`, então não há colisão ao mesclar (ver Spec #4).
 - **Referências entre entidades são por `uid`, fracas e anuláveis.** Um
-  `productUid`/`customerUid`/`sessionUid` é uma *pista de origem*, não uma FK
+  `productUid`/`customerUid`/`sessionUid` é uma _pista de origem_, não uma FK
   rígida: pode ser `null`/ausente, e a importação **nunca depende** de resolvê-la.
   Dentro de um mesmo aparelho o Dexie ainda usa `id` numérico para performance.
 - Timestamps (`createdAt`, `updatedAt`, `openedAt`, ...) são **epoch em
@@ -171,64 +171,64 @@ erDiagram
 Configuração única do estabelecimento. Sempre um registro (`CONFIG_ID = 1`).
 Local ao aparelho — não sincroniza, não tem `uid`.
 
-| Campo                  | Tipo                    | Notas                                   |
-| ---------------------- | ----------------------- | --------------------------------------- |
-| `id`                   | number PK               | fixo em 1                               |
-| `businessTypeId`       | string                  | **(spec #1)** tipo ativo; `''` se não escolhido |
+| Campo                  | Tipo                    | Notas                                             |
+| ---------------------- | ----------------------- | ------------------------------------------------- |
+| `id`                   | number PK               | fixo em 1                                         |
+| `businessTypeId`       | string                  | **(spec #1)** tipo ativo; `''` se não escolhido   |
 | `extra`                | `Record<string,string>` | **(spec #1)** valores de fields escopo `business` |
-| `name`                 | string                  | nome do estabelecimento                 |
-| `document`             | string                  | CNPJ/CPF                                |
-| `phone`                | string                  |                                         |
-| `address`              | string                  |                                         |
-| `ticketCounter`        | number                  | próximo número de comanda               |
-| `ticketLimit`          | number                  | teto do contador (default 9999)         |
-| `ticketAutoReset`      | boolean                 | reinicia o contador ao atingir o limite |
-| `statusControlEnabled` | boolean                 | liga o controle de `stage` (KDS)        |
+| `name`                 | string                  | nome do estabelecimento                           |
+| `document`             | string                  | CNPJ/CPF                                          |
+| `phone`                | string                  |                                                   |
+| `address`              | string                  |                                                   |
+| `ticketCounter`        | number                  | próximo número de comanda                         |
+| `ticketLimit`          | number                  | teto do contador (default 9999)                   |
+| `ticketAutoReset`      | boolean                 | reinicia o contador ao atingir o limite           |
+| `statusControlEnabled` | boolean                 | liga o controle de `stage` (KDS)                  |
 
 ### Product `products`
 
-| Campo                   | Tipo         | Notas                                   |
-| ----------------------- | ------------ | --------------------------------------- |
-| `id`                    | number PK    | local                                   |
-| `uid`                   | string       | **(remodelagem)** identidade global     |
-| `name`                  | string       | indexado                                |
-| `category`              | string       | indexado                                |
-| `costPrice`             | number       | custo                                   |
-| `salePrice`             | number       | venda                                   |
-| `stock`                 | number       |                                         |
-| `active`                | boolean      | indexado                                |
-| `customizationGroupIds` | number[]     | grupos aplicáveis (por `id` **local**)  |
-| `createdAt` / `updatedAt` | number     | epoch ms                                |
+| Campo                     | Tipo      | Notas                                  |
+| ------------------------- | --------- | -------------------------------------- |
+| `id`                      | number PK | local                                  |
+| `uid`                     | string    | **(remodelagem)** identidade global    |
+| `name`                    | string    | indexado                               |
+| `category`                | string    | indexado                               |
+| `costPrice`               | number    | custo                                  |
+| `salePrice`               | number    | venda                                  |
+| `stock`                   | number    |                                        |
+| `active`                  | boolean   | indexado                               |
+| `customizationGroupIds`   | number[]  | grupos aplicáveis (por `id` **local**) |
+| `createdAt` / `updatedAt` | number    | epoch ms                               |
 
 ### CustomizationGroup `customizationGroups`
 
 Grupo de adicionais (ex.: "Molhos"). `chargeAfter`: cobra a partir da N-ésima
 unidade (as primeiras saem de graça).
 
-| Campo         | Tipo      | Notas                                  |
-| ------------- | --------- | -------------------------------------- |
-| `id`          | number PK | local                                  |
-| `uid`         | string    | **(remodelagem)** identidade global    |
-| `name`        | string    | indexado                               |
-| `required`    | boolean   | obriga escolha                         |
-| `minQty`      | number    | mínimo exigido                         |
-| `maxQty`      | number    | máximo permitido                       |
+| Campo         | Tipo      | Notas                                    |
+| ------------- | --------- | ---------------------------------------- |
+| `id`          | number PK | local                                    |
+| `uid`         | string    | **(remodelagem)** identidade global      |
+| `name`        | string    | indexado                                 |
+| `required`    | boolean   | obriga escolha                           |
+| `minQty`      | number    | mínimo exigido                           |
+| `maxQty`      | number    | máximo permitido                         |
 | `chargeAfter` | number    | nº de unidades gratuitas antes de cobrar |
 
 ### CustomizationItem `customizationItems`
 
 Item de um grupo (ex.: "Maionese").
 
-| Campo         | Tipo      | Notas                              |
-| ------------- | --------- | ---------------------------------- |
-| `id`          | number PK | local                              |
-| `uid`         | string    | **(remodelagem)** identidade global |
+| Campo         | Tipo      | Notas                                                |
+| ------------- | --------- | ---------------------------------------------------- |
+| `id`          | number PK | local                                                |
+| `uid`         | string    | **(remodelagem)** identidade global                  |
 | `groupUid`    | string    | **(remodelagem)** ref fraca → CustomizationGroup.uid |
-| `name`        | string    |                                    |
-| `price`       | number    |                                    |
-| `maxQty`      | number    | máximo deste item                  |
-| `chargeAfter` | number    | gratuitas antes de cobrar          |
-| `active`      | boolean   | indexado                           |
+| `name`        | string    |                                                      |
+| `price`       | number    |                                                      |
+| `maxQty`      | number    | máximo deste item                                    |
+| `chargeAfter` | number    | gratuitas antes de cobrar                            |
+| `active`      | boolean   | indexado                                             |
 
 ### Customer `customers`
 
@@ -236,15 +236,15 @@ Sem unicidade rígida de `phone`: no escoteiro o identificador pode não ser
 telefone. A identificação/deduplicação é responsabilidade do **use case** por
 tipo de negócio (ver Spec #2 — mesclar clientes), não do storage.
 
-| Campo         | Tipo                    | Notas                                |
-| ------------- | ----------------------- | ------------------------------------ |
-| `id`          | number PK               | local                                |
-| `uid`         | string                  | **(remodelagem)** identidade global  |
-| `name`        | string                  | indexado                             |
-| `phone`       | string                  | **(remodelagem)** opcional, **sem UK** |
-| `extra`       | `Record<string,string>` | **(spec #1)** valores de fields escopo `customer` |
-| `addresses`   | string[]                | endereços salvos                     |
-| `createdAt` / `updatedAt` | number      | epoch ms                             |
+| Campo                     | Tipo                    | Notas                                             |
+| ------------------------- | ----------------------- | ------------------------------------------------- |
+| `id`                      | number PK               | local                                             |
+| `uid`                     | string                  | **(remodelagem)** identidade global               |
+| `name`                    | string                  | indexado                                          |
+| `phone`                   | string                  | **(remodelagem)** opcional, **sem UK**            |
+| `extra`                   | `Record<string,string>` | **(spec #1)** valores de fields escopo `customer` |
+| `addresses`               | string[]                | endereços salvos                                  |
+| `createdAt` / `updatedAt` | number                  | epoch ms                                          |
 
 ### Session `sessions`
 
@@ -252,29 +252,29 @@ Sessão de caixa (um "dia" de operação). `cashFinal`/`closedAt` nulos enquanto
 aberta. O `uid` é o que a `Order` referencia — na importação, o master casa a
 sessão por `uid`; se não existir, **cria uma nova** (cada aparelho é um operador).
 
-| Campo         | Tipo           | Notas                          |
-| ------------- | -------------- | ------------------------------ |
-| `id`          | number PK      | local                          |
+| Campo         | Tipo           | Notas                               |
+| ------------- | -------------- | ----------------------------------- |
+| `id`          | number PK      | local                               |
 | `uid`         | string         | **(remodelagem)** identidade global |
-| `openedAt`    | number         | indexado                       |
-| `closedAt`    | number \| null | null = sessão aberta; indexado |
-| `cashInitial` | number         | troco inicial (contado ao abrir) |
-| `cashFinal`   | number \| null | contagem no fechamento         |
-| `notes`       | string         |                                |
+| `openedAt`    | number         | indexado                            |
+| `closedAt`    | number \| null | null = sessão aberta; indexado      |
+| `cashInitial` | number         | troco inicial (contado ao abrir)    |
+| `cashFinal`   | number \| null | contagem no fechamento              |
+| `notes`       | string         |                                     |
 
 ### CashMovement `cashMovements`
 
 Sangria (retirada) ou suprimento (entrada) de caixa dentro de uma sessão.
 
-| Campo        | Tipo      | Notas                                 |
-| ------------ | --------- | ------------------------------------- |
-| `id`         | number PK | local                                 |
-| `uid`        | string    | **(remodelagem)** identidade global   |
+| Campo        | Tipo      | Notas                                     |
+| ------------ | --------- | ----------------------------------------- |
+| `id`         | number PK | local                                     |
+| `uid`        | string    | **(remodelagem)** identidade global       |
 | `sessionUid` | string    | **(remodelagem)** ref fraca → Session.uid |
-| `type`       | string    | `'sangria'` \| `'suprimento'`; indexado |
-| `amount`     | number    |                                       |
-| `reason`     | string    |                                       |
-| `createdAt`  | number    | epoch ms                              |
+| `type`       | string    | `'sangria'` \| `'suprimento'`; indexado   |
+| `amount`     | number    |                                           |
+| `reason`     | string    |                                           |
+| `createdAt`  | number    | epoch ms                                  |
 
 ### Order `orders`
 
@@ -283,50 +283,50 @@ embutidos (snapshots), sem depender de Product/Customer/Session existirem no
 destino. Referências são por `uid`, fracas e anuláveis. Não se vincula a
 `BusinessConfig` — guarda apenas `businessTypeId` para saber o modo de origem.
 
-| Campo           | Tipo               | Notas                                                  |
-| --------------- | ------------------ | ------------------------------------------------------ |
-| `id`            | number PK          | local                                                  |
-| `uid`           | string             | **(remodelagem)** identidade global                    |
-| `businessTypeId`| string             | **(remodelagem)** modo de origem (`scout`, `quick_sale`, ...) |
-| `sessionUid`    | string             | **(remodelagem)** ref fraca → Session.uid              |
-| `customerUid`   | string \| —        | **(remodelagem)** ref fraca → Customer.uid (opcional)  |
-| `customerName`  | string             | snapshot                                               |
-| `customerPhone` | string             | snapshot                                               |
-| `ticket`        | string             | número da comanda                                      |
-| `total`         | number             |                                                        |
-| `paymentMethod` | string \| null     | indexado; null enquanto não pago                       |
-| `stage`         | OrderStage         | `aceito` \| `em_preparo` \| `a_caminho` \| `finalizado`; indexado |
-| `status`        | OrderStatus        | `open` \| `paid` \| `pending` \| `cancelled`           |
-| `items`         | OrderItem[]        | embutido (ver abaixo)                                  |
-| `createdAt` / `updatedAt` | number   | epoch ms; `createdAt` indexado                         |
+| Campo                     | Tipo           | Notas                                                             |
+| ------------------------- | -------------- | ----------------------------------------------------------------- |
+| `id`                      | number PK      | local                                                             |
+| `uid`                     | string         | **(remodelagem)** identidade global                               |
+| `businessTypeId`          | string         | **(remodelagem)** modo de origem (`scout`, `quick_sale`, ...)     |
+| `sessionUid`              | string         | **(remodelagem)** ref fraca → Session.uid                         |
+| `customerUid`             | string \| —    | **(remodelagem)** ref fraca → Customer.uid (opcional)             |
+| `customerName`            | string         | snapshot                                                          |
+| `customerPhone`           | string         | snapshot                                                          |
+| `ticket`                  | string         | número da comanda                                                 |
+| `total`                   | number         |                                                                   |
+| `paymentMethod`           | string \| null | indexado; null enquanto não pago                                  |
+| `stage`                   | OrderStage     | `aceito` \| `em_preparo` \| `a_caminho` \| `finalizado`; indexado |
+| `status`                  | OrderStatus    | `open` \| `paid` \| `pending` \| `cancelled`                      |
+| `items`                   | OrderItem[]    | embutido (ver abaixo)                                             |
+| `createdAt` / `updatedAt` | number         | epoch ms; `createdAt` indexado                                    |
 
 ### OrderItem (embutido em `Order.items`)
 
 Linha da comanda, **totalmente snapshot** — não depende do produto existir.
 `productUid` é só uma pista de origem (anulável).
 
-| Campo                | Tipo                       | Notas                              |
-| -------------------- | -------------------------- | ---------------------------------- |
-| `productUid`         | string \| —                | **(remodelagem)** ref fraca → Product.uid (pista) |
-| `name`               | string                     | snapshot                           |
-| `salePrice`          | number                     | snapshot                           |
-| `costPrice`          | number                     | snapshot                           |
-| `qty`                | number                     |                                    |
-| `observation`        | string \| —                | opcional                           |
-| `customizations`     | OrderCustomizationItem[] \| — | **(remodelagem)** lista **plana** de adicionais |
-| `customizationTotal` | number \| —                | acréscimo dos adicionais           |
+| Campo                | Tipo                          | Notas                                             |
+| -------------------- | ----------------------------- | ------------------------------------------------- |
+| `productUid`         | string \| —                   | **(remodelagem)** ref fraca → Product.uid (pista) |
+| `name`               | string                        | snapshot                                          |
+| `salePrice`          | number                        | snapshot                                          |
+| `costPrice`          | number                        | snapshot                                          |
+| `qty`                | number                        |                                                   |
+| `observation`        | string \| —                   | opcional                                          |
+| `customizations`     | OrderCustomizationItem[] \| — | **(remodelagem)** lista **plana** de adicionais   |
+| `customizationTotal` | number \| —                   | acréscimo dos adicionais                          |
 
 ### OrderCustomizationItem (embutido em `OrderItem.customizations`)
 
 Achatado: o nome do grupo vira coluna do próprio item (não há mais nível
 `OrderCustomization` intermediário). Tudo snapshot.
 
-| Campo       | Tipo   | Notas                        |
-| ----------- | ------ | ---------------------------- |
+| Campo       | Tipo   | Notas                               |
+| ----------- | ------ | ----------------------------------- |
 | `groupName` | string | **(remodelagem)** snapshot do grupo |
-| `name`      | string | snapshot do item             |
-| `qty`       | number |                              |
-| `price`     | number | snapshot                     |
+| `name`      | string | snapshot do item                    |
+| `qty`       | number |                                     |
+| `price`     | number | snapshot                            |
 
 ## Índices (visão de infra — Dexie hoje)
 
@@ -335,16 +335,16 @@ Só para referência; **não** faz parte do modelo lógico. Fonte:
 A remodelagem adiciona `uid` como índice único (`&uid`) nas stores
 sincronizáveis e troca refs numéricas por refs de `uid`.
 
-| Store                 | Índices (atuais)                                            |
-| --------------------- | ----------------------------------------------------------- |
-| `products`            | `++id, name, category, active`                              |
-| `orders`              | `++id, sessionId, status, paymentMethod, createdAt, stage`  |
-| `sessions`            | `++id, openedAt, closedAt`                                  |
-| `cashMovements`       | `++id, sessionId, type`                                     |
-| `config`              | `++id`                                                       |
-| `customizationGroups` | `++id, name`                                                |
-| `customizationItems`  | `++id, groupId, active`                                     |
-| `customers`           | `++id, &phone, name`                                        |
+| Store                 | Índices (atuais)                                           |
+| --------------------- | ---------------------------------------------------------- |
+| `products`            | `++id, name, category, active`                             |
+| `orders`              | `++id, sessionId, status, paymentMethod, createdAt, stage` |
+| `sessions`            | `++id, openedAt, closedAt`                                 |
+| `cashMovements`       | `++id, sessionId, type`                                    |
+| `config`              | `++id`                                                     |
+| `customizationGroups` | `++id, name`                                               |
+| `customizationItems`  | `++id, groupId, active`                                    |
+| `customers`           | `++id, &phone, name`                                       |
 
 ## Mudanças planejadas
 

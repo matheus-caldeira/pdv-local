@@ -33,7 +33,9 @@ describe('splitExtra', () => {
     expect(result.orphans).toEqual([]);
   });
   it('não-declaradas com valor vão para orphans', () => {
-    const result = splitExtra({ section: 'lobinho', color: 'azul' }, ['section']);
+    const result = splitExtra({ section: 'lobinho', color: 'azul' }, [
+      'section',
+    ]);
     expect(result.orphans).toEqual([{ key: 'color', value: 'azul' }]);
   });
   it('ignora não-declaradas com valor vazio', () => {

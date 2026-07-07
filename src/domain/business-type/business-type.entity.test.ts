@@ -19,7 +19,10 @@ describe('business-type.entity', () => {
   });
 
   it('constrói BusinessTypeRules', () => {
-    const rules: BusinessTypeRules = { ordering: 'required', payment: 'deferred' };
+    const rules: BusinessTypeRules = {
+      ordering: 'required',
+      payment: 'deferred',
+    };
     expect(rules.ordering).toBe('required');
   });
 

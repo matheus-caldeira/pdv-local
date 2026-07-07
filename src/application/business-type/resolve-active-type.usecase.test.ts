@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { makeResolveActiveType } from './resolve-active-type.usecase';
-import { isLeft, isRight, right, type Either } from '../../domain/shared/either';
+import {
+  isLeft,
+  isRight,
+  right,
+  type Either,
+} from '../../domain/shared/either';
 import type { InfrastructureError } from '../../infrastructure/errors';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
@@ -13,7 +18,9 @@ function configRepoWith(businessTypeId: string) {
 
 describe('makeResolveActiveType', () => {
   it('resolve a definição scout', async () => {
-    const resolve = makeResolveActiveType({ configRepo: configRepoWith('scout') });
+    const resolve = makeResolveActiveType({
+      configRepo: configRepoWith('scout'),
+    });
     const result = await resolve();
     expect(isRight(result)).toBe(true);
     if (isRight(result)) expect(result.right.id).toBe('scout');
@@ -22,10 +29,13 @@ describe('makeResolveActiveType', () => {
     const resolve = makeResolveActiveType({ configRepo: configRepoWith('') });
     const result = await resolve();
     expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.left.code).toBe('BUSINESS_TYPE_NOT_SELECTED');
+    if (isLeft(result))
+      expect(result.left.code).toBe('BUSINESS_TYPE_NOT_SELECTED');
   });
   it('falha UNKNOWN_BUSINESS_TYPE para id desconhecido', async () => {
-    const resolve = makeResolveActiveType({ configRepo: configRepoWith('xyz') });
+    const resolve = makeResolveActiveType({
+      configRepo: configRepoWith('xyz'),
+    });
     const result = await resolve();
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('UNKNOWN_BUSINESS_TYPE');

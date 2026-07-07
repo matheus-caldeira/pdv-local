@@ -8,7 +8,11 @@ const scout: BusinessTypeDefinition = {
   fields: {
     business: [{ key: 'group', kind: 'text' }],
     customer: [
-      { key: 'section', kind: 'select', options: ['lobinho', 'escoteiro', 'senior', 'pioneiro'] },
+      {
+        key: 'section',
+        kind: 'select',
+        options: ['lobinho', 'escoteiro', 'senior', 'pioneiro'],
+      },
       { key: 'guardian', kind: 'text' },
     ],
   },
@@ -32,6 +36,8 @@ const registry: Record<string, BusinessTypeDefinition> = {
   [tab.id]: tab,
 };
 
-export function getBusinessType(id: string): BusinessTypeDefinition | undefined {
+export function getBusinessType(
+  id: string,
+): BusinessTypeDefinition | undefined {
   return registry[id];
 }

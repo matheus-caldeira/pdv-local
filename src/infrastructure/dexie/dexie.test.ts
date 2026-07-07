@@ -385,7 +385,9 @@ describe('repository error paths', () => {
   it('DexieProductRepository returns Left when the table fails', async () => {
     const repo = new DexieProductRepository(db);
     db.close();
-    const result = await repo.decrementStock([{ productUid: 'prod-x', qty: 1 }]);
+    const result = await repo.decrementStock([
+      { productUid: 'prod-x', qty: 1 },
+    ]);
     expect(isLeft(result)).toBe(true);
   });
 
