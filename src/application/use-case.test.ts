@@ -19,12 +19,17 @@ class TestError extends AppError {
 const fakeRepositories = {} as Repositories;
 
 class SpyUseCase extends UseCase<number, string> {
+  private readonly calls: string[];
+  private readonly failAt?: 'pre' | 'execute' | 'post';
+
   constructor(
     uow: UnitOfWork,
-    private readonly calls: string[],
-    private readonly failAt?: 'pre' | 'execute' | 'post',
+    calls: string[],
+    failAt?: 'pre' | 'execute' | 'post',
   ) {
     super(uow);
+    this.calls = calls;
+    this.failAt = failAt;
   }
   protected async pre(input: number): Promise<Either<AppError, void>> {
     this.calls.push('pre');

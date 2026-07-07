@@ -21,8 +21,11 @@ class MapContext implements UseCaseContext {
 
 export abstract class UseCase<Input, Output> {
   protected readonly context: UseCaseContext = new MapContext();
+  protected readonly uow: UnitOfWork;
 
-  constructor(protected readonly uow: UnitOfWork) {}
+  constructor(uow: UnitOfWork) {
+    this.uow = uow;
+  }
 
   protected abstract pre(
     input: Input,
