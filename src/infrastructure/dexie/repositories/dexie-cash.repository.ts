@@ -1,4 +1,5 @@
 import { left, right, type Either } from '../../../domain/shared/either';
+import { createUid } from '../../../domain/shared/uid';
 import type {
   CashMovement,
   NewCashMovement,
@@ -42,6 +43,7 @@ export class DexieCashRepository implements CashRepository {
   ): Promise<Either<InfrastructureError, Session>> {
     try {
       const session = {
+        uid: createUid(),
         openedAt: Date.now(),
         closedAt: null,
         cashInitial,
@@ -56,19 +58,24 @@ export class DexieCashRepository implements CashRepository {
   }
 
   async closeSession(
-    id: number,
+    uid: string,
     cashFinal: number,
     notes: string,
   ): Promise<Either<InfrastructureError, Session>> {
     try {
       const patch = { closedAt: Date.now(), cashFinal, notes };
-      await this.db.sessions.update(id, patch);
-      const stored = await this.db.sessions.get(id);
+      await this.db.sessions
+        .filter((session) => session.uid === uid)
+        .modify(patch);
+      const stored = await this.db.sessions
+        .filter((session) => session.uid === uid)
+        .first();
       return right({
+        uid,
+        id: stored?.id,
         openedAt: stored?.openedAt ?? Date.now(),
         cashInitial: stored?.cashInitial ?? 0,
         ...patch,
-        id,
       });
     } catch (cause) {
       return left(toInfrastructureError(cause));
@@ -76,12 +83,11 @@ export class DexieCashRepository implements CashRepository {
   }
 
   async listMovements(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, CashMovement[]>> {
     try {
       const movements = await this.db.cashMovements
-        .where('sessionId')
-        .equals(sessionId)
+        .filter((movement) => movement.sessionUid === sessionUid)
         .toArray();
       movements.sort((a, b) => b.createdAt - a.createdAt);
       return right(movements);
