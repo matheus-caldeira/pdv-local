@@ -89,3 +89,29 @@ export class SessionAlreadyOpenError extends DomainError {
     super('Já existe um caixa aberto.');
   }
 }
+
+export class MissingTicketError extends DomainError {
+  readonly code = 'MISSING_TICKET';
+
+  constructor() {
+    super('Informe a comanda para registrar o pedido.');
+  }
+}
+
+export class BusinessTypeNotSelectedError extends DomainError {
+  readonly code = 'BUSINESS_TYPE_NOT_SELECTED';
+
+  constructor() {
+    super('Nenhum tipo de negócio foi selecionado.');
+  }
+}
+
+export class UnknownBusinessTypeError extends DomainError {
+  readonly code = 'UNKNOWN_BUSINESS_TYPE';
+  readonly businessTypeId: string;
+
+  constructor(businessTypeId: string) {
+    super(`Tipo de negócio desconhecido: "${businessTypeId}".`);
+    this.businessTypeId = businessTypeId;
+  }
+}
