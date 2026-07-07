@@ -9,7 +9,7 @@ import {
 } from './order.report';
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
-  productId: 1,
+  productUid: 'product-1',
   name: 'X-Burger',
   salePrice: 20,
   costPrice: 8,
@@ -19,7 +19,9 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: 1,
-  sessionId: 1,
+  uid: 'order-1',
+  businessTypeId: 'quick_sale',
+  sessionUid: 'session-1',
   items: [item()],
   total: 20,
   paymentMethod: 'pix',

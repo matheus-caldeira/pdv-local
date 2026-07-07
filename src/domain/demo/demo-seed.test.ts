@@ -46,16 +46,43 @@ describe('generateDemoSeed', () => {
 
   it('links orders to existing sessions, products and customers', () => {
     const seed = generateDemoSeed(NOW);
-    const sessionIds = new Set((seed.sessions as Session[]).map((s) => s.id));
-    const productIds = new Set((seed.products as Product[]).map((p) => p.id));
-    const customerIds = new Set(
-      (seed.customers as { id: number }[]).map((c) => c.id),
+    const sessionUids = new Set((seed.sessions as Session[]).map((s) => s.uid));
+    const productUids = new Set((seed.products as Product[]).map((p) => p.uid));
+    const customerUids = new Set(
+      (seed.customers as { uid: string }[]).map((c) => c.uid),
     );
     for (const order of seed.orders as Order[]) {
-      expect(sessionIds.has(order.sessionId)).toBe(true);
-      expect(customerIds.has(order.customerId as number)).toBe(true);
+      expect(sessionUids.has(order.sessionUid)).toBe(true);
+      expect(customerUids.has(order.customerUid as string)).toBe(true);
       for (const item of order.items) {
-        expect(productIds.has(item.productId)).toBe(true);
+        expect(productUids.has(item.productUid as string)).toBe(true);
+      }
+    }
+  });
+
+  it('assigns a truthy uid and businessTypeId to every order', () => {
+    const orders = generateDemoSeed(NOW).orders as Order[];
+    expect(orders.length).toBeGreaterThan(0);
+    for (const order of orders) {
+      expect(order.uid).toBeTruthy();
+      expect(order.sessionUid).toBeTruthy();
+      expect(order.businessTypeId).toBeTruthy();
+    }
+  });
+
+  it('flattens customizations without an OrderCustomization wrapper', () => {
+    const orders = generateDemoSeed(NOW).orders as Order[];
+    const customizedItems = orders
+      .flatMap((order) => order.items)
+      .filter((item) => (item.customizations?.length ?? 0) > 0);
+    expect(customizedItems.length).toBeGreaterThan(0);
+    for (const item of customizedItems) {
+      for (const customization of item.customizations ?? []) {
+        expect(customization).not.toHaveProperty('items');
+        expect(typeof customization.groupName).toBe('string');
+        expect(typeof customization.name).toBe('string');
+        expect(typeof customization.qty).toBe('number');
+        expect(typeof customization.price).toBe('number');
       }
     }
   });
