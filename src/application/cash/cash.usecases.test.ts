@@ -65,8 +65,10 @@ class FakeCashRepository implements CashRepository {
     cashInitial: number,
   ): Promise<Either<InfrastructureError, Session>> {
     if (this.openSessionResult) return this.openSessionResult;
+    const id = this.nextSessionId++;
     const session: Session = {
-      id: this.nextSessionId++,
+      id,
+      uid: `session-${id}`,
       openedAt: 1,
       closedAt: null,
       cashInitial,
@@ -78,12 +80,12 @@ class FakeCashRepository implements CashRepository {
   }
 
   async closeSession(
-    id: number,
+    uid: string,
     cashFinal: number,
     notes: string,
   ): Promise<Either<InfrastructureError, Session>> {
     if (this.closeSessionResult) return this.closeSessionResult;
-    const session = this.sessions.find((s) => s.id === id)!;
+    const session = this.sessions.find((s) => s.uid === uid)!;
     session.closedAt = 2;
     session.cashFinal = cashFinal;
     session.notes = notes;
@@ -91,10 +93,10 @@ class FakeCashRepository implements CashRepository {
   }
 
   async listMovements(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, CashMovement[]>> {
     if (this.listMovementsResult) return this.listMovementsResult;
-    return right(this.movements.filter((m) => m.sessionId === sessionId));
+    return right(this.movements.filter((m) => m.sessionUid === sessionUid));
   }
 
   async addMovement(
@@ -106,6 +108,17 @@ class FakeCashRepository implements CashRepository {
     return right(stored);
   }
 }
+
+const session = (over: Partial<Session> = {}): Session => ({
+  id: 1,
+  uid: 'session-1',
+  openedAt: 1,
+  closedAt: null,
+  cashInitial: 0,
+  cashFinal: null,
+  notes: '',
+  ...over,
+});
 
 class FakeOrderRepository implements OrderRepository {
   orders: Order[] = [];
@@ -122,10 +135,10 @@ class FakeOrderRepository implements OrderRepository {
   }
 
   async listBySession(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, Order[]>> {
     if (this.listResult) return this.listResult;
-    return right(this.orders.filter((o) => o.sessionId === sessionId));
+    return right(this.orders.filter((o) => o.sessionUid === sessionUid));
   }
 
   observeBySession(): Observable<Order[]> {
@@ -151,7 +164,9 @@ class FakeOrderRepository implements OrderRepository {
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: 1,
-  sessionId: 1,
+  uid: 'order-1',
+  businessTypeId: 'quick_sale',
+  sessionUid: 'session-1',
   items: [],
   total: 100,
   paymentMethod: 'dinheiro',
@@ -249,7 +264,7 @@ describe('cash use cases', () => {
       });
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
-        expect(result.right.sessionId).toBe(1);
+        expect(result.right.sessionUid).toBe('session-1');
         expect(result.right.amount).toBe(30);
       }
     });
@@ -290,22 +305,8 @@ describe('cash use cases', () => {
   describe('makeLoadCashSummary', () => {
     it('returns an empty summary with past sessions sorted by recency when none is open', async () => {
       cash.sessions = [
-        {
-          id: 1,
-          openedAt: 1,
-          closedAt: 5,
-          cashInitial: 0,
-          cashFinal: 0,
-          notes: '',
-        },
-        {
-          id: 2,
-          openedAt: 10,
-          closedAt: 20,
-          cashInitial: 0,
-          cashFinal: 0,
-          notes: '',
-        },
+        session({ id: 1, uid: 'session-1', openedAt: 1, closedAt: 5 }),
+        session({ id: 2, uid: 'session-2', openedAt: 10, closedAt: 20 }),
       ];
       const result = await makeLoadCashSummary(cash, orders)();
       expect(isRight(result)).toBe(true);
@@ -321,7 +322,8 @@ describe('cash use cases', () => {
       cash.movements = [
         {
           id: 1,
-          sessionId: 1,
+          uid: 'movement-1',
+          sessionUid: 'session-1',
           type: 'suprimento',
           amount: 50,
           reason: '',
@@ -329,7 +331,8 @@ describe('cash use cases', () => {
         },
         {
           id: 2,
-          sessionId: 1,
+          uid: 'movement-2',
+          sessionUid: 'session-1',
           type: 'sangria',
           amount: 20,
           reason: '',

@@ -9,8 +9,8 @@ export function makeListOrders(repository: OrderRepository) {
 }
 
 export function makeObserveSessionOrders(repository: OrderRepository) {
-  return (sessionId: number): Observable<Order[]> =>
-    repository.observeBySession(sessionId);
+  return (sessionUid: string): Observable<Order[]> =>
+    repository.observeBySession(sessionUid);
 }
 
 export function makeObserveActiveOrders(repository: OrderRepository) {
@@ -18,15 +18,19 @@ export function makeObserveActiveOrders(repository: OrderRepository) {
 }
 
 export function makeMarkOrderPaid(repository: OrderRepository) {
-  return (id: number, paymentMethod: string): Promise<Either<AppError, void>> =>
-    repository.markAsPaid(id, paymentMethod);
+  return (
+    uid: string,
+    paymentMethod: string,
+  ): Promise<Either<AppError, void>> =>
+    repository.markAsPaid(uid, paymentMethod);
 }
 
 export function makeCancelOrder(repository: OrderRepository) {
-  return (id: number): Promise<Either<AppError, void>> => repository.cancel(id);
+  return (uid: string): Promise<Either<AppError, void>> =>
+    repository.cancel(uid);
 }
 
 export function makeSetOrderStage(repository: OrderRepository) {
-  return (id: number, stage: OrderStage): Promise<Either<AppError, void>> =>
-    repository.setStage(id, stage);
+  return (uid: string, stage: OrderStage): Promise<Either<AppError, void>> =>
+    repository.setStage(uid, stage);
 }

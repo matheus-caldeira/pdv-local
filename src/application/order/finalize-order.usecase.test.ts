@@ -32,8 +32,8 @@ class FakeRepositories implements Repositories {
     null;
 
   claimTicketResult: Either<InfrastructureError, string> = right('0001');
-  findOrCreateResult: Either<InfrastructureError, number | undefined> =
-    right(7);
+  findOrCreateResult: Either<InfrastructureError, string | undefined> =
+    right('cust-uid');
   decrementResult: Either<InfrastructureError, void> = right(undefined);
   createResult: Either<InfrastructureError, Order> | null = null;
 
@@ -130,7 +130,7 @@ class FakeUnitOfWork implements UnitOfWork {
 }
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
-  productId: 1,
+  productUid: '1',
   name: 'X-Burger',
   salePrice: 20,
   costPrice: 8,
@@ -141,7 +141,8 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
 const baseInput = (
   over: Partial<FinalizeOrderInput> = {},
 ): FinalizeOrderInput => ({
-  sessionId: 1,
+  sessionUid: 's1',
+  businessTypeId: 'quick_sale',
   items: [item()],
   paymentMethod: 'pix',
   status: 'paid',
@@ -177,7 +178,10 @@ describe('makeFinalizeOrder', () => {
     expect(repositories.createdOrder?.total).toBe(40);
     expect(repositories.createdOrder?.stage).toBe('aceito');
     expect(repositories.createdOrder?.ticket).toBe('0001');
-    expect(repositories.createdOrder?.customerId).toBe(7);
+    expect(repositories.createdOrder?.uid).toBeTruthy();
+    expect(repositories.createdOrder?.businessTypeId).toBe('quick_sale');
+    expect(repositories.createdOrder?.sessionUid).toBe('s1');
+    expect(repositories.createdOrder?.customerUid).toBe('cust-uid');
     expect(repositories.decrements).toEqual([{ productId: 1, qty: 2 }]);
   });
 

@@ -1,5 +1,6 @@
 import { isLeft, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
+import { createUid } from '../../domain/shared/uid';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 import type {
   NewOrder,
@@ -13,7 +14,8 @@ import {
 } from '../../domain/order/order.rules';
 
 export interface FinalizeOrderInput {
-  sessionId: number;
+  sessionUid: string;
+  businessTypeId: string;
   items: OrderItem[];
   paymentMethod: string | null;
   status: OrderStatus;
@@ -47,21 +49,25 @@ export function makeFinalizeOrder(uow: UnitOfWork) {
       if (isLeft(customerResult)) return customerResult;
 
       const stockResult = await repositories.products.decrementStock(
-        input.items.map((item) => ({
-          productId: item.productId,
-          qty: item.qty,
-        })),
+        input.items
+          .filter((item) => item.productUid !== undefined)
+          .map((item) => ({
+            productId: Number(item.productUid),
+            qty: item.qty,
+          })),
       );
       if (isLeft(stockResult)) return stockResult;
 
       const now = Date.now();
       const order: NewOrder = {
-        sessionId: input.sessionId,
+        uid: createUid(),
+        businessTypeId: input.businessTypeId,
+        sessionUid: input.sessionUid,
         items: input.items,
         total,
         paymentMethod: input.paymentMethod,
         customerName: input.customerName.trim(),
-        customerId: customerResult.right,
+        customerUid: customerResult.right,
         customerPhone: input.customerPhone.trim(),
         ticket: ticketResult.right,
         status: input.status,
