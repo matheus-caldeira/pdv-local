@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { isLeft, isRight, left, right } from '../../domain/shared/either';
+import { createUid } from '../../domain/shared/uid';
 import type { NewOrder } from '../../domain/order/order.entity';
 import { PDVDatabase } from './dexie-database';
 import { DexieConfigRepository } from './repositories/dexie-config.repository';
@@ -29,7 +30,9 @@ afterEach(async () => {
 });
 
 const newOrder = (over: Partial<NewOrder> = {}): NewOrder => ({
-  sessionId: 1,
+  uid: createUid(),
+  businessTypeId: 'default',
+  sessionUid: 'sess-1',
   items: [],
   total: 0,
   paymentMethod: 'pix',
@@ -222,10 +225,10 @@ describe('DexieOrderRepository', () => {
 
   it('lists only the orders of a given session', async () => {
     const repo = new DexieOrderRepository(db);
-    await repo.create(newOrder({ sessionId: 1 }));
-    await repo.create(newOrder({ sessionId: 1 }));
-    await repo.create(newOrder({ sessionId: 2 }));
-    const result = await repo.listBySession(1);
+    await repo.create(newOrder({ sessionUid: 'sess-1' }));
+    await repo.create(newOrder({ sessionUid: 'sess-1' }));
+    await repo.create(newOrder({ sessionUid: 'sess-2' }));
+    const result = await repo.listBySession('sess-1');
     expect(isRight(result) && result.right).toHaveLength(2);
   });
 
@@ -244,7 +247,7 @@ describe('DexieOrderRepository', () => {
     const repo = new DexieOrderRepository(db);
     const created = await repo.create(newOrder({ status: 'open' }));
     if (!isRight(created)) throw new Error('setup');
-    const result = await repo.markAsPaid(created.right.id!, 'dinheiro');
+    const result = await repo.markAsPaid(created.right.uid, 'dinheiro');
     expect(isRight(result)).toBe(true);
     const stored = await db.orders.get(created.right.id!);
     expect(stored?.status).toBe('paid');
@@ -255,7 +258,7 @@ describe('DexieOrderRepository', () => {
     const repo = new DexieOrderRepository(db);
     const created = await repo.create(newOrder());
     if (!isRight(created)) throw new Error('setup');
-    await repo.cancel(created.right.id!);
+    await repo.cancel(created.right.uid);
     const stored = await db.orders.get(created.right.id!);
     expect(stored?.status).toBe('cancelled');
   });
@@ -264,16 +267,16 @@ describe('DexieOrderRepository', () => {
     const repo = new DexieOrderRepository(db);
     const created = await repo.create(newOrder({ stage: 'aceito' }));
     if (!isRight(created)) throw new Error('setup');
-    await repo.setStage(created.right.id!, 'em_preparo');
+    await repo.setStage(created.right.uid, 'em_preparo');
     const stored = await db.orders.get(created.right.id!);
     expect(stored?.stage).toBe('em_preparo');
   });
 
   it('observes the orders of a session reactively', async () => {
     const repo = new DexieOrderRepository(db);
-    await repo.create(newOrder({ sessionId: 1 }));
+    await repo.create(newOrder({ sessionUid: 'sess-1' }));
     const first = await new Promise<number>((resolve) => {
-      const sub = repo.observeBySession(1).subscribe((orders) => {
+      const sub = repo.observeBySession('sess-1').subscribe((orders) => {
         sub.unsubscribe();
         resolve(orders.length);
       });
@@ -372,17 +375,17 @@ describe('repository error paths', () => {
   it('DexieOrderRepository returns Left when listing fails', async () => {
     const repo = new DexieOrderRepository(db);
     db.close();
-    expect(isLeft(await repo.listBySession(1))).toBe(true);
+    expect(isLeft(await repo.listBySession('sess-1'))).toBe(true);
     expect(isLeft(await repo.listAll())).toBe(true);
-    expect(isLeft(await repo.markAsPaid(1, 'pix'))).toBe(true);
-    expect(isLeft(await repo.cancel(1))).toBe(true);
-    expect(isLeft(await repo.setStage(1, 'aceito'))).toBe(true);
+    expect(isLeft(await repo.markAsPaid('ord-1', 'pix'))).toBe(true);
+    expect(isLeft(await repo.cancel('ord-1'))).toBe(true);
+    expect(isLeft(await repo.setStage('ord-1', 'aceito'))).toBe(true);
   });
 
   it('DexieProductRepository returns Left when the table fails', async () => {
     const repo = new DexieProductRepository(db);
     db.close();
-    const result = await repo.decrementStock([{ productId: 1, qty: 1 }]);
+    const result = await repo.decrementStock([{ productUid: 'prod-x', qty: 1 }]);
     expect(isLeft(result)).toBe(true);
   });
 
