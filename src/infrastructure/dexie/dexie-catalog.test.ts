@@ -78,6 +78,7 @@ describe('DexieProductRepository CRUD', () => {
 
 describe('DexieCustomizationRepository CRUD', () => {
   const group = {
+    uid: 'group-fixture-uid',
     name: 'Ponto',
     required: true,
     minQty: 1,
@@ -85,7 +86,8 @@ describe('DexieCustomizationRepository CRUD', () => {
     chargeAfter: 0,
   };
   const item = {
-    groupId: 1,
+    uid: 'item-fixture-uid',
+    groupUid: 'group-1',
     name: 'Bem passado',
     price: 0,
     maxQty: 1,
@@ -98,14 +100,19 @@ describe('DexieCustomizationRepository CRUD', () => {
     const created = await repo.createGroup(group);
     expect(isRight(created)).toBe(true);
     const gid = isRight(created) ? created.right.id! : 0;
+    const guid = isRight(created) ? created.right.uid : '';
     await repo.updateGroup(gid, { ...group, name: 'Ponto da carne' });
     expect((await db.customizationGroups.get(gid))?.name).toBe(
       'Ponto da carne',
     );
 
-    const createdItem = await repo.createItem({ ...item, groupId: gid });
+    const createdItem = await repo.createItem({ ...item, groupUid: guid });
     const iid = isRight(createdItem) ? createdItem.right.id! : 0;
-    await repo.updateItem(iid, { ...item, groupId: gid, name: 'Mal passado' });
+    await repo.updateItem(iid, {
+      ...item,
+      groupUid: guid,
+      name: 'Mal passado',
+    });
     expect((await db.customizationItems.get(iid))?.name).toBe('Mal passado');
 
     const groups = await repo.listGroups();

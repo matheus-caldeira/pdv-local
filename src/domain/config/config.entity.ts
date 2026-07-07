@@ -8,4 +8,6 @@ export interface BusinessConfig {
   ticketLimit: number;
   ticketAutoReset: boolean;
   statusControlEnabled: boolean;
+  businessTypeId: string;
+  extra: Record<string, string>;
 }

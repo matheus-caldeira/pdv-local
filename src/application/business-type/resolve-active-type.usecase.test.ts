@@ -10,9 +10,21 @@ import type { InfrastructureError } from '../../infrastructure/errors';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
 function configRepoWith(businessTypeId: string) {
+  const config: BusinessConfig = {
+    name: '',
+    document: '',
+    phone: '',
+    address: '',
+    ticketCounter: 1,
+    ticketLimit: 9999,
+    ticketAutoReset: true,
+    statusControlEnabled: false,
+    businessTypeId,
+    extra: {},
+  };
   return {
     read: async (): Promise<Either<InfrastructureError, BusinessConfig>> =>
-      right({ businessTypeId } as BusinessConfig),
+      right(config),
   };
 }
 
