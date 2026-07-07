@@ -133,7 +133,7 @@ describe('CashPage', () => {
       screen.getByLabelText('Dinheiro Inicial (R$)'),
       '75.5',
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessao' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessão' }));
     expect(openSession).toHaveBeenCalledWith(75.5);
     await waitFor(() =>
       expect(screen.getByLabelText('Dinheiro Inicial (R$)')).toHaveValue(null),
@@ -146,20 +146,20 @@ describe('CashPage', () => {
     await waitFor(() =>
       expect(screen.getByText('Abrir Caixa')).toBeInTheDocument(),
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessao' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessão' }));
     expect(openSession).toHaveBeenCalledWith(0);
   });
 
   it('keeps the input when opening fails', async () => {
-    openSession.mockResolvedValue(left(new FakeError('ja aberto')));
+    openSession.mockResolvedValue(left(new FakeError('já aberto')));
     renderPage();
     await waitFor(() =>
       expect(screen.getByText('Abrir Caixa')).toBeInTheDocument(),
     );
     await userEvent.type(screen.getByLabelText('Dinheiro Inicial (R$)'), '12');
-    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessao' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir Sessão' }));
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('ja aberto'),
+      expect(screen.getByRole('status')).toHaveTextContent('já aberto'),
     );
     expect(screen.getByLabelText('Dinheiro Inicial (R$)')).toHaveValue(12);
   });
@@ -175,7 +175,7 @@ describe('CashPage', () => {
     expect(screen.getByText('Dinheiro')).toBeInTheDocument();
     expect(screen.getByText('PIX')).toBeInTheDocument();
     expect(screen.getByText('brinde')).toBeInTheDocument();
-    expect(screen.getByText('Movimentacoes')).toBeInTheDocument();
+    expect(screen.getByText('Movimentações')).toBeInTheDocument();
     expect(screen.getByText('troco')).toBeInTheDocument();
     expect(screen.getAllByText('Sangria').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Suprimento').length).toBeGreaterThan(0);
@@ -196,14 +196,14 @@ describe('CashPage', () => {
     expect(
       screen.queryByText('Vendas por Forma de Pagamento'),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText('Movimentacoes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Movimentações')).not.toBeInTheDocument();
   });
 
   it('renders past sessions', async () => {
     loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
     renderPage();
     await waitFor(() =>
-      expect(screen.getByText('Sessoes Anteriores')).toBeInTheDocument(),
+      expect(screen.getByText('Sessões Anteriores')).toBeInTheDocument(),
     );
     expect(screen.getAllByText(/Inicial:/)).toHaveLength(2);
     expect(screen.getAllByText(/Final:/)).toHaveLength(2);
@@ -312,7 +312,7 @@ describe('CashPage', () => {
       '160',
     );
     await userEvent.type(
-      within(dialog).getByLabelText('Observacoes (opcional)'),
+      within(dialog).getByLabelText('Observações (opcional)'),
       'tudo certo',
     );
     await userEvent.click(

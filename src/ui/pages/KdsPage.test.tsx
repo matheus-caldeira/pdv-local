@@ -103,7 +103,7 @@ describe('KdsPage', () => {
       within(card).queryByRole('button', { name: /Voltar/ }),
     ).not.toBeInTheDocument();
     await userEvent.click(
-      within(card).getByRole('button', { name: /Avancar/ }),
+      within(card).getByRole('button', { name: /Avançar/ }),
     );
     expect(setOrderStage).toHaveBeenCalledWith(1, 'em_preparo');
   });
@@ -113,7 +113,7 @@ describe('KdsPage', () => {
     renderPage();
     const card = screen.getByText('#002').closest('div')!.parentElement!;
     expect(
-      within(card).queryByRole('button', { name: /Avancar/ }),
+      within(card).queryByRole('button', { name: /Avançar/ }),
     ).not.toBeInTheDocument();
     await userEvent.click(within(card).getByRole('button', { name: /Voltar/ }));
     expect(setOrderStage).toHaveBeenCalledWith(2, 'a_caminho');

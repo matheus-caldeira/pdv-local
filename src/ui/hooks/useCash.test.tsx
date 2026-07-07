@@ -107,12 +107,12 @@ describe('useCash', () => {
   });
 
   it('toasts when opening fails', async () => {
-    openSession.mockResolvedValue(left(new FakeError('ja aberto')));
+    openSession.mockResolvedValue(left(new FakeError('já aberto')));
     renderProbe();
     await waitFor(() => expect(loadCashSummary).toHaveBeenCalled());
     await userEvent.click(screen.getByText('open'));
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('ja aberto'),
+      expect(screen.getByRole('status')).toHaveTextContent('já aberto'),
     );
     expect(loadCashSummary).toHaveBeenCalledTimes(1);
   });

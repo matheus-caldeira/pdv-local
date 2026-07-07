@@ -15,7 +15,7 @@ import type {
 } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 import type { LoadedCustomizationGroup } from '../hooks/useCustomizationLoader';
-import type { CustomizationItem } from '../../infrastructure/dexie/dexie-database';
+import type { CustomizationItem } from '../../domain/customization/customization.entity';
 
 interface CustomizationModalProps {
   product: Product;
@@ -136,9 +136,9 @@ export function CustomizationModal({
                 <div>
                   <span className="block text-sm font-bold">{group.name}</span>
                   <span className="mt-px block text-xs text-ink-tertiary">
-                    {group.required ? 'Obrigatorio' : 'Opcional'} ·{' '}
+                    {group.required ? 'Obrigatório' : 'Opcional'} ·{' '}
                     {group.minQty}-{group.maxQty}
-                    {group.chargeAfter > 0 && ` · ${group.chargeAfter} gratis`}
+                    {group.chargeAfter > 0 && ` · ${group.chargeAfter} grátis`}
                   </span>
                 </div>
                 <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-xs font-bold tabular-nums text-ink-secondary">
@@ -163,7 +163,7 @@ export function CustomizationModal({
                           {item.chargeAfter > 0 && (
                             <span className="font-normal text-ink-tertiary">
                               {' '}
-                              ({item.chargeAfter} gratis)
+                              ({item.chargeAfter} grátis)
                             </span>
                           )}
                         </span>
@@ -194,7 +194,7 @@ export function CustomizationModal({
             htmlFor="customization-observation"
             className="mb-1 block text-xs font-semibold text-ink-secondary"
           >
-            Observacao
+            Observação
           </label>
           <textarea
             id="customization-observation"

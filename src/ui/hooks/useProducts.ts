@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getDatabase } from '../../infrastructure/dexie/provider-registry';
+import { container } from '../../app/container';
+import { fold } from '../../domain/shared/either';
 import type { Product } from '../../domain/product/product.entity';
 
 export function useProducts() {
@@ -7,12 +8,14 @@ export function useProducts() {
 
   useEffect(() => {
     let cancelled = false;
-    getDatabase()
-      .products.filter((product) => product.active !== false)
-      .toArray()
-      .then((list) => {
-        if (!cancelled) setProducts(list);
-      });
+    container.listActiveProducts().then((result) => {
+      if (cancelled) return;
+      fold(
+        result,
+        () => setProducts([]),
+        (list) => setProducts(list),
+      );
+    });
     return () => {
       cancelled = true;
     };

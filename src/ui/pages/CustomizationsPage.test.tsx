@@ -123,7 +123,7 @@ describe('CustomizationsPage', () => {
     await waitFor(() =>
       expect(screen.getByText('Adicionais')).toBeInTheDocument(),
     );
-    expect(screen.getByText('Obrigatorio')).toBeInTheDocument();
+    expect(screen.getByText('Obrigatório')).toBeInTheDocument();
     expect(screen.getByText('Opcional')).toBeInTheDocument();
     expect(screen.getByText('Cobra a partir de 2')).toBeInTheDocument();
     expect(screen.getByText('2 itens')).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe('CustomizationsPage', () => {
       screen.getByRole('button', { name: 'Expandir Adicionais' }),
     );
     expect(screen.getByText('Bacon')).toBeInTheDocument();
-    expect(screen.getByText('Gratis')).toBeInTheDocument();
+    expect(screen.getByText('Grátis')).toBeInTheDocument();
     expect(screen.getByText('max 2')).toBeInTheDocument();
     expect(screen.getByText('cobra +1')).toBeInTheDocument();
     await userEvent.click(
@@ -167,17 +167,17 @@ describe('CustomizationsPage', () => {
     const dialog = screen.getByRole('dialog');
     await userEvent.type(within(dialog).getByLabelText('Nome do Grupo'), 'Pao');
     await userEvent.selectOptions(
-      within(dialog).getByLabelText('Obrigatorio?'),
+      within(dialog).getByLabelText('Obrigatório?'),
       '1',
     );
-    const min = within(dialog).getByLabelText('Minimo');
+    const min = within(dialog).getByLabelText('Mínimo');
     await userEvent.clear(min);
     await userEvent.type(min, '1');
-    const max = within(dialog).getByLabelText('Maximo');
+    const max = within(dialog).getByLabelText('Máximo');
     await userEvent.clear(max);
     await userEvent.type(max, '2');
     const charge = within(dialog).getByLabelText(
-      'Cobrar a partir de (selecoes)',
+      'Cobrar a partir de (seleções)',
     );
     await userEvent.clear(charge);
     await userEvent.type(charge, '2');
@@ -267,10 +267,10 @@ describe('CustomizationsPage', () => {
     );
     const dialog = screen.getByRole('dialog');
     await userEvent.type(within(dialog).getByLabelText('Nome'), 'Ovo');
-    const price = within(dialog).getByLabelText('Preco (R$)');
+    const price = within(dialog).getByLabelText('Preço (R$)');
     await userEvent.clear(price);
     await userEvent.type(price, '2');
-    const max = within(dialog).getByLabelText('Maximo por item');
+    const max = within(dialog).getByLabelText('Máximo por item');
     await userEvent.clear(max);
     await userEvent.type(max, '4');
     const charge = within(dialog).getByLabelText(

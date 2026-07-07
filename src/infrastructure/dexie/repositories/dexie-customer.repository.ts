@@ -5,7 +5,7 @@ import type {
   NewCustomerData,
 } from '../../../domain/customer/customer.repository';
 import type { Customer } from '../../../domain/customer/customer.entity';
-import type { InfrastructureError } from '../../errors';
+import { RecordNotFoundError, type InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
 import { toInfrastructureError } from '../dexie-errors';
 
@@ -61,13 +61,12 @@ export class DexieCustomerRepository implements CustomerRepository {
   ): Promise<Either<InfrastructureError, Customer>> {
     try {
       const existing = await this.db.customers.get(id);
+      if (!existing) {
+        return left(new RecordNotFoundError('Cliente não encontrado.'));
+      }
       const patch = { ...data, updatedAt: Date.now() };
       await this.db.customers.update(id, patch);
-      return right({
-        createdAt: existing?.createdAt ?? Date.now(),
-        ...patch,
-        id,
-      });
+      return right({ createdAt: existing.createdAt, ...patch, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }

@@ -108,25 +108,25 @@ export function Cart({
         />
         {matchedCustomer && matchedCustomer.addresses.length > 0 ? (
           <select
-            aria-label="Endereco do cliente"
+            aria-label="Endereço do cliente"
             className="min-h-[38px] w-full rounded-sm border border-border-emphasis bg-surface-inset px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
             value={address}
             onChange={(event) => onAddressChange(event.target.value)}
           >
-            <option value="">Sem endereco</option>
+            <option value="">Sem endereço</option>
             {matchedCustomer.addresses.map((entry, index) => (
               <option key={index} value={entry}>
                 {entry}
               </option>
             ))}
-            <option value="__new__">+ Novo endereco</option>
+            <option value="__new__">+ Novo endereço</option>
           </select>
         ) : null}
         {(!matchedCustomer || address === '__new__') && (
           <TextField
             type="text"
-            aria-label="Endereco (opcional)"
-            placeholder="Endereco (opcional)"
+            aria-label="Endereço (opcional)"
+            placeholder="Endereço (opcional)"
             value={address === '__new__' ? '' : address}
             onChange={(event) => onAddressChange(event.target.value)}
           />
@@ -183,8 +183,8 @@ export function Cart({
                 />
                 <button
                   type="button"
-                  aria-label="Anotacao"
-                  title="Anotacao"
+                  aria-label="Anotação"
+                  title="Anotação"
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-info text-info hover:bg-surface-inset"
                   onClick={() => openObsEdit(item.cartId)}
                 >
@@ -228,10 +228,10 @@ export function Cart({
         <Modal
           open
           onClose={() => setEditingObsId(null)}
-          title="Anotacao do Item"
+          title="Anotação do Item"
         >
           <textarea
-            aria-label="Anotacao do item"
+            aria-label="Anotação do item"
             className="w-full resize-y rounded-sm border border-border-emphasis bg-surface-inset p-3 text-base text-ink-primary outline-none focus:border-accent"
             value={obsText}
             onChange={(event) => setObsText(event.target.value)}

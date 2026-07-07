@@ -161,11 +161,11 @@ describe('ProductsPage', () => {
     );
     await userEvent.type(within(dialog).getByLabelText('Categoria'), 'Bebidas');
     await userEvent.type(
-      within(dialog).getByLabelText('Preco de Custo (R$)'),
+      within(dialog).getByLabelText('Preço de Custo (R$)'),
       '1',
     );
     await userEvent.type(
-      within(dialog).getByLabelText('Preco de Venda (R$)'),
+      within(dialog).getByLabelText('Preço de Venda (R$)'),
       '4',
     );
     await userEvent.type(within(dialog).getByLabelText('Estoque'), '5');
@@ -198,8 +198,8 @@ describe('ProductsPage', () => {
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Editar Coca' }));
     const dialog = screen.getByRole('dialog');
-    await userEvent.clear(within(dialog).getByLabelText('Preco de Custo (R$)'));
-    await userEvent.clear(within(dialog).getByLabelText('Preco de Venda (R$)'));
+    await userEvent.clear(within(dialog).getByLabelText('Preço de Custo (R$)'));
+    await userEvent.clear(within(dialog).getByLabelText('Preço de Venda (R$)'));
     await userEvent.clear(within(dialog).getByLabelText('Estoque'));
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Salvar' }),
@@ -262,7 +262,7 @@ describe('ProductsPage', () => {
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: /Novo Produto/ }));
     expect(
-      screen.queryByText('Grupos de Customizacao'),
+      screen.queryByText('Grupos de Customização'),
     ).not.toBeInTheDocument();
   });
 

@@ -26,8 +26,8 @@ const STATUS_TONES: Record<
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credito: 'Credito',
-  debito: 'Debito',
+  credito: 'Crédito',
+  debito: 'Débito',
   dinheiro: 'Dinheiro',
   pagar_depois: 'Pagar Depois',
 };

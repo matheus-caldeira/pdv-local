@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getDatabase } from '../../infrastructure/dexie/provider-registry';
-import type { Session } from '../../infrastructure/dexie/dexie-database';
+import { container } from '../../app/container';
+import { fold } from '../../domain/shared/either';
+import type { Session } from '../../domain/cash/cash.entity';
 
 export function useSession() {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
@@ -8,14 +9,15 @@ export function useSession() {
 
   useEffect(() => {
     let cancelled = false;
-    getDatabase()
-      .sessions.toArray()
-      .then((sessions) => {
-        if (cancelled) return;
-        const open = sessions.find((session) => session.closedAt === null);
-        setActiveSession(open ?? null);
-        setLoading(false);
-      });
+    container.getActiveSession().then((result) => {
+      if (cancelled) return;
+      fold(
+        result,
+        () => setActiveSession(null),
+        (session) => setActiveSession(session),
+      );
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };

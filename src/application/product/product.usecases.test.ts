@@ -1,15 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isLeft, isRight, right } from '../../domain/shared/either';
+import { isLeft, isRight, left, right } from '../../domain/shared/either';
 import { InvalidProductError } from '../../domain/errors';
+import { ConnectorError } from '../../infrastructure/errors';
 import type { Product } from '../../domain/product/product.entity';
 import type { ProductRepository } from '../../domain/product/product.repository';
 import type { ProductInput } from '../../domain/product/product.rules';
 import {
   makeCreateProduct,
+  makeListActiveProducts,
   makeListProducts,
   makeRemoveProduct,
   makeUpdateProduct,
 } from './product.usecases';
+
+const product = (over: Partial<Product> = {}): Product => ({
+  id: 1,
+  name: 'X',
+  category: 'C',
+  costPrice: 1,
+  salePrice: 10,
+  stock: 5,
+  active: true,
+  customizationGroupIds: [],
+  createdAt: 1,
+  updatedAt: 1,
+  ...over,
+});
 
 const input = (over: Partial<ProductInput> = {}): ProductInput => ({
   name: 'X',
@@ -72,5 +88,24 @@ describe('product use cases', () => {
     const repo = fakeRepo();
     await makeRemoveProduct(repo)(3);
     expect(repo.remove).toHaveBeenCalledWith(3);
+  });
+
+  it('lists only active products', async () => {
+    const repo = fakeRepo();
+    repo.list = vi.fn(async () =>
+      right([
+        product({ id: 1, active: true }),
+        product({ id: 2, active: false }),
+      ]),
+    );
+    const result = await makeListActiveProducts(repo)();
+    expect(isRight(result) && result.right.map((p) => p.id)).toEqual([1]);
+  });
+
+  it('propagates a failure when listing active products', async () => {
+    const repo = fakeRepo();
+    repo.list = vi.fn(async () => left(new ConnectorError('x')));
+    const result = await makeListActiveProducts(repo)();
+    expect(isLeft(result)).toBe(true);
   });
 });

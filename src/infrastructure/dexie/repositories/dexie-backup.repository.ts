@@ -192,29 +192,99 @@ function encodeCell(value: unknown): string {
   return /[,"\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+interface CsvField {
+  value: string;
+  quoted: boolean;
+}
+
+function tokenizeCsv(text: string): CsvField[][] {
+  const records: CsvField[][] = [];
+  let record: CsvField[] = [];
+  let field = '';
+  let wasQuoted = false;
+  let inQuotes = false;
+  let index = 0;
+
+  const pushField = () => {
+    record.push({ value: field, quoted: wasQuoted });
+    field = '';
+    wasQuoted = false;
+  };
+  const pushRecord = () => {
+    pushField();
+    records.push(record);
+    record = [];
+  };
+
+  while (index < text.length) {
+    const char = text[index];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[index + 1] === '"') {
+          field += '"';
+          index += 2;
+          continue;
+        }
+        inQuotes = false;
+        index += 1;
+        continue;
+      }
+      field += char;
+      index += 1;
+      continue;
+    }
+    if (char === '"') {
+      inQuotes = true;
+      wasQuoted = true;
+      index += 1;
+      continue;
+    }
+    if (char === ',') {
+      pushField();
+      index += 1;
+      continue;
+    }
+    if (char === '\r') {
+      index += 1;
+      continue;
+    }
+    if (char === '\n') {
+      pushRecord();
+      index += 1;
+      continue;
+    }
+    field += char;
+    index += 1;
+  }
+  if (record.length > 0 || field !== '' || wasQuoted) {
+    pushRecord();
+  }
+  return records;
+}
+
 function parseCsv(text: string): Row[] {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map((header) => header.trim());
-  return lines.slice(1).map((line) => {
-    const values = line.split(',');
+  const records = tokenizeCsv(text.replace(/\r\n/g, '\n').replace(/\n+$/, ''));
+  if (records.length < 2) return [];
+  const headers = records[0].map((field) => field.value.trim());
+  return records.slice(1).map((record) => {
     const row: Row = {};
     headers.forEach((header, index) => {
-      row[header] = decodeCell(values[index]?.trim() ?? '');
+      const field = record[index];
+      row[header] = field ? decodeCell(field) : '';
     });
     return row;
   });
 }
 
-function decodeCell(value: string): unknown {
-  if (value.startsWith('"') && value.endsWith('"')) {
-    const unquoted = value.slice(1, -1).replace(/""/g, '"');
+function decodeCell(field: CsvField): unknown {
+  if (field.quoted) {
     try {
-      return JSON.parse(unquoted);
+      return JSON.parse(field.value);
     } catch {
-      return unquoted;
+      return field.value;
     }
   }
+  const value = field.value;
   if (value !== '' && !Number.isNaN(Number(value))) return Number(value);
   return value;
 }

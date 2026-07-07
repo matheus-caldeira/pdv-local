@@ -1,4 +1,4 @@
-import { isLeft, left, type Either } from '../../domain/shared/either';
+import { isLeft, left, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import { DuplicatePhoneError } from '../../domain/errors';
 import type { Customer } from '../../domain/customer/customer.entity';
@@ -10,6 +10,22 @@ import {
 
 export function makeListCustomers(repository: CustomerRepository) {
   return (): Promise<Either<AppError, Customer[]>> => repository.list();
+}
+
+const PHONE_SEARCH_MIN = 3;
+const PHONE_SEARCH_LIMIT = 6;
+
+export function makeSearchCustomersByPhone(repository: CustomerRepository) {
+  return async (value: string): Promise<Either<AppError, Customer[]>> => {
+    const query = value.trim();
+    if (query.length < PHONE_SEARCH_MIN) return right([]);
+    const result = await repository.list();
+    if (isLeft(result)) return result;
+    const matches = result.right
+      .filter((customer) => customer.phone.includes(query))
+      .slice(0, PHONE_SEARCH_LIMIT);
+    return right(matches);
+  };
 }
 
 export function makeSaveCustomer(repository: CustomerRepository) {

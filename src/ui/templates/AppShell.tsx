@@ -17,11 +17,9 @@ import {
   Info,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { container } from '../../app/container';
-import { fold } from '../../domain/shared/either';
 import { formatTime } from '../../domain/shared/format';
 import { useSession } from '../hooks/useSession';
-import { useToast } from '../molecules/toast-context';
+import { useStatusControl } from '../hooks/useStatusControl';
 import { ContactModal } from '../organisms/ContactModal';
 
 const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`;
@@ -41,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/customers', icon: Users, label: 'Clientes' },
   { to: '/customizations', icon: SlidersHorizontal, label: 'Extras' },
   { to: '/cash', icon: Wallet, label: 'Caixa' },
-  { to: '/reports', icon: BarChart3, label: 'Relatorios' },
+  { to: '/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/settings', icon: Settings, label: 'Config' },
 ];
 
@@ -77,10 +75,9 @@ const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
 export function AppShell() {
   const { activeSession } = useSession();
   const location = useLocation();
-  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [statusControl, setStatusControl] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const statusControl = useStatusControl(location.pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,21 +89,6 @@ export function AppShell() {
       cancelled = true;
     };
   }, [location.pathname]);
-
-  useEffect(() => {
-    let cancelled = false;
-    container.readConfig().then((result) => {
-      if (cancelled) return;
-      fold(
-        result,
-        (error) => toast(error.message, 'error'),
-        (config) => setStatusControl(config.statusControlEnabled),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [location.pathname, toast]);
 
   const navItems: NavItem[] = statusControl
     ? [
@@ -233,7 +215,7 @@ export function AppShell() {
             {activeSession && (
               <div className="flex items-center gap-2 border-t border-border px-5 py-4 text-sm text-ink-tertiary">
                 <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-                Sessao aberta desde {formatTime(activeSession.openedAt)}
+                Sessão aberta desde {formatTime(activeSession.openedAt)}
               </div>
             )}
             <button

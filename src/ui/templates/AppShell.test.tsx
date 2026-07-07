@@ -128,7 +128,7 @@ describe('AppShell', () => {
     expect(
       screen.queryByText(formatTime(ACTIVE_SESSION.openedAt)),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/Sessao aberta desde/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sessão aberta desde/)).not.toBeInTheDocument();
   });
 
   it('skips the deferred sidebar close when unmounted before it runs', async () => {
@@ -214,7 +214,7 @@ describe('AppShell', () => {
     await waitFor(() => expect(readConfig).toHaveBeenCalled());
     await userEvent.click(screen.getByRole('button', { name: /Mais/ }));
     const dialog = screen.getByRole('dialog', { name: 'Menu' });
-    expect(within(dialog).getByText(/Sessao aberta desde/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Sessão aberta desde/)).toBeInTheDocument();
     await userEvent.click(
       within(dialog).getByRole('button', { name: /Sobre e contato/ }),
     );

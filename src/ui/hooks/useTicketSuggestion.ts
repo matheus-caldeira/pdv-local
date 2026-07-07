@@ -1,29 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getDatabase } from '../../infrastructure/dexie/provider-registry';
-import { formatTicket } from '../../domain/config/config.rules';
-import {
-  CONFIG_ID,
-  TICKET_DEFAULTS,
-} from '../../infrastructure/dexie/dexie-database';
-
-async function readSuggestion(): Promise<string> {
-  const stored = await getDatabase().config.get(CONFIG_ID);
-  const counter = stored?.ticketCounter ?? TICKET_DEFAULTS.ticketCounter;
-  const limit = stored?.ticketLimit ?? TICKET_DEFAULTS.ticketLimit;
-  return formatTicket(counter, limit);
-}
+import { container } from '../../app/container';
+import { fold } from '../../domain/shared/either';
 
 export function useTicketSuggestion() {
   const [suggestion, setSuggestion] = useState('');
 
   const refresh = useCallback(async () => {
-    setSuggestion(await readSuggestion());
+    const result = await container.peekTicketSuggestion();
+    fold(
+      result,
+      () => setSuggestion(''),
+      (value) => setSuggestion(value),
+    );
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    readSuggestion().then((value) => {
-      if (!cancelled) setSuggestion(value);
+    container.peekTicketSuggestion().then((result) => {
+      if (cancelled) return;
+      fold(
+        result,
+        () => setSuggestion(''),
+        (value) => setSuggestion(value),
+      );
     });
     return () => {
       cancelled = true;

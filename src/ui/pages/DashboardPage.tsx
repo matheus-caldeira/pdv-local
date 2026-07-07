@@ -45,10 +45,10 @@ export function DashboardPage() {
       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 rounded-xl border border-border bg-surface-2 px-6 py-10 text-center text-ink-tertiary">
         <Wallet size={48} />
         <h2 className="text-lg font-bold tracking-tight text-ink-primary">
-          Nenhuma sessao aberta
+          Nenhuma sessão aberta
         </h2>
         <p className="text-sm">
-          Abra uma sessao de caixa para comecar a vender.
+          Abra uma sessão de caixa para começar a vender.
         </p>
         <Button fullWidth onClick={() => navigate('/cash')}>
           Abrir Caixa
@@ -68,7 +68,7 @@ export function DashboardPage() {
           <h1 className="text-2xl font-extrabold tracking-tight">Painel</h1>
           <span className="flex items-center gap-2 text-sm font-semibold text-success">
             <span className="h-2 w-2 rounded-full bg-success" />
-            Sessao aberta desde {formatTime(activeSession.openedAt)}
+            Sessão aberta desde {formatTime(activeSession.openedAt)}
           </span>
         </div>
         <Button onClick={() => navigate('/pdv')}>
@@ -79,7 +79,7 @@ export function DashboardPage() {
       <SalesSummaryCards
         cards={[
           {
-            label: 'Vendas da sessao',
+            label: 'Vendas da sessão',
             value: <Money value={summary?.totalSales ?? 0} />,
             highlight: true,
           },
@@ -114,7 +114,7 @@ export function DashboardPage() {
 
       <div className="mt-6 flex flex-col gap-2">
         <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-ink-tertiary">
-          <Clock size={14} /> Ultimos Pedidos
+          <Clock size={14} /> Últimos Pedidos
         </h3>
         {recent.length === 0 ? (
           <div className="py-6 text-center text-sm text-ink-tertiary">

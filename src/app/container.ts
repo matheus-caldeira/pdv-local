@@ -14,6 +14,7 @@ import {
 } from '../application/order/finalize-order.usecase';
 import {
   makeCreateProduct,
+  makeListActiveProducts,
   makeListProducts,
   makeRemoveProduct,
   makeUpdateProduct,
@@ -23,6 +24,7 @@ import {
   makeCreateItem,
   makeListGroups,
   makeListItems,
+  makeLoadProductCustomizations,
   makeRemoveGroup,
   makeRemoveItem,
   makeUpdateGroup,
@@ -32,10 +34,12 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
+  makeSearchCustomersByPhone,
 } from '../application/customer/customer.usecases';
 import {
   makeAddCashMovement,
   makeCloseSession,
+  makeGetActiveSession,
   makeLoadCashSummary,
   makeOpenSession,
 } from '../application/cash/cash.usecases';
@@ -48,6 +52,7 @@ import {
   makeSetOrderStage,
 } from '../application/order/order-management.usecases';
 import {
+  makePeekTicketSuggestion,
   makeReadConfig,
   makeResetTicketSequence,
   makeSaveConfig,
@@ -80,11 +85,13 @@ export function createContainer() {
   return {
     finalizeOrder: makeFinalizeOrder(uow),
     listProducts: makeListProducts(products),
+    listActiveProducts: makeListActiveProducts(products),
     createProduct: makeCreateProduct(products),
     updateProduct: makeUpdateProduct(products),
     removeProduct: makeRemoveProduct(products),
     listGroups: makeListGroups(customizations),
     listItems: makeListItems(customizations),
+    loadProductCustomizations: makeLoadProductCustomizations(customizations),
     createGroup: makeCreateGroup(customizations),
     updateGroup: makeUpdateGroup(customizations),
     removeGroup: makeRemoveGroup(uow),
@@ -92,9 +99,11 @@ export function createContainer() {
     updateItem: makeUpdateItem(customizations),
     removeItem: makeRemoveItem(customizations),
     listCustomers: makeListCustomers(customers),
+    searchCustomersByPhone: makeSearchCustomersByPhone(customers),
     saveCustomer: makeSaveCustomer(customers),
     removeCustomer: makeRemoveCustomer(customers),
     loadCashSummary: makeLoadCashSummary(cash, orders),
+    getActiveSession: makeGetActiveSession(cash),
     openSession: makeOpenSession(cash),
     closeSession: makeCloseSession(cash),
     addCashMovement: makeAddCashMovement(cash),
@@ -105,6 +114,7 @@ export function createContainer() {
     cancelOrder: makeCancelOrder(orders),
     setOrderStage: makeSetOrderStage(orders),
     readConfig: makeReadConfig(config),
+    peekTicketSuggestion: makePeekTicketSuggestion(config),
     saveConfig: makeSaveConfig(config),
     resetTicketSequence: makeResetTicketSequence(config),
     listReportSessions: makeListReportSessions(cash),

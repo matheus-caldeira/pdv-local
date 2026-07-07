@@ -109,9 +109,9 @@ describe('DashboardPage', () => {
 
   it('shows the empty state and navigates to cash', async () => {
     renderPage();
-    expect(screen.getByText('Nenhuma sessao aberta')).toBeInTheDocument();
+    expect(screen.getByText('Nenhuma sessão aberta')).toBeInTheDocument();
     expect(
-      screen.getByText('Abra uma sessao de caixa para comecar a vender.'),
+      screen.getByText('Abra uma sessão de caixa para começar a vender.'),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Abrir Caixa' }));
     expect(navigate).toHaveBeenCalledWith('/cash');
@@ -123,8 +123,8 @@ describe('DashboardPage', () => {
     await waitFor(() =>
       expect(screen.getByText('R$ 250,00')).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Sessao aberta desde/)).toBeInTheDocument();
-    expect(screen.getByText('Vendas da sessao')).toBeInTheDocument();
+    expect(screen.getByText(/Sessão aberta desde/)).toBeInTheDocument();
+    expect(screen.getByText('Vendas da sessão')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('Burger')).toBeInTheDocument();

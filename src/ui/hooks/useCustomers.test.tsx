@@ -123,7 +123,7 @@ describe('useCustomers', () => {
     await waitFor(() => expect(listCustomers).toHaveBeenCalled());
     await userEvent.click(screen.getByText('remove'));
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('Cliente excluido'),
+      expect(screen.getByRole('status')).toHaveTextContent('Cliente excluído'),
     );
     expect(removeCustomer).toHaveBeenCalledWith(9);
     expect(listCustomers).toHaveBeenCalledTimes(2);

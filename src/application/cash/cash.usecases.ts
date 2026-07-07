@@ -79,6 +79,14 @@ export function makeLoadCashSummary(
   };
 }
 
+export function makeGetActiveSession(cash: CashRepository) {
+  return async (): Promise<Either<AppError, Session | null>> => {
+    const open = await cash.findOpenSession();
+    if (isLeft(open)) return open;
+    return right(open.right ?? null);
+  };
+}
+
 export function makeOpenSession(cash: CashRepository) {
   return async (cashInitial: number): Promise<Either<AppError, Session>> => {
     const amount = normalizeCashInitial(cashInitial);

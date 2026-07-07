@@ -7,7 +7,6 @@ import './DocsLayout.css';
 
 const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`;
 
-// Agrupa as páginas por seção preservando a ordem do manifesto.
 function groupBySection() {
   const groups: { section: string; pages: typeof DOCS_PAGES }[] = [];
   for (const page of DOCS_PAGES) {

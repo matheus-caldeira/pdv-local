@@ -142,7 +142,7 @@ export function CustomizationsPage() {
     <div className="max-w-3xl">
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold tracking-tight">
-          Customizacoes
+          Customizações
         </h1>
         <Button onClick={openNewGroup}>
           <Plus size={18} /> Novo Grupo
@@ -150,8 +150,8 @@ export function CustomizationsPage() {
       </div>
 
       <p className="mb-5 text-sm leading-relaxed text-ink-secondary">
-        Crie grupos de customizacao (ex: Adicionais, Tipo do pao) e adicione
-        itens com precos. Vincule os grupos aos produtos na tela de Produtos.
+        Crie grupos de customização (ex: Adicionais, Tipo do pão) e adicione
+        itens com preços. Vincule os grupos aos produtos na tela de Produtos.
       </p>
 
       {groups.length === 0 ? (
@@ -193,7 +193,7 @@ export function CustomizationsPage() {
                           size="xs"
                           uppercase
                         >
-                          {g.required ? 'Obrigatorio' : 'Opcional'}
+                          {g.required ? 'Obrigatório' : 'Opcional'}
                         </Badge>
                         <Badge size="xs" uppercase>
                           Min: {g.minQty} / Max: {g.maxQty}
@@ -252,7 +252,7 @@ export function CustomizationsPage() {
                             />
                           ) : (
                             <span className="text-sm font-bold text-accent">
-                              Gratis
+                              Grátis
                             </span>
                           )}
                           {item.maxQty > 0 && (
@@ -308,10 +308,10 @@ export function CustomizationsPage() {
               onChange={(e) =>
                 setEditingGroup((g) => ({ ...g, name: e.target.value }))
               }
-              placeholder="Ex: Adicionais, Tipo do pao..."
+              placeholder="Ex: Adicionais, Tipo do pão..."
             />
           </FormField>
-          <FormField label="Obrigatorio?">
+          <FormField label="Obrigatório?">
             <Select
               value={editingGroup.required ? '1' : '0'}
               onChange={(e) =>
@@ -321,12 +321,12 @@ export function CustomizationsPage() {
                 }))
               }
             >
-              <option value="0">Nao - cliente pode pular</option>
+              <option value="0">Não - cliente pode pular</option>
               <option value="1">Sim - deve escolher</option>
             </Select>
           </FormField>
           <div className="flex gap-3">
-            <FormField label="Minimo" className="flex-1">
+            <FormField label="Mínimo" className="flex-1">
               <TextField
                 type="number"
                 inputMode="numeric"
@@ -340,7 +340,7 @@ export function CustomizationsPage() {
                 }
               />
             </FormField>
-            <FormField label="Maximo" className="flex-1">
+            <FormField label="Máximo" className="flex-1">
               <TextField
                 type="number"
                 inputMode="numeric"
@@ -356,8 +356,8 @@ export function CustomizationsPage() {
             </FormField>
           </div>
           <FormField
-            label="Cobrar a partir de (selecoes)"
-            hint="Ex: 2 = as 2 primeiras selecoes sao gratis"
+            label="Cobrar a partir de (seleções)"
+            hint="Ex: 2 = as 2 primeiras seleções são grátis"
           >
             <TextField
               type="number"
@@ -394,7 +394,7 @@ export function CustomizationsPage() {
               placeholder="Ex: Bacon extra, Cheddar..."
             />
           </FormField>
-          <FormField label="Preco (R$)">
+          <FormField label="Preço (R$)">
             <TextField
               type="number"
               inputMode="decimal"
@@ -406,10 +406,10 @@ export function CustomizationsPage() {
                   price: e.target.value === '' ? 0 : parseFloat(e.target.value),
                 }))
               }
-              placeholder="0,00 = gratis"
+              placeholder="0,00 = grátis"
             />
           </FormField>
-          <FormField label="Maximo por item" hint="0 = usa o limite do grupo">
+          <FormField label="Máximo por item" hint="0 = usa o limite do grupo">
             <TextField
               type="number"
               inputMode="numeric"
@@ -425,7 +425,7 @@ export function CustomizationsPage() {
           </FormField>
           <FormField
             label="Cobrar a partir de (unidades)"
-            hint="Ex: 1 = primeira unidade gratis, cobra a partir da 2a"
+            hint="Ex: 1 = primeira unidade grátis, cobra a partir da 2a"
           >
             <TextField
               type="number"

@@ -154,7 +154,7 @@ describe('DexieCustomerRepository', () => {
 });
 
 describe('DexieProductRepository', () => {
-  it('decrements stock only for products with stock', async () => {
+  it('decrements stock consistently, allowing it to go negative', async () => {
     const repo = new DexieProductRepository(db);
     const id = await db.products.add({
       name: 'P',
@@ -167,8 +167,19 @@ describe('DexieProductRepository', () => {
       createdAt: 1,
       updatedAt: 1,
     });
-    const empty = await db.products.add({
+    const scarce = await db.products.add({
       name: 'Q',
+      category: 'C',
+      costPrice: 1,
+      salePrice: 2,
+      stock: 1,
+      active: true,
+      customizationGroupIds: [],
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const empty = await db.products.add({
+      name: 'R',
       category: 'C',
       costPrice: 1,
       salePrice: 2,
@@ -180,12 +191,14 @@ describe('DexieProductRepository', () => {
     });
     const result = await repo.decrementStock([
       { productId: id as number, qty: 2 },
+      { productId: scarce as number, qty: 3 },
       { productId: empty as number, qty: 1 },
       { productId: 9999, qty: 1 },
     ]);
     expect(isRight(result)).toBe(true);
     expect((await db.products.get(id))?.stock).toBe(3);
-    expect((await db.products.get(empty))?.stock).toBe(0);
+    expect((await db.products.get(scarce))?.stock).toBe(-2);
+    expect((await db.products.get(empty))?.stock).toBe(-1);
   });
 });
 

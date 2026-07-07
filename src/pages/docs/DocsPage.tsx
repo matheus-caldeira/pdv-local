@@ -16,9 +16,6 @@ type State =
   | { kind: 'ready'; content: string }
   | { kind: 'error' };
 
-// Links internos (relativos, ex: `[Caixa](caixa)`) viram navegação da SPA com
-// destino absoluto `/caixa`, independente da URL atual ter barra final. Links
-// externos, âncoras (#) e mailto continuam como <a> nativo.
 function isInternalDocLink(href: string): boolean {
   return !/^([a-z]+:|\/\/|#|\/)/i.test(href);
 }
@@ -36,8 +33,6 @@ const markdownComponents: Components = {
   },
 };
 
-// Resolve o slug atual e remonta o conteúdo a cada troca (via `key`), o que
-// reinicia o estado para "loading" sem precisar de setState no efeito.
 export function DocsPage({ slug: slugProp }: DocsPageProps) {
   const params = useParams();
   const slug = slugProp ?? params.slug ?? FIRST_DOC_SLUG;

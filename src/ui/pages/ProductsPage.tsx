@@ -220,7 +220,7 @@ export function ProductsPage() {
               ))}
             </datalist>
           </FormField>
-          <FormField label="Preco de Custo (R$)">
+          <FormField label="Preço de Custo (R$)">
             <TextField
               type="number"
               inputMode="decimal"
@@ -235,7 +235,7 @@ export function ProductsPage() {
               placeholder="0,00"
             />
           </FormField>
-          <FormField label="Preco de Venda (R$)">
+          <FormField label="Preço de Venda (R$)">
             <TextField
               type="number"
               inputMode="decimal"
@@ -280,7 +280,7 @@ export function ProductsPage() {
         {groups.length > 0 && (
           <div className="mt-3">
             <span className="mb-2 block text-xs font-semibold text-ink-secondary">
-              Grupos de Customizacao
+              Grupos de Customização
             </span>
             <div className="flex flex-wrap gap-2">
               {groups.map((g) => {

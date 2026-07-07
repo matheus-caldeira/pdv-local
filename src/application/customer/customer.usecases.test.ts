@@ -9,6 +9,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
+  makeSearchCustomersByPhone,
 } from './customer.usecases';
 
 const customer = (over: Partial<Customer> = {}): Customer => ({
@@ -92,6 +93,30 @@ describe('customer use cases', () => {
       findByPhone: vi.fn(async () => left(new ConnectorError('x'))),
     });
     const result = await makeSaveCustomer(repo)(input());
+    expect(isLeft(result)).toBe(true);
+  });
+
+  it('returns no suggestions for a query shorter than three chars', async () => {
+    const repo = fakeRepo();
+    const result = await makeSearchCustomersByPhone(repo)('41');
+    expect(isRight(result) && result.right).toEqual([]);
+    expect(repo.list).not.toHaveBeenCalled();
+  });
+
+  it('returns up to six phone matches', async () => {
+    const many = Array.from({ length: 8 }, (_, i) =>
+      customer({ id: i + 1, phone: `4199${i}` }),
+    );
+    const repo = fakeRepo({ list: vi.fn(async () => right(many)) });
+    const result = await makeSearchCustomersByPhone(repo)('4199');
+    expect(isRight(result) && result.right).toHaveLength(6);
+  });
+
+  it('propagates a failure when listing for search', async () => {
+    const repo = fakeRepo({
+      list: vi.fn(async () => left(new ConnectorError('x'))),
+    });
+    const result = await makeSearchCustomersByPhone(repo)('4199');
     expect(isLeft(result)).toBe(true);
   });
 });

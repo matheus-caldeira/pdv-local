@@ -28,6 +28,7 @@ import {
 import {
   makeAddCashMovement,
   makeCloseSession,
+  makeGetActiveSession,
   makeLoadCashSummary,
   makeOpenSession,
 } from './cash.usecases';
@@ -382,6 +383,27 @@ describe('cash use cases', () => {
       await makeOpenSession(cash)(100);
       orders.listResult = left(new ConnectorError('down'));
       const result = await makeLoadCashSummary(cash, orders)();
+      expect(isLeft(result)).toBe(true);
+    });
+  });
+
+  describe('makeGetActiveSession', () => {
+    it('returns the open session when there is one', async () => {
+      const opened = await makeOpenSession(cash)(100);
+      const result = await makeGetActiveSession(cash)();
+      expect(isRight(result) && result.right?.id).toBe(
+        isRight(opened) ? opened.right.id : undefined,
+      );
+    });
+
+    it('returns null when there is no open session', async () => {
+      const result = await makeGetActiveSession(cash)();
+      expect(isRight(result) && result.right).toBeNull();
+    });
+
+    it('propagates a failure from the repository', async () => {
+      cash.findOpenSessionResult = left(new ConnectorError('down'));
+      const result = await makeGetActiveSession(cash)();
       expect(isLeft(result)).toBe(true);
     });
   });
