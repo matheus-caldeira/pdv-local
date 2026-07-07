@@ -118,9 +118,11 @@ describe('DexieCustomerRepository', () => {
   it('appends a new address and upgrades the default name', async () => {
     const repo = new DexieCustomerRepository(db);
     await db.customers.add({
+      uid: 'uid-1',
       name: 'Consumidor',
       phone: '41999',
       addresses: ['Rua A'],
+      extra: {},
       createdAt: 1,
       updatedAt: 1,
     });
@@ -137,9 +139,11 @@ describe('DexieCustomerRepository', () => {
   it('keeps the existing address list when the address repeats', async () => {
     const repo = new DexieCustomerRepository(db);
     await db.customers.add({
+      uid: 'uid-2',
       name: 'Maria',
       phone: '41999',
       addresses: ['Rua A'],
+      extra: {},
       createdAt: 1,
       updatedAt: 1,
     });
