@@ -9,12 +9,12 @@ export interface CashRepository {
     cashInitial: number,
   ): Promise<Either<InfrastructureError, Session>>;
   closeSession(
-    id: number,
+    uid: string,
     cashFinal: number,
     notes: string,
   ): Promise<Either<InfrastructureError, Session>>;
   listMovements(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, CashMovement[]>>;
   addMovement(
     movement: NewCashMovement,
