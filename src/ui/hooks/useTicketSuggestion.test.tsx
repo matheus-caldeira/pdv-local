@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { left, right } from '../../domain/shared/either';
+import { ConnectorError } from '../../infrastructure/errors';
 import { useTicketSuggestion } from './useTicketSuggestion';
 
-const configGet = vi.fn();
+const peekTicketSuggestion = vi.fn();
 
-vi.mock('../../infrastructure/dexie/provider-registry', () => ({
-  getDatabase: () => ({ config: { get: configGet } }),
+vi.mock('../../app/container', () => ({
+  container: { peekTicketSuggestion: () => peekTicketSuggestion() },
 }));
 
 function Probe() {
@@ -22,33 +24,33 @@ function Probe() {
 
 describe('useTicketSuggestion', () => {
   beforeEach(() => {
-    configGet.mockReset();
+    peekTicketSuggestion.mockReset();
   });
   afterEach(cleanup);
 
-  it('formats the stored counter against the limit', async () => {
-    configGet.mockResolvedValue({ ticketCounter: 7, ticketLimit: 9999 });
+  it('shows the suggestion returned by the use case', async () => {
+    peekTicketSuggestion.mockResolvedValue(right('0007'));
     render(<Probe />);
     await waitFor(() =>
       expect(screen.getByText('ticket:0007')).toBeInTheDocument(),
     );
   });
 
-  it('falls back to defaults when config is missing', async () => {
-    configGet.mockResolvedValue(undefined);
+  it('shows an empty suggestion on failure', async () => {
+    peekTicketSuggestion.mockResolvedValue(left(new ConnectorError('x')));
     render(<Probe />);
     await waitFor(() =>
-      expect(screen.getByText('ticket:0001')).toBeInTheDocument(),
+      expect(screen.getByText('ticket:')).toBeInTheDocument(),
     );
   });
 
   it('refreshes on demand', async () => {
-    configGet.mockResolvedValueOnce({ ticketCounter: 1, ticketLimit: 9999 });
+    peekTicketSuggestion.mockResolvedValueOnce(right('0001'));
     render(<Probe />);
     await waitFor(() =>
       expect(screen.getByText('ticket:0001')).toBeInTheDocument(),
     );
-    configGet.mockResolvedValueOnce({ ticketCounter: 2, ticketLimit: 9999 });
+    peekTicketSuggestion.mockResolvedValueOnce(right('0002'));
     await act(async () => {
       screen.getByText('refresh').click();
     });
@@ -57,16 +59,31 @@ describe('useTicketSuggestion', () => {
     );
   });
 
+  it('clears the suggestion when refresh fails', async () => {
+    peekTicketSuggestion.mockResolvedValueOnce(right('0005'));
+    render(<Probe />);
+    await waitFor(() =>
+      expect(screen.getByText('ticket:0005')).toBeInTheDocument(),
+    );
+    peekTicketSuggestion.mockResolvedValueOnce(left(new ConnectorError('x')));
+    await act(async () => {
+      screen.getByText('refresh').click();
+    });
+    await waitFor(() =>
+      expect(screen.getByText('ticket:')).toBeInTheDocument(),
+    );
+  });
+
   it('ignores a late initial resolution after unmount', async () => {
     let resolve: (value: unknown) => void = () => {};
-    configGet.mockReturnValue(
+    peekTicketSuggestion.mockReturnValue(
       new Promise((res) => {
         resolve = res;
       }),
     );
     const { unmount } = render(<Probe />);
     unmount();
-    resolve({ ticketCounter: 3, ticketLimit: 9999 });
+    resolve(right('0003'));
     await Promise.resolve();
     expect(screen.queryByText('ticket:0003')).not.toBeInTheDocument();
   });

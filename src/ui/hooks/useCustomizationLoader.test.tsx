@@ -1,18 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { left, right } from '../../domain/shared/either';
+import { ConnectorError } from '../../infrastructure/errors';
 import { useCustomizationLoader } from './useCustomizationLoader';
 import type { Product } from '../../domain/product/product.entity';
 
-const groupGet = vi.fn();
-const itemsWhere = vi.fn();
+const loadProductCustomizations = vi.fn();
 
-vi.mock('../../infrastructure/dexie/provider-registry', () => ({
-  getDatabase: () => ({
-    customizationGroups: { get: groupGet },
-    customizationItems: {
-      where: () => ({ equals: () => ({ toArray: itemsWhere }) }),
-    },
-  }),
+vi.mock('../../app/container', () => ({
+  container: {
+    loadProductCustomizations: (ids: number[]) =>
+      loadProductCustomizations(ids),
+  },
 }));
 
 function product(ids: number[]): Product {
@@ -32,32 +31,37 @@ function product(ids: number[]): Product {
 
 describe('useCustomizationLoader', () => {
   beforeEach(() => {
-    groupGet.mockReset();
-    itemsWhere.mockReset();
+    loadProductCustomizations.mockReset();
   });
   afterEach(() => vi.clearAllMocks());
 
-  it('returns empty when there are no group ids', async () => {
+  it('passes an empty list when the product has no group ids', async () => {
+    loadProductCustomizations.mockResolvedValue(right([]));
     const { result } = renderHook(() => useCustomizationLoader());
     const groups = await result.current({
       ...product([]),
       customizationGroupIds: undefined as unknown as number[],
     });
     expect(groups).toEqual([]);
+    expect(loadProductCustomizations).toHaveBeenCalledWith([]);
   });
 
-  it('skips missing groups and filters inactive items', async () => {
-    groupGet.mockImplementation((id: number) =>
-      id === 10 ? { id: 10, name: 'Adicionais' } : undefined,
+  it('returns the groups loaded by the use case', async () => {
+    loadProductCustomizations.mockResolvedValue(
+      right([
+        { id: 10, name: 'Adicionais', items: [{ id: 1, name: 'Bacon' }] },
+      ]),
     );
-    itemsWhere.mockResolvedValue([
-      { id: 1, active: true, name: 'Bacon' },
-      { id: 2, active: false, name: 'Off' },
-    ]);
     const { result } = renderHook(() => useCustomizationLoader());
-    const groups = await result.current(product([10, 99]));
+    const groups = await result.current(product([10]));
     expect(groups).toHaveLength(1);
-    expect(groups[0].items).toHaveLength(1);
     expect(groups[0].items[0].name).toBe('Bacon');
+  });
+
+  it('returns an empty list when the use case fails', async () => {
+    loadProductCustomizations.mockResolvedValue(left(new ConnectorError('x')));
+    const { result } = renderHook(() => useCustomizationLoader());
+    const groups = await result.current(product([10]));
+    expect(groups).toEqual([]);
   });
 });

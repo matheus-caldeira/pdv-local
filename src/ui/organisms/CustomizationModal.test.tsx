@@ -77,7 +77,7 @@ describe('CustomizationModal', () => {
         ],
       }),
     ]);
-    expect(screen.getByText('Obrigatorio · 1-1')).toBeInTheDocument();
+    expect(screen.getByText('Obrigatório · 1-1')).toBeInTheDocument();
     await userEvent.click(
       screen.getByRole('button', { name: 'Adicionar · R$ 20,00' }),
     );
@@ -209,7 +209,7 @@ describe('CustomizationModal', () => {
         ],
       }),
     ]);
-    expect(screen.getByText('(1 gratis)')).toBeInTheDocument();
+    expect(screen.getByText('(1 grátis)')).toBeInTheDocument();
     const add = screen.getByRole('button', { name: 'Aumentar' });
     await userEvent.click(add);
     await userEvent.click(add);
@@ -240,9 +240,9 @@ describe('CustomizationModal', () => {
         ],
       }),
     ]);
-    expect(screen.getByText(/2 gratis/)).toBeInTheDocument();
+    expect(screen.getByText(/2 grátis/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Aumentar' }));
-    await userEvent.type(screen.getByLabelText('Observacao'), 'Sem cebola');
+    await userEvent.type(screen.getByLabelText('Observação'), 'Sem cebola');
     await userEvent.click(screen.getByRole('button', { name: /^Adicionar ·/ }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({

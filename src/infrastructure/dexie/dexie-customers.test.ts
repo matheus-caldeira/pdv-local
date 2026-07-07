@@ -59,11 +59,11 @@ describe('DexieCustomerRepository CRUD', () => {
     }
   });
 
-  it('keeps a fallback createdAt when updating a missing record', async () => {
+  it('returns Left when updating a record that does not exist', async () => {
     const repo = new DexieCustomerRepository(db);
     const updated = await repo.update(999, data());
-    expect(isRight(updated)).toBe(true);
-    if (isRight(updated)) expect(updated.right.createdAt).toBeGreaterThan(0);
+    expect(isLeft(updated)).toBe(true);
+    if (isLeft(updated)) expect(updated.left.code).toBe('RECORD_NOT_FOUND');
   });
 
   it('returns Left for every method when the table fails', async () => {

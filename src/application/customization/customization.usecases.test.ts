@@ -20,11 +20,32 @@ import {
   makeCreateItem,
   makeListGroups,
   makeListItems,
+  makeLoadProductCustomizations,
   makeRemoveGroup,
   makeRemoveItem,
   makeUpdateGroup,
   makeUpdateItem,
 } from './customization.usecases';
+
+const group = (over: Partial<CustomizationGroup> = {}): CustomizationGroup => ({
+  id: 1,
+  name: 'Adicionais',
+  required: false,
+  minQty: 0,
+  maxQty: 3,
+  chargeAfter: 0,
+  ...over,
+});
+const cItem = (over: Partial<CustomizationItem> = {}): CustomizationItem => ({
+  id: 1,
+  groupId: 1,
+  name: 'Bacon',
+  price: 3,
+  maxQty: 2,
+  chargeAfter: 0,
+  active: true,
+  ...over,
+});
 
 function fakeRepo(): CustomizationRepository {
   return {
@@ -172,5 +193,48 @@ describe('makeRemoveGroup', () => {
     });
     const result = await makeRemoveGroup(uow)(5);
     expect(isLeft(result)).toBe(true);
+  });
+
+  describe('makeLoadProductCustomizations', () => {
+    it('loads the product groups in order with only their active items', async () => {
+      const repo = fakeRepo();
+      repo.listGroups = vi.fn(async () =>
+        right([group({ id: 1 }), group({ id: 2, name: 'Ponto' })]),
+      );
+      repo.listItems = vi.fn(async () =>
+        right([
+          cItem({ id: 10, groupId: 1, name: 'Bacon' }),
+          cItem({ id: 11, groupId: 1, name: 'Oculto', active: false }),
+          cItem({ id: 12, groupId: 2, name: 'Bem passado' }),
+        ]),
+      );
+      const result = await makeLoadProductCustomizations(repo)([2, 1]);
+      expect(isRight(result)).toBe(true);
+      if (isRight(result)) {
+        expect(result.right.map((g) => g.id)).toEqual([2, 1]);
+        expect(result.right[1].items.map((i) => i.name)).toEqual(['Bacon']);
+      }
+    });
+
+    it('skips group ids that do not exist', async () => {
+      const repo = fakeRepo();
+      repo.listGroups = vi.fn(async () => right([group({ id: 1 })]));
+      const result = await makeLoadProductCustomizations(repo)([1, 99]);
+      expect(isRight(result) && result.right).toHaveLength(1);
+    });
+
+    it('propagates a failure listing groups', async () => {
+      const repo = fakeRepo();
+      repo.listGroups = vi.fn(async () => left(new ConnectorError('x')));
+      const result = await makeLoadProductCustomizations(repo)([1]);
+      expect(isLeft(result)).toBe(true);
+    });
+
+    it('propagates a failure listing items', async () => {
+      const repo = fakeRepo();
+      repo.listItems = vi.fn(async () => left(new ConnectorError('x')));
+      const result = await makeLoadProductCustomizations(repo)([1]);
+      expect(isLeft(result)).toBe(true);
+    });
   });
 });

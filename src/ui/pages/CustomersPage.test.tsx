@@ -74,8 +74,8 @@ describe('CustomersPage', () => {
     await waitFor(() => expect(screen.getByText('Ana')).toBeInTheDocument());
     const names = screen.getAllByText(/Ana|Bruno/).map((n) => n.textContent);
     expect(names).toEqual(['Ana', 'Bruno']);
-    expect(screen.getByText('2 enderecos')).toBeInTheDocument();
-    expect(screen.getByText('1 endereco')).toBeInTheDocument();
+    expect(screen.getByText('2 endereços')).toBeInTheDocument();
+    expect(screen.getByText('1 endereço')).toBeInTheDocument();
   });
 
   it('shows the empty state when there are no customers', async () => {
@@ -119,18 +119,18 @@ describe('CustomersPage', () => {
     await userEvent.type(within(dialog).getByLabelText('Nome'), 'Carla');
     await userEvent.type(within(dialog).getByLabelText('Telefone'), '551199');
     await userEvent.click(
-      within(dialog).getByRole('button', { name: /Adicionar endereco/ }),
+      within(dialog).getByRole('button', { name: /Adicionar endereço/ }),
     );
     await userEvent.click(
-      within(dialog).getByRole('button', { name: /Adicionar endereco/ }),
+      within(dialog).getByRole('button', { name: /Adicionar endereço/ }),
     );
-    await userEvent.type(within(dialog).getByLabelText('Endereco 1'), 'Rua Um');
+    await userEvent.type(within(dialog).getByLabelText('Endereço 1'), 'Rua Um');
     await userEvent.type(
-      within(dialog).getByLabelText('Endereco 2'),
+      within(dialog).getByLabelText('Endereço 2'),
       'Rua Dois',
     );
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'Remover endereco 1' }),
+      within(dialog).getByRole('button', { name: 'Remover endereço 1' }),
     );
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Salvar' }),
@@ -152,10 +152,10 @@ describe('CustomersPage', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Editar Cliente')).toBeInTheDocument();
     expect(within(dialog).getByLabelText('Nome')).toHaveValue('Ana');
-    expect(within(dialog).getByLabelText('Endereco 1')).toHaveValue('Rua A');
-    await userEvent.clear(within(dialog).getByLabelText('Endereco 2'));
+    expect(within(dialog).getByLabelText('Endereço 1')).toHaveValue('Rua A');
+    await userEvent.clear(within(dialog).getByLabelText('Endereço 2'));
     await userEvent.type(
-      within(dialog).getByLabelText('Endereco 2'),
+      within(dialog).getByLabelText('Endereço 2'),
       'Rua Nova',
     );
     await userEvent.click(

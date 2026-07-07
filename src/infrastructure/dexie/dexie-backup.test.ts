@@ -172,6 +172,13 @@ describe('DexieBackupRepository', () => {
     expect(isRight(result) && result.right).toBe(0);
   });
 
+  it('returns zero rows for an empty CSV file', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const file = new File([''], 'p.csv');
+    const result = await repo.importEntity('products', file);
+    expect(isRight(result) && result.right).toBe(0);
+  });
+
   it('keeps a malformed quoted cell as text', async () => {
     const repo = new DexieBackupRepository(db, new FakeFileSaver());
     const csv = 'name\n"{bad json}"';
@@ -180,6 +187,92 @@ describe('DexieBackupRepository', () => {
     expect(isRight(result)).toBe(true);
     const stored = await db.products.toArray();
     expect(stored[0].name).toBe('{bad json}');
+  });
+
+  it('parses a quoted cell whose json contains commas', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const csv = 'name,meta\nBurger,"{""a"":1,""b"":2}"';
+    const file = new File([csv], 'p.csv');
+    const result = await repo.importEntity('products', file);
+    expect(isRight(result)).toBe(true);
+    const stored = await db.products.toArray();
+    expect(stored[0].name).toBe('Burger');
+    expect((stored[0] as unknown as { meta: unknown }).meta).toEqual({
+      a: 1,
+      b: 2,
+    });
+  });
+
+  it('ignores stray carriage returns outside quotes', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const csv = 'name,salePrice\nBur\rger,15';
+    const file = new File([csv], 'p.csv');
+    const result = await repo.importEntity('products', file);
+    expect(isRight(result)).toBe(true);
+    const stored = await db.products.toArray();
+    expect(stored[0].name).toBe('Burger');
+    expect(stored[0].salePrice).toBe(15);
+  });
+
+  it('parses a final row that is a single empty quoted field', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const csv = 'name\n""';
+    const file = new File([csv], 'p.csv');
+    const result = await repo.importEntity('products', file);
+    expect(isRight(result) && result.right).toBe(1);
+    const stored = await db.products.toArray();
+    expect(stored[0].name).toBe('');
+  });
+
+  it('parses a quoted cell containing a newline', async () => {
+    const repo = new DexieBackupRepository(db, new FakeFileSaver());
+    const csv = 'name,note\nBurger,"line1\nline2"';
+    const file = new File([csv], 'p.csv');
+    const result = await repo.importEntity('products', file);
+    expect(isRight(result)).toBe(true);
+    const stored = await db.products.toArray();
+    expect((stored[0] as unknown as { note: string }).note).toBe(
+      'line1\nline2',
+    );
+  });
+
+  it('round-trips orders with nested items through CSV', async () => {
+    await db.orders.add({
+      sessionId: 3,
+      items: [
+        { productId: 1, name: 'A, B', salePrice: 10, costPrice: 5, qty: 2 },
+        { productId: 2, name: 'C', salePrice: 7, costPrice: 3, qty: 1 },
+      ],
+      total: 27,
+      paymentMethod: 'dinheiro',
+      customerName: 'Zé',
+      ticket: '0001',
+      customerPhone: '',
+      stage: 'aceito',
+      status: 'paid',
+      createdAt: 1,
+      updatedAt: 1,
+    } as never);
+    const saver = new FakeFileSaver();
+    const repo = new DexieBackupRepository(db, saver);
+    await repo.exportEntity('orders', 'csv');
+    const csv = saver.files[0].content;
+
+    await repo.wipeAll();
+    const file = new File([csv], 'pdv-orders.csv');
+    const result = await repo.importEntity('orders', file);
+    expect(isRight(result) && result.right).toBe(1);
+    const stored = await db.orders.toArray();
+    expect(stored[0].total).toBe(27);
+    expect(stored[0].items).toHaveLength(2);
+    expect(stored[0].items[0]).toEqual({
+      productId: 1,
+      name: 'A, B',
+      salePrice: 10,
+      costPrice: 5,
+      qty: 2,
+    });
+    expect(stored[0].customerName).toBe('Zé');
   });
 
   it('wipes every table', async () => {

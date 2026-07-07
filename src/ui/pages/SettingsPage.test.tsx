@@ -97,7 +97,7 @@ describe('SettingsPage', () => {
     let resolve: (value: unknown) => void = () => {};
     readConfig.mockReturnValue(new Promise((r) => (resolve = r)));
     renderPage();
-    expect(screen.getByText('Configuracoes')).toBeInTheDocument();
+    expect(screen.getByText('Configurações')).toBeInTheDocument();
     expect(
       screen.queryByLabelText('Nome do Estabelecimento'),
     ).not.toBeInTheDocument();
@@ -132,13 +132,13 @@ describe('SettingsPage', () => {
     const phone = screen.getByLabelText('Telefone');
     await userEvent.clear(phone);
     await userEvent.type(phone, '555');
-    const address = screen.getByLabelText('Endereco');
+    const address = screen.getByLabelText('Endereço');
     await userEvent.clear(address);
     await userEvent.type(address, 'Rua Nova');
     await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[0]);
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Configuracoes salvas',
+        'Configurações salvas',
       ),
     );
     expect(saveConfig).toHaveBeenCalledWith({
@@ -170,14 +170,14 @@ describe('SettingsPage', () => {
     saveConfig.mockResolvedValue(right(CONFIG));
     renderPage();
     await waitFor(() =>
-      expect(screen.getByLabelText('Reset Automatico')).toBeInTheDocument(),
+      expect(screen.getByLabelText('Reset Automático')).toBeInTheDocument(),
     );
     await userEvent.selectOptions(
-      screen.getByLabelText('Reset Automatico'),
+      screen.getByLabelText('Reset Automático'),
       '0',
     );
     const limit = screen.getByLabelText(
-      'Limite (define os digitos da comanda)',
+      'Limite (define os dígitos da comanda)',
     );
     await userEvent.clear(limit);
     await userEvent.type(limit, '999');
@@ -226,7 +226,7 @@ describe('SettingsPage', () => {
     await userEvent.clear(resetInput);
     await userEvent.type(resetInput, '12');
     await userEvent.click(
-      screen.getByRole('button', { name: 'Reiniciar Sequencia' }),
+      screen.getByRole('button', { name: 'Reiniciar Sequência' }),
     );
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('12')).toBeInTheDocument();
@@ -248,7 +248,7 @@ describe('SettingsPage', () => {
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Reiniciar Sequencia' }),
+      screen.getByRole('button', { name: 'Reiniciar Sequência' }),
     );
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
@@ -269,7 +269,7 @@ describe('SettingsPage', () => {
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Reiniciar Sequencia' }),
+      screen.getByRole('button', { name: 'Reiniciar Sequência' }),
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('presentation'));
@@ -287,7 +287,7 @@ describe('SettingsPage', () => {
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Reiniciar Sequencia' }),
+      screen.getByRole('button', { name: 'Reiniciar Sequência' }),
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.click(
@@ -425,11 +425,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Testar Impressao' }),
+        screen.getByRole('button', { name: 'Testar Impressão' }),
       ).toBeInTheDocument(),
     );
     await userEvent.selectOptions(
-      screen.getByLabelText('Tipo de Conexao'),
+      screen.getByLabelText('Tipo de Conexão'),
       'usb',
     );
     await userEvent.selectOptions(
@@ -441,7 +441,7 @@ describe('SettingsPage', () => {
       '1',
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Testar Impressao' }),
+      screen.getByRole('button', { name: 'Testar Impressão' }),
     );
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
@@ -453,7 +453,7 @@ describe('SettingsPage', () => {
     );
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Configuracoes de impressao salvas',
+        'Configurações de impressão salvas',
       ),
     );
   });
@@ -552,11 +552,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -570,11 +570,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
     expect(loadDemo).not.toHaveBeenCalled();
@@ -585,7 +585,7 @@ describe('SettingsPage', () => {
     );
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Carregar Demonstracao',
+        name: 'Carregar Demonstração',
       }),
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
@@ -597,11 +597,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
     await userEvent.click(
@@ -620,11 +620,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
@@ -649,11 +649,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('falha demo'),
@@ -666,11 +666,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('presentation'));
@@ -685,11 +685,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
@@ -710,11 +710,11 @@ describe('SettingsPage', () => {
     renderPage();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
       ).toBeInTheDocument(),
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar dados de demonstracao' }),
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

@@ -88,7 +88,7 @@ describe('ReportsPage', () => {
     listReportSessions.mockResolvedValue(right([]));
     renderPage();
     await waitFor(() =>
-      expect(screen.getByText('Nenhuma sessao encontrada')).toBeInTheDocument(),
+      expect(screen.getByText('Nenhuma sessão encontrada')).toBeInTheDocument(),
     );
   });
 

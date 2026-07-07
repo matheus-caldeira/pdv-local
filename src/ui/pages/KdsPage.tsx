@@ -79,7 +79,7 @@ export function KdsPage() {
                             size="sm"
                             onClick={() => moveStage(order.id!, next)}
                           >
-                            Avancar <ChevronRight size={14} />
+                            Avançar <ChevronRight size={14} />
                           </Button>
                         )}
                       </div>

@@ -1,51 +1,181 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { ToastProvider } from './ui/molecules/Toast';
 import { AppShell } from './ui/templates/AppShell';
-import { DashboardPage } from './ui/pages/DashboardPage';
-import { PdvPage } from './ui/pages/PdvPage';
-import { ProductsPage } from './ui/pages/ProductsPage';
-import { OrdersPage } from './ui/pages/OrdersPage';
-import { CashPage } from './ui/pages/CashPage';
-import { ReportsPage } from './ui/pages/ReportsPage';
-import { SettingsPage } from './ui/pages/SettingsPage';
-import { CustomizationsPage } from './ui/pages/CustomizationsPage';
-import { CustomersPage } from './ui/pages/CustomersPage';
-import { KdsPage } from './ui/pages/KdsPage';
-import { PanelPage } from './ui/pages/PanelPage';
-import { NotFoundPage } from './ui/pages/NotFoundPage';
-import { DocsLayout } from './pages/docs/DocsLayout';
-import { DocsPage } from './pages/docs/DocsPage';
 import { resolveBasename, DOCS_BASE } from './lib/docsBase';
+
+const DashboardPage = lazy(() =>
+  import('./ui/pages/DashboardPage').then((m) => ({
+    default: m.DashboardPage,
+  })),
+);
+const PdvPage = lazy(() =>
+  import('./ui/pages/PdvPage').then((m) => ({ default: m.PdvPage })),
+);
+const ProductsPage = lazy(() =>
+  import('./ui/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })),
+);
+const OrdersPage = lazy(() =>
+  import('./ui/pages/OrdersPage').then((m) => ({ default: m.OrdersPage })),
+);
+const CashPage = lazy(() =>
+  import('./ui/pages/CashPage').then((m) => ({ default: m.CashPage })),
+);
+const ReportsPage = lazy(() =>
+  import('./ui/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+);
+const SettingsPage = lazy(() =>
+  import('./ui/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+const CustomizationsPage = lazy(() =>
+  import('./ui/pages/CustomizationsPage').then((m) => ({
+    default: m.CustomizationsPage,
+  })),
+);
+const CustomersPage = lazy(() =>
+  import('./ui/pages/CustomersPage').then((m) => ({
+    default: m.CustomersPage,
+  })),
+);
+const KdsPage = lazy(() =>
+  import('./ui/pages/KdsPage').then((m) => ({ default: m.KdsPage })),
+);
+const PanelPage = lazy(() =>
+  import('./ui/pages/PanelPage').then((m) => ({ default: m.PanelPage })),
+);
+const NotFoundPage = lazy(() =>
+  import('./ui/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
+);
+const DocsLayout = lazy(() =>
+  import('./pages/docs/DocsLayout').then((m) => ({ default: m.DocsLayout })),
+);
+const DocsPage = lazy(() =>
+  import('./pages/docs/DocsPage').then((m) => ({ default: m.DocsPage })),
+);
 
 const basename = resolveBasename(window.location.pathname);
 const isDocs = basename === DOCS_BASE;
+
+function RouteFallback() {
+  return (
+    <div className="py-10 text-center text-sm text-ink-tertiary">
+      Carregando...
+    </div>
+  );
+}
 
 export function App() {
   return (
     <ToastProvider>
       <BrowserRouter basename={basename}>
         {isDocs ? (
-          <Routes>
-            <Route element={<DocsLayout />}>
-              <Route index element={<DocsPage />} />
-              <Route path=":slug" element={<DocsPage />} />
-            </Route>
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route element={<DocsLayout />}>
+                <Route index element={<DocsPage />} />
+                <Route path=":slug" element={<DocsPage />} />
+              </Route>
+            </Routes>
+          </Suspense>
         ) : (
           <Routes>
             <Route element={<AppShell />}>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/pdv" element={<PdvPage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/customers" element={<CustomersPage />} />
-              <Route path="/kds" element={<KdsPage />} />
-              <Route path="/panel" element={<PanelPage />} />
-              <Route path="/cash" element={<CashPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/customizations" element={<CustomizationsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route
+                path="/"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <DashboardPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/pdv"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <PdvPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <ProductsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <OrdersPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/customers"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <CustomersPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/kds"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <KdsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/panel"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <PanelPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/cash"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <CashPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <ReportsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/customizations"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <CustomizationsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <SettingsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <NotFoundPage />
+                  </Suspense>
+                }
+              />
             </Route>
           </Routes>
         )}

@@ -218,7 +218,7 @@ describe('OrdersPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Marcar como Pago' }),
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Debito' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Débito' }));
     expect(markOrderPaid).toHaveBeenCalledWith(4, 'debito');
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
@@ -233,7 +233,7 @@ describe('OrdersPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Marcar como Pago' }),
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Credito' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Crédito' }));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('falha pago'),
     );

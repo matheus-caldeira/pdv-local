@@ -36,7 +36,7 @@ export function useSettings() {
           return false;
         },
         () => {
-          toast('Configuracoes salvas');
+          toast('Configurações salvas');
           load();
           return true;
         },
@@ -55,7 +55,7 @@ export function useSettings() {
           return false;
         },
         () => {
-          toast(`Sequencia reiniciada a partir de ${counter}`);
+          toast(`Sequência reiniciada a partir de ${counter}`);
           load();
           return true;
         },
@@ -136,7 +136,7 @@ export function useSettings() {
         return false;
       },
       () => {
-        toast('Dados de demonstracao importados');
+        toast('Dados de demonstração importados');
         return true;
       },
     );

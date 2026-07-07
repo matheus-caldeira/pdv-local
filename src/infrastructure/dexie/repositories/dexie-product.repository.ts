@@ -66,7 +66,7 @@ export class DexieProductRepository implements ProductRepository {
     try {
       for (const decrement of decrements) {
         const product = await this.db.products.get(decrement.productId);
-        if (product && product.stock > 0) {
+        if (product) {
           await this.db.products.update(decrement.productId, {
             stock: product.stock - decrement.qty,
           });

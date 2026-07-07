@@ -123,7 +123,7 @@ describe('useSettings', () => {
     await userEvent.click(screen.getByText('save'));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Configuracoes salvas',
+        'Configurações salvas',
       ),
     );
     expect(saveConfig).toHaveBeenCalledWith(INPUT);
@@ -148,7 +148,7 @@ describe('useSettings', () => {
     await userEvent.click(screen.getByText('reset'));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Sequencia reiniciada a partir de 7',
+        'Sequência reiniciada a partir de 7',
       ),
     );
     expect(resetTicketSequence).toHaveBeenCalledWith(7);

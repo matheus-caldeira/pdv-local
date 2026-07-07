@@ -7,8 +7,8 @@ import { formatDate, formatTime } from '../../domain/shared/format';
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credito: 'Credito',
-  debito: 'Debito',
+  credito: 'Crédito',
+  debito: 'Débito',
   dinheiro: 'Dinheiro',
   pagar_depois: 'Pagar Depois',
   outros: 'outros',
@@ -31,18 +31,18 @@ export function ReportsPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight">Relatorios</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">Relatórios</h1>
       </div>
 
       {sessions.length === 0 ? (
         <div className="py-10 text-center text-sm text-ink-tertiary">
-          Nenhuma sessao encontrada
+          Nenhuma sessão encontrada
         </div>
       ) : (
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
-              Sessao
+              Sessão
             </h3>
             <div className="flex flex-wrap gap-2">
               {sessions.map((s) => (

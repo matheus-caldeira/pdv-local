@@ -14,8 +14,8 @@ interface PaymentPanelProps {
 
 const PAYMENT_METHODS = [
   { key: 'pix', label: 'PIX', icon: 'P' },
-  { key: 'credito', label: 'Credito', icon: 'C' },
-  { key: 'debito', label: 'Debito', icon: 'D' },
+  { key: 'credito', label: 'Crédito', icon: 'C' },
+  { key: 'debito', label: 'Débito', icon: 'D' },
   { key: 'dinheiro', label: 'Dinheiro', icon: '$' },
 ];
 

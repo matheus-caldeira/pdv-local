@@ -33,8 +33,8 @@ interface FormState {
 const ENTITIES: { key: BackupEntity; label: string }[] = [
   { key: 'products', label: 'Produtos' },
   { key: 'orders', label: 'Pedidos' },
-  { key: 'sessions', label: 'Sessoes' },
-  { key: 'cashMovements', label: 'Movimentacoes' },
+  { key: 'sessions', label: 'Sessões' },
+  { key: 'cashMovements', label: 'Movimentações' },
 ];
 
 function toFormState(config: BusinessConfig): FormState {
@@ -111,7 +111,7 @@ export function SettingsPage() {
     return (
       <div className="max-w-3xl">
         <h1 className="text-2xl font-extrabold tracking-tight">
-          Configuracoes
+          Configurações
         </h1>
       </div>
     );
@@ -157,8 +157,8 @@ export function SettingsPage() {
   }
 
   async function handleWipe() {
-    if (!window.confirm('Tem certeza? Todos os dados serao perdidos!')) return;
-    if (!window.confirm('Esta acao NAO pode ser desfeita. Continuar?')) return;
+    if (!window.confirm('Tem certeza? Todos os dados serão perdidos!')) return;
+    if (!window.confirm('Esta ação NÃO pode ser desfeita. Continuar?')) return;
     const ok = await wipe();
     if (ok) window.location.reload();
   }
@@ -180,9 +180,9 @@ export function SettingsPage() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-extrabold tracking-tight">Configuracoes</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight">Configurações</h1>
 
-      <Section icon={<Store size={20} />} title="Dados do Negocio">
+      <Section icon={<Store size={20} />} title="Dados do Negócio">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FormField label="Nome do Estabelecimento" className="sm:col-span-2">
             <TextField
@@ -212,13 +212,13 @@ export function SettingsPage() {
               placeholder="(00) 00000-0000"
             />
           </FormField>
-          <FormField label="Endereco" className="sm:col-span-2">
+          <FormField label="Endereço" className="sm:col-span-2">
             <TextField
               value={form.address}
               onChange={(e) =>
                 setForm((p) => p && { ...p, address: e.target.value })
               }
-              placeholder="Rua, numero, bairro..."
+              placeholder="Rua, número, bairro..."
             />
           </FormField>
         </div>
@@ -229,10 +229,10 @@ export function SettingsPage() {
 
       <Section icon={<Hash size={20} />} title="Comandas">
         <p className="text-sm text-ink-tertiary">
-          A comanda e gerada automaticamente em sequencia a cada nova venda, com
-          zeros a esquerda. A quantidade de digitos deriva do limite.
+          A comanda e gerada automaticamente em sequência a cada nova venda, com
+          zeros a esquerda. A quantidade de dígitos deriva do limite.
         </p>
-        <FormField label="Reset Automatico">
+        <FormField label="Reset Automático">
           <Select
             value={form.ticketAutoReset ? '1' : '0'}
             onChange={(e) =>
@@ -242,10 +242,10 @@ export function SettingsPage() {
             }
           >
             <option value="1">Sim - reinicia ao passar do limite</option>
-            <option value="0">Nao - sequencia continua sempre</option>
+            <option value="0">Não - sequência continua sempre</option>
           </Select>
         </FormField>
-        <FormField label="Limite (define os digitos da comanda)">
+        <FormField label="Limite (define os dígitos da comanda)">
           <TextField
             type="number"
             min={1}
@@ -256,7 +256,7 @@ export function SettingsPage() {
           />
         </FormField>
         <p className="text-sm text-ink-tertiary">
-          Proxima comanda:{' '}
+          Próxima comanda:{' '}
           <strong className="font-mono tabular-nums text-ink-primary">
             {formatTicket(form.ticketCounter, Number(form.ticketLimit))}
           </strong>
@@ -267,7 +267,7 @@ export function SettingsPage() {
 
         <div className="flex flex-col gap-3 border-t border-border pt-4">
           <span className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
-            Reiniciar Sequencia
+            Reiniciar Sequência
           </span>
           <FormField label="Reiniciar a partir de">
             <TextField
@@ -282,16 +282,16 @@ export function SettingsPage() {
             className="self-start"
             onClick={() => setResetModalOpen(true)}
           >
-            Reiniciar Sequencia
+            Reiniciar Sequência
           </Button>
         </div>
       </Section>
 
       <Section icon={<ClipboardList size={20} />} title="Pedidos">
         <p className="text-sm text-ink-tertiary">
-          O controle de status acompanha o preparo de cada pedido por estagios
+          O controle de status acompanha o preparo de cada pedido por estágios
           (aceito, em preparo, a caminho, finalizado) e habilita as telas de
-          gestao (KDS) e o painel publico.
+          gestão (KDS) e o painel público.
         </p>
         <FormField label="Controle de Status">
           <Select
@@ -314,7 +314,7 @@ export function SettingsPage() {
 
       <Section icon={<Download size={20} />} title="Exportar Dados">
         <p className="text-sm text-ink-tertiary">
-          Exporte todos os dados ou apenas uma entidade especifica.
+          Exporte todos os dados ou apenas uma entidade específica.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => exportAll('json')}>
@@ -374,7 +374,7 @@ export function SettingsPage() {
         </Button>
       </Section>
 
-      <Section icon={<Database size={20} />} title="Demonstracao">
+      <Section icon={<Database size={20} />} title="Demonstração">
         <p className="text-sm text-ink-tertiary">
           Carregue um conjunto de dados de exemplo (produtos, vendas e caixa)
           para experimentar o sistema. Isto substitui todos os dados atuais.
@@ -384,17 +384,17 @@ export function SettingsPage() {
           className="self-start"
           onClick={handleDemoClick}
         >
-          Carregar dados de demonstracao
+          Carregar dados de demonstração
         </Button>
       </Section>
 
       <Section icon={<Printer size={20} />} title="Impressora (ESC/POS)">
         <p className="text-sm text-ink-tertiary">
-          Configure uma impressora termica via USB ou Bluetooth para imprimir
-          recibos e comandas. Utiliza o protocolo ESC/POS compativel com a
-          maioria das impressoras termicas (Epson, Elgin, Bematech, etc).
+          Configure uma impressora térmica via USB ou Bluetooth para imprimir
+          recibos e comandas. Utiliza o protocolo ESC/POS compatível com a
+          maioria das impressoras térmicas (Epson, Elgin, Bematech, etc).
         </p>
-        <FormField label="Tipo de Conexao">
+        <FormField label="Tipo de Conexão">
           <Select defaultValue="none">
             <option value="none">Nenhuma (desabilitado)</option>
             <option value="usb">USB (WebUSB)</option>
@@ -410,7 +410,7 @@ export function SettingsPage() {
         </FormField>
         <FormField label="Imprimir Automaticamente">
           <Select defaultValue="0">
-            <option value="0">Nao - apenas manual</option>
+            <option value="0">Não - apenas manual</option>
             <option value="1">Sim - ao fechar pedido</option>
           </Select>
         </FormField>
@@ -424,9 +424,9 @@ export function SettingsPage() {
               )
             }
           >
-            Testar Impressao
+            Testar Impressão
           </Button>
-          <Button onClick={() => toast('Configuracoes de impressao salvas')}>
+          <Button onClick={() => toast('Configurações de impressão salvas')}>
             Salvar
           </Button>
         </div>
@@ -434,7 +434,7 @@ export function SettingsPage() {
 
       <Section title="Zona de Perigo" danger>
         <p className="text-sm text-ink-tertiary">
-          Apagar todos os dados do sistema. Esta acao nao pode ser desfeita.
+          Apagar todos os dados do sistema. Esta ação não pode ser desfeita.
         </p>
         <Button variant="danger" className="self-start" onClick={handleWipe}>
           Apagar Todos os Dados
@@ -444,14 +444,14 @@ export function SettingsPage() {
       <Modal
         open={resetModalOpen}
         onClose={() => setResetModalOpen(false)}
-        title="Reiniciar sequencia de comandas"
+        title="Reiniciar sequência de comandas"
       >
         <p className="text-sm text-ink-secondary">
-          A proxima comanda passara a ser{' '}
+          A próxima comanda passará a ser{' '}
           <strong className="font-mono tabular-nums text-ink-primary">
             {formatTicket(Number(resetValue), Number(form.ticketLimit))}
           </strong>
-          . Pedidos ja registrados nao sao afetados.
+          . Pedidos já registrados não são afetados.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setResetModalOpen(false)}>
@@ -464,11 +464,11 @@ export function SettingsPage() {
       <Modal
         open={demoConfirmStep === 1}
         onClose={() => setDemoConfirmStep(0)}
-        title="Carregar dados de demonstracao"
+        title="Carregar dados de demonstração"
       >
         <p className="text-sm text-ink-secondary">
           Isto vai <strong className="text-ink-primary">apagar</strong> todos os
-          dados atuais e substitui-los pelos dados de demonstracao.
+          dados atuais e substitui-los pelos dados de demonstração.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>
@@ -483,18 +483,18 @@ export function SettingsPage() {
       <Modal
         open={demoConfirmStep === 2}
         onClose={() => setDemoConfirmStep(0)}
-        title="Esta acao nao pode ser desfeita"
+        title="Esta ação não pode ser desfeita"
       >
         <p className="text-sm text-ink-secondary">
-          Os dados atuais serao perdidos permanentemente. Tem certeza que deseja
-          carregar a demonstracao?
+          Os dados atuais serão perdidos permanentemente. Tem certeza que deseja
+          carregar a demonstração?
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>
             Cancelar
           </Button>
           <Button variant="danger" onClick={runDemoImport}>
-            Carregar Demonstracao
+            Carregar Demonstração
           </Button>
         </div>
       </Modal>

@@ -11,8 +11,8 @@ import type { CashMovementType } from '../../domain/cash/cash.entity';
 
 const PAYMENT_LABELS: Record<string, string> = {
   pix: 'PIX',
-  credito: 'Credito',
-  debito: 'Debito',
+  credito: 'Crédito',
+  debito: 'Débito',
   dinheiro: 'Dinheiro',
   pagar_depois: 'Pagar Depois',
   outros: 'Outros',
@@ -99,7 +99,7 @@ export function CashPage() {
             />
           </FormField>
           <Button fullWidth onClick={handleOpen}>
-            Abrir Sessao
+            Abrir Sessão
           </Button>
         </div>
       ) : (
@@ -196,7 +196,7 @@ export function CashPage() {
           {movements.length > 0 && (
             <div className="flex flex-col gap-2">
               <h3 className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
-                Movimentacoes
+                Movimentações
               </h3>
               <div className="flex flex-col gap-1">
                 {movements.map((m) => (
@@ -240,7 +240,7 @@ export function CashPage() {
       {pastSessions.length > 0 && (
         <div className="mt-6 flex flex-col gap-2">
           <h3 className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
-            Sessoes Anteriores
+            Sessões Anteriores
           </h3>
           <div className="flex flex-col gap-1">
             {pastSessions.map((s) => (
@@ -320,11 +320,11 @@ export function CashPage() {
               placeholder="0,00"
             />
           </FormField>
-          <FormField label="Observacoes (opcional)">
+          <FormField label="Observações (opcional)">
             <TextField
               value={closeNotes}
               onChange={(e) => setCloseNotes(e.target.value)}
-              placeholder="Observacoes do fechamento..."
+              placeholder="Observações do fechamento..."
             />
           </FormField>
         </div>

@@ -52,7 +52,7 @@ export function useCustomers() {
           return false;
         },
         () => {
-          toast('Cliente excluido');
+          toast('Cliente excluído');
           loadCustomers();
           return true;
         },

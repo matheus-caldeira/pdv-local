@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { isRight, right, type Either } from '../../domain/shared/either';
+import {
+  isLeft,
+  isRight,
+  left,
+  right,
+  type Either,
+} from '../../domain/shared/either';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { ConfigRepository } from '../../domain/config/config.repository';
-import type { InfrastructureError } from '../../infrastructure/errors';
 import {
+  ConnectorError,
+  type InfrastructureError,
+} from '../../infrastructure/errors';
+import {
+  makePeekTicketSuggestion,
   makeReadConfig,
   makeResetTicketSequence,
   makeSaveConfig,
@@ -79,5 +89,19 @@ describe('makeResetTicketSequence', () => {
     const repo = new FakeConfigRepository();
     await makeResetTicketSequence(repo)(7.9);
     expect(repo.saved).toEqual({ ticketCounter: 7 });
+  });
+});
+
+describe('makePeekTicketSuggestion', () => {
+  it('formats the current counter padded to the limit width', async () => {
+    const result = await makePeekTicketSuggestion(new FakeConfigRepository())();
+    expect(isRight(result) && result.right).toBe('0001');
+  });
+
+  it('propagates a failure from read', async () => {
+    const repo = new FakeConfigRepository();
+    repo.read = async () => left(new ConnectorError('x'));
+    const result = await makePeekTicketSuggestion(repo)();
+    expect(isLeft(result)).toBe(true);
   });
 });

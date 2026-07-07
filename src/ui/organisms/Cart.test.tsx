@@ -106,8 +106,8 @@ describe('Cart', () => {
   it('opens the observation modal and saves', async () => {
     const props = baseProps();
     render(<Cart {...props} cart={[cartItem]} total={46} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Anotacao' }));
-    const textarea = screen.getByLabelText('Anotacao do item');
+    await userEvent.click(screen.getByRole('button', { name: 'Anotação' }));
+    const textarea = screen.getByLabelText('Anotação do item');
     expect(textarea).toHaveValue('Sem cebola');
     await userEvent.clear(textarea);
     await userEvent.type(textarea, 'Bem passado');
@@ -119,14 +119,14 @@ describe('Cart', () => {
     const props = baseProps();
     const noObs: CartItem = { ...cartItem, observation: undefined };
     render(<Cart {...props} cart={[noObs]} total={46} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Anotacao' }));
-    expect(screen.getByLabelText('Anotacao do item')).toHaveValue('');
+    await userEvent.click(screen.getByRole('button', { name: 'Anotação' }));
+    expect(screen.getByLabelText('Anotação do item')).toHaveValue('');
   });
 
   it('closes the observation modal via Escape without saving', async () => {
     const props = baseProps();
     render(<Cart {...props} cart={[cartItem]} total={46} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Anotacao' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Anotação' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -144,12 +144,12 @@ describe('Cart', () => {
   it('renders the address select for a matched customer with addresses', async () => {
     const props = baseProps();
     render(<Cart {...props} matchedCustomer={customer} address="Rua A, 10" />);
-    const select = screen.getByLabelText('Endereco do cliente');
+    const select = screen.getByLabelText('Endereço do cliente');
     expect(select).toBeInTheDocument();
     await userEvent.selectOptions(select, '__new__');
     expect(props.onAddressChange).toHaveBeenCalledWith('__new__');
     expect(
-      screen.queryByLabelText('Endereco (opcional)'),
+      screen.queryByLabelText('Endereço (opcional)'),
     ).not.toBeInTheDocument();
   });
 
@@ -157,7 +157,7 @@ describe('Cart', () => {
     render(
       <Cart {...baseProps()} matchedCustomer={customer} address="__new__" />,
     );
-    expect(screen.getByLabelText('Endereco (opcional)')).toHaveValue('');
+    expect(screen.getByLabelText('Endereço (opcional)')).toHaveValue('');
   });
 
   it('forwards typing in the form fields', async () => {
@@ -169,7 +169,7 @@ describe('Cart', () => {
       'A',
     );
     await userEvent.type(screen.getByLabelText('Comanda / Mesa'), '5');
-    await userEvent.type(screen.getByLabelText('Endereco (opcional)'), 'R');
+    await userEvent.type(screen.getByLabelText('Endereço (opcional)'), 'R');
     expect(props.onPhoneChange).toHaveBeenCalled();
     expect(props.onCustomerNameChange).toHaveBeenCalled();
     expect(props.onTicketChange).toHaveBeenCalled();

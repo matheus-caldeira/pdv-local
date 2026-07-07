@@ -9,20 +9,15 @@ import type { Product } from '../../domain/product/product.entity';
 import type { FinalizeOrderInput } from '../../application/order/finalize-order.usecase';
 
 const finalizeOrder = vi.fn();
-const configGet = vi.fn();
-const customersToArray = vi.fn();
+const peekTicketSuggestion = vi.fn();
+const searchCustomersByPhone = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
     finalizeOrder: (input: FinalizeOrderInput) => finalizeOrder(input),
+    peekTicketSuggestion: () => peekTicketSuggestion(),
+    searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
   },
-}));
-
-vi.mock('../../infrastructure/dexie/provider-registry', () => ({
-  getDatabase: () => ({
-    config: { get: configGet },
-    customers: { toArray: customersToArray },
-  }),
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -45,7 +40,7 @@ function product(partial: Partial<Product> & { id: number }): Product {
 }
 
 async function setup() {
-  configGet.mockResolvedValue({ ticketCounter: 1, ticketLimit: 9999 });
+  peekTicketSuggestion.mockResolvedValue(right('0001'));
   const view = renderHook(() => usePdvController(7), { wrapper });
   await waitFor(() => expect(view.result.current.ticket).toBe('0001'));
   return view;
@@ -54,8 +49,10 @@ async function setup() {
 describe('usePdvController', () => {
   beforeEach(() => {
     finalizeOrder.mockReset();
-    configGet.mockReset();
-    customersToArray.mockReset();
+    peekTicketSuggestion.mockReset();
+    searchCustomersByPhone.mockReset();
+    peekTicketSuggestion.mockResolvedValue(right('0001'));
+    searchCustomersByPhone.mockResolvedValue(right([]));
   });
   afterEach(cleanup);
 
@@ -103,9 +100,9 @@ describe('usePdvController', () => {
   });
 
   it('searches and selects a customer, mapping Consumidor to empty name', async () => {
-    customersToArray.mockResolvedValue([
-      { id: 1, name: 'Consumidor', phone: '99887766', addresses: [] },
-    ]);
+    searchCustomersByPhone.mockResolvedValue(
+      right([{ id: 1, name: 'Consumidor', phone: '99887766', addresses: [] }]),
+    );
     const { result } = await setup();
     await act(async () => result.current.onPhoneChange('9988'));
     await waitFor(() =>
@@ -138,9 +135,9 @@ describe('usePdvController', () => {
 
   it('finalizes a paid sale claiming the suggested ticket and resets', async () => {
     finalizeOrder.mockResolvedValue(right({ id: 1 }));
-    configGet
-      .mockResolvedValueOnce({ ticketCounter: 1, ticketLimit: 9999 })
-      .mockResolvedValueOnce({ ticketCounter: 2, ticketLimit: 9999 });
+    peekTicketSuggestion
+      .mockResolvedValueOnce(right('0001'))
+      .mockResolvedValueOnce(right('0002'));
     const { result } = renderHook(() => usePdvController(7), { wrapper });
     await waitFor(() => expect(result.current.ticket).toBe('0001'));
 

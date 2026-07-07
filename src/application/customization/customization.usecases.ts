@@ -23,6 +23,39 @@ export function makeListItems(repository: CustomizationRepository) {
     repository.listItems();
 }
 
+export interface LoadedCustomizationGroup extends CustomizationGroup {
+  items: CustomizationItem[];
+}
+
+export function makeLoadProductCustomizations(
+  repository: CustomizationRepository,
+) {
+  return async (
+    groupIds: number[],
+  ): Promise<Either<AppError, LoadedCustomizationGroup[]>> => {
+    const groupsResult = await repository.listGroups();
+    if (isLeft(groupsResult)) return groupsResult;
+    const itemsResult = await repository.listItems();
+    if (isLeft(itemsResult)) return itemsResult;
+
+    const groupsById = new Map(
+      groupsResult.right.map((group) => [group.id, group]),
+    );
+    const loaded: LoadedCustomizationGroup[] = [];
+    for (const groupId of groupIds) {
+      const group = groupsById.get(groupId);
+      if (!group) continue;
+      loaded.push({
+        ...group,
+        items: itemsResult.right.filter(
+          (item) => item.groupId === groupId && item.active !== false,
+        ),
+      });
+    }
+    return right(loaded);
+  };
+}
+
 export function makeCreateGroup(repository: CustomizationRepository) {
   return async (
     input: CustomizationGroupInput,

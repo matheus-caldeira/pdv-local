@@ -126,7 +126,7 @@ export function CustomersPage() {
               </div>
               <div className="text-sm text-ink-tertiary">
                 {c.addresses.length}{' '}
-                {c.addresses.length === 1 ? 'endereco' : 'enderecos'}
+                {c.addresses.length === 1 ? 'endereço' : 'endereços'}
               </div>
             </button>
           ))}
@@ -160,18 +160,18 @@ export function CustomersPage() {
           </FormField>
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold text-ink-secondary">
-              Enderecos
+              Endereços
             </span>
             {editing.addresses.map((addr, i) => (
               <div key={i} className="flex items-center gap-2">
                 <TextField
-                  aria-label={`Endereco ${i + 1}`}
+                  aria-label={`Endereço ${i + 1}`}
                   value={addr}
                   onChange={(e) => updateAddress(i, e.target.value)}
-                  placeholder="Rua, numero, bairro..."
+                  placeholder="Rua, número, bairro..."
                 />
                 <IconButton
-                  aria-label={`Remover endereco ${i + 1}`}
+                  aria-label={`Remover endereço ${i + 1}`}
                   onClick={() => removeAddress(i)}
                 >
                   <Trash2 size={14} />
@@ -184,7 +184,7 @@ export function CustomersPage() {
               className="self-start"
               onClick={addAddress}
             >
-              <Plus size={14} /> Adicionar endereco
+              <Plus size={14} /> Adicionar endereço
             </Button>
           </div>
         </div>
