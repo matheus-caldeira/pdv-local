@@ -3,7 +3,7 @@ import type { InfrastructureError } from '../../infrastructure/errors';
 import type { NewProduct, Product } from './product.entity';
 
 export interface StockDecrement {
-  productId: number;
+  productUid: string;
   qty: number;
 }
 

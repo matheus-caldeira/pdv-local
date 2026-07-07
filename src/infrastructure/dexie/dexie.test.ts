@@ -161,6 +161,7 @@ describe('DexieProductRepository', () => {
   it('decrements stock consistently, allowing it to go negative', async () => {
     const repo = new DexieProductRepository(db);
     const id = await db.products.add({
+      uid: 'prod-uid-p',
       name: 'P',
       category: 'C',
       costPrice: 1,
@@ -172,6 +173,7 @@ describe('DexieProductRepository', () => {
       updatedAt: 1,
     });
     const scarce = await db.products.add({
+      uid: 'prod-uid-q',
       name: 'Q',
       category: 'C',
       costPrice: 1,
@@ -183,6 +185,7 @@ describe('DexieProductRepository', () => {
       updatedAt: 1,
     });
     const empty = await db.products.add({
+      uid: 'prod-uid-r',
       name: 'R',
       category: 'C',
       costPrice: 1,
@@ -194,10 +197,10 @@ describe('DexieProductRepository', () => {
       updatedAt: 1,
     });
     const result = await repo.decrementStock([
-      { productId: id as number, qty: 2 },
-      { productId: scarce as number, qty: 3 },
-      { productId: empty as number, qty: 1 },
-      { productId: 9999, qty: 1 },
+      { productUid: 'prod-uid-p', qty: 2 },
+      { productUid: 'prod-uid-q', qty: 3 },
+      { productUid: 'prod-uid-r', qty: 1 },
+      { productUid: 'non-existent-uid', qty: 1 },
     ]);
     expect(isRight(result)).toBe(true);
     expect((await db.products.get(id))?.stock).toBe(3);

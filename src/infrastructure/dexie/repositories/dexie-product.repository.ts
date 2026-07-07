@@ -65,9 +65,11 @@ export class DexieProductRepository implements ProductRepository {
   ): Promise<Either<InfrastructureError, void>> {
     try {
       for (const decrement of decrements) {
-        const product = await this.db.products.get(decrement.productId);
-        if (product) {
-          await this.db.products.update(decrement.productId, {
+        const product = await this.db.products
+          .filter((p) => p.uid === decrement.productUid)
+          .first();
+        if (product && product.id != null) {
+          await this.db.products.update(product.id, {
             stock: product.stock - decrement.qty,
           });
         }

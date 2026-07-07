@@ -27,7 +27,7 @@ import {
 class FakeRepositories implements Repositories {
   claimedTicket = false;
   createdOrder: NewOrder | null = null;
-  decrements: { productId: number; qty: number }[] = [];
+  decrements: { productUid: string; qty: number }[] = [];
   findOrCreateInput: { phone: string; name: string; address: string } | null =
     null;
 
@@ -85,7 +85,7 @@ class FakeRepositories implements Repositories {
     remove: async () => right(undefined),
     removeCustomizationGroup: async () => right(undefined),
     decrementStock: async (
-      decrements: { productId: number; qty: number }[],
+      decrements: { productUid: string; qty: number }[],
     ) => {
       this.decrements = decrements;
       return this.decrementResult;
@@ -130,7 +130,7 @@ class FakeUnitOfWork implements UnitOfWork {
 }
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
-  productUid: '1',
+  productUid: 'prod-uid-1',
   name: 'X-Burger',
   salePrice: 20,
   costPrice: 8,
@@ -182,7 +182,9 @@ describe('makeFinalizeOrder', () => {
     expect(repositories.createdOrder?.businessTypeId).toBe('quick_sale');
     expect(repositories.createdOrder?.sessionUid).toBe('s1');
     expect(repositories.createdOrder?.customerUid).toBe('cust-uid');
-    expect(repositories.decrements).toEqual([{ productId: 1, qty: 2 }]);
+    expect(repositories.decrements).toEqual([
+      { productUid: 'prod-uid-1', qty: 2 },
+    ]);
   });
 
   it('uses the provided ticket without claiming a new one', async () => {

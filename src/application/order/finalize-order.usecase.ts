@@ -52,7 +52,7 @@ export function makeFinalizeOrder(uow: UnitOfWork) {
         input.items
           .filter((item) => item.productUid !== undefined)
           .map((item) => ({
-            productId: Number(item.productUid),
+            productUid: item.productUid as string,
             qty: item.qty,
           })),
       );
