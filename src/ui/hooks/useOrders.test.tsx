@@ -17,8 +17,8 @@ vi.mock('../../app/container', () => ({
   container: {
     listOrders: () => listOrders(),
     readConfig: () => readConfig(),
-    markOrderPaid: (id: number, method: string) => markOrderPaid(id, method),
-    cancelOrder: (id: number) => cancelOrder(id),
+    markOrderPaid: (uid: string, method: string) => markOrderPaid(uid, method),
+    cancelOrder: (uid: string) => cancelOrder(uid),
   },
 }));
 
@@ -29,7 +29,9 @@ class FakeError extends AppError {
 
 const ORDER: Order = {
   id: 1,
-  sessionId: 1,
+  uid: 'order-1',
+  businessTypeId: 'tab',
+  sessionUid: 'session-1',
   items: [],
   total: 10,
   paymentMethod: null,
@@ -51,6 +53,8 @@ const CONFIG: BusinessConfig = {
   ticketLimit: 0,
   ticketAutoReset: false,
   statusControlEnabled: true,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 function Probe() {
@@ -59,8 +63,8 @@ function Probe() {
     <div>
       <span>orders:{orders.length}</span>
       <span>control:{String(statusControlEnabled)}</span>
-      <button onClick={() => markPaid(1, 'pix')}>pay</button>
-      <button onClick={() => cancel(1)}>cancel</button>
+      <button onClick={() => markPaid('order-1', 'pix')}>pay</button>
+      <button onClick={() => cancel('order-1')}>cancel</button>
     </div>
   );
 }
@@ -120,7 +124,7 @@ describe('useOrders', () => {
         'Pedido marcado como pago',
       ),
     );
-    expect(markOrderPaid).toHaveBeenCalledWith(1, 'pix');
+    expect(markOrderPaid).toHaveBeenCalledWith('order-1', 'pix');
     expect(listOrders).toHaveBeenCalledTimes(2);
   });
 
@@ -143,7 +147,7 @@ describe('useOrders', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('Pedido cancelado'),
     );
-    expect(cancelOrder).toHaveBeenCalledWith(1);
+    expect(cancelOrder).toHaveBeenCalledWith('order-1');
     expect(listOrders).toHaveBeenCalledTimes(2);
   });
 

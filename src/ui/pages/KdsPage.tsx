@@ -13,7 +13,7 @@ import {
 
 export function KdsPage() {
   const { activeSession } = useSession();
-  const { byStage, moveStage } = useKdsOrders(activeSession?.id);
+  const { byStage, moveStage } = useKdsOrders(activeSession?.uid);
 
   return (
     <div>
@@ -69,7 +69,7 @@ export function KdsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => moveStage(order.id!, previous)}
+                            onClick={() => moveStage(order.uid, previous)}
                           >
                             <ChevronLeft size={14} /> Voltar
                           </Button>
@@ -77,7 +77,7 @@ export function KdsPage() {
                         {next && (
                           <Button
                             size="sm"
-                            onClick={() => moveStage(order.id!, next)}
+                            onClick={() => moveStage(order.uid, next)}
                           >
                             Avançar <ChevronRight size={14} />
                           </Button>

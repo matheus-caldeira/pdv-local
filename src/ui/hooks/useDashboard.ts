@@ -4,13 +4,13 @@ import { fold } from '../../domain/shared/either';
 import type { DashboardData } from '../../application/report/report.usecases';
 import { useToast } from '../molecules/toast-context';
 
-export function useDashboard(sessionId: number | undefined) {
+export function useDashboard(sessionUid: string | undefined) {
   const toast = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (sessionId === undefined) {
+    if (sessionUid === undefined) {
       Promise.resolve().then(() => {
         if (!cancelled) setData(null);
       });
@@ -18,7 +18,7 @@ export function useDashboard(sessionId: number | undefined) {
         cancelled = true;
       };
     }
-    container.loadDashboard(sessionId).then((result) => {
+    container.loadDashboard(sessionUid).then((result) => {
       if (cancelled) return;
       fold(
         result,
@@ -29,7 +29,7 @@ export function useDashboard(sessionId: number | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, toast]);
+  }, [sessionUid, toast]);
 
   return { data };
 }

@@ -157,20 +157,19 @@ export function Cart({
                   <Money value={itemUnitTotal(item)} /> un.
                 </span>
               </div>
-              {item.customizations &&
-                item.customizations.map((customization, index) => (
-                  <div key={index} className="mb-1 flex flex-wrap gap-1">
-                    {customization.items.map((ci, ciIndex) => (
-                      <span
-                        key={ciIndex}
-                        className="rounded-full bg-surface-inset px-1.5 py-px text-xs text-ink-tertiary"
-                      >
-                        {ci.qty > 1 ? ci.qty + 'x ' : ''}
-                        {ci.name}
-                      </span>
-                    ))}
-                  </div>
-                ))}
+              {item.customizations && item.customizations.length > 0 && (
+                <div className="mb-1 flex flex-wrap gap-1">
+                  {item.customizations.map((customization, index) => (
+                    <span
+                      key={index}
+                      className="rounded-full bg-surface-inset px-1.5 py-px text-xs text-ink-tertiary"
+                    >
+                      {customization.qty > 1 ? customization.qty + 'x ' : ''}
+                      {customization.name}
+                    </span>
+                  ))}
+                </div>
+              )}
               {item.observation && (
                 <div className="mb-1 text-xs italic text-ink-tertiary">
                   Obs: {item.observation}

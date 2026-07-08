@@ -30,6 +30,8 @@ const config: BusinessConfig = {
   ticketLimit: 9999,
   ticketAutoReset: true,
   statusControlEnabled: true,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 class FakeConfigRepository implements ConfigRepository {

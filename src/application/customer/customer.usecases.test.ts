@@ -14,9 +14,11 @@ import {
 
 const customer = (over: Partial<Customer> = {}): Customer => ({
   id: 1,
+  uid: 'customer-1',
   name: 'Maria',
   phone: '41999',
   addresses: [],
+  extra: {},
   createdAt: 1,
   updatedAt: 1,
   ...over,
@@ -26,10 +28,10 @@ function fakeRepo(over: Partial<CustomerRepository> = {}): CustomerRepository {
   return {
     list: vi.fn(async () => right([] as Customer[])),
     findByPhone: vi.fn(async () => right(undefined)),
-    create: vi.fn(async (d) => right(customer({ ...d, id: 9 }))),
-    update: vi.fn(async (id, d) => right(customer({ ...d, id }))),
+    create: vi.fn(async (d) => right(customer({ ...d, uid: 'customer-9' }))),
+    update: vi.fn(async (uid, d) => right(customer({ ...d, uid }))),
     remove: vi.fn(async () => right(undefined)),
-    findOrCreate: vi.fn(async () => right(1)),
+    findOrCreate: vi.fn(async () => right('customer-1')),
     ...over,
   };
 }
@@ -50,8 +52,8 @@ describe('customer use cases', () => {
 
   it('removes a customer', async () => {
     const repo = fakeRepo();
-    await makeRemoveCustomer(repo)(3);
-    expect(repo.remove).toHaveBeenCalledWith(3);
+    await makeRemoveCustomer(repo)('customer-3');
+    expect(repo.remove).toHaveBeenCalledWith('customer-3');
   });
 
   it('rejects an invalid customer before touching the repo', async () => {
@@ -70,20 +72,20 @@ describe('customer use cases', () => {
     expect(repo.create).toHaveBeenCalled();
   });
 
-  it('updates the customer with the matching id', async () => {
+  it('updates the customer with the matching uid', async () => {
     const repo = fakeRepo({
-      findByPhone: vi.fn(async () => right(customer({ id: 5 }))),
+      findByPhone: vi.fn(async () => right(customer({ uid: 'customer-5' }))),
     });
-    const result = await makeSaveCustomer(repo)(input(), 5);
+    const result = await makeSaveCustomer(repo)(input(), 'customer-5');
     expect(isRight(result)).toBe(true);
-    expect(repo.update).toHaveBeenCalledWith(5, expect.anything());
+    expect(repo.update).toHaveBeenCalledWith('customer-5', expect.anything());
   });
 
   it('rejects a phone already used by another customer', async () => {
     const repo = fakeRepo({
-      findByPhone: vi.fn(async () => right(customer({ id: 2 }))),
+      findByPhone: vi.fn(async () => right(customer({ uid: 'customer-2' }))),
     });
-    const result = await makeSaveCustomer(repo)(input(), 5);
+    const result = await makeSaveCustomer(repo)(input(), 'customer-5');
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left).toBeInstanceOf(DuplicatePhoneError);
   });
@@ -105,7 +107,7 @@ describe('customer use cases', () => {
 
   it('returns up to six phone matches', async () => {
     const many = Array.from({ length: 8 }, (_, i) =>
-      customer({ id: i + 1, phone: `4199${i}` }),
+      customer({ id: i + 1, uid: `customer-${i + 1}`, phone: `4199${i}` }),
     );
     const repo = fakeRepo({ list: vi.fn(async () => right(many)) });
     const result = await makeSearchCustomersByPhone(repo)('4199');

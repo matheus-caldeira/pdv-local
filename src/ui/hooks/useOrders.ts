@@ -29,8 +29,8 @@ export function useOrders() {
   }, [load]);
 
   const markPaid = useCallback(
-    async (id: number, paymentMethod: string) => {
-      const result = await container.markOrderPaid(id, paymentMethod);
+    async (uid: string, paymentMethod: string) => {
+      const result = await container.markOrderPaid(uid, paymentMethod);
       return fold(
         result,
         (error) => {
@@ -48,8 +48,8 @@ export function useOrders() {
   );
 
   const cancel = useCallback(
-    async (id: number) => {
-      const result = await container.cancelOrder(id);
+    async (uid: string) => {
+      const result = await container.cancelOrder(uid);
       return fold(
         result,
         (error) => {

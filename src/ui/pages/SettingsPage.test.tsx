@@ -54,6 +54,8 @@ const CONFIG: BusinessConfig = {
   ticketLimit: 99,
   ticketAutoReset: true,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 function renderPage() {

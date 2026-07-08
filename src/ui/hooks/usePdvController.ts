@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { container } from '../../app/container';
 import { fold } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
 import { calculateOrderTotal } from '../../domain/order/order.rules';
@@ -26,7 +27,7 @@ function statusForOption(option: PayOption): OrderStatus {
   return 'open';
 }
 
-export function usePdvController(sessionId: number) {
+export function usePdvController(sessionUid: string) {
   const toast = useToast();
   const finalizeOrder = useFinalizeOrder();
   const { suggestion, refresh: refreshTicket } = useTicketSuggestion();
@@ -38,10 +39,26 @@ export function usePdvController(sessionId: number) {
   const [address, setAddress] = useState('');
   const [ticket, setTicket] = useState('');
   const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+  const [businessTypeId, setBusinessTypeId] = useState('');
 
   useEffect(() => {
     setTicket(suggestion);
   }, [suggestion]);
+
+  useEffect(() => {
+    let cancelled = false;
+    container.readConfig().then((result) => {
+      if (cancelled) return;
+      fold(
+        result,
+        () => undefined,
+        (config) => setBusinessTypeId(config.businessTypeId),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const total = useMemo(() => calculateOrderTotal(cart), [cart]);
   const totalQty = useMemo(
@@ -61,7 +78,7 @@ export function usePdvController(sessionId: number) {
   const selectCustomer = useCallback(
     (customer: Customer) => {
       setMatchedCustomer(customer);
-      setPhone(customer.phone);
+      setPhone(customer.phone ?? '');
       setCustomerName(customer.name === 'Consumidor' ? '' : customer.name);
       setAddress(customer.addresses[0] || '');
       customerSearch.clear();
@@ -72,7 +89,8 @@ export function usePdvController(sessionId: number) {
   const addSimpleToCart = useCallback((product: Product) => {
     setCart((prev) => {
       const existing = prev.find(
-        (item) => item.productId === product.id && !item.customizations?.length,
+        (item) =>
+          item.productUid === product.uid && !item.customizations?.length,
       );
       if (existing) {
         return prev.map((item) =>
@@ -85,7 +103,7 @@ export function usePdvController(sessionId: number) {
         ...prev,
         {
           cartId: genCartId(),
-          productId: product.id!,
+          productUid: product.uid,
           name: product.name,
           salePrice: product.salePrice,
           costPrice: product.costPrice,
@@ -140,7 +158,7 @@ export function usePdvController(sessionId: number) {
       const realAddress = address === '__new__' ? '' : address.trim();
 
       const items: OrderItem[] = cart.map((item) => ({
-        productId: item.productId,
+        productUid: item.productUid,
         name: item.name,
         salePrice: item.salePrice,
         costPrice: item.costPrice,
@@ -151,7 +169,8 @@ export function usePdvController(sessionId: number) {
       }));
 
       const result = await finalizeOrder({
-        sessionId,
+        sessionUid,
+        businessTypeId,
         items,
         paymentMethod: option === 'tab' ? null : paymentMethod,
         status: statusForOption(option),
@@ -181,12 +200,13 @@ export function usePdvController(sessionId: number) {
     },
     [
       address,
+      businessTypeId,
       cart,
       customerName,
       finalizeOrder,
       phone,
       resetForm,
-      sessionId,
+      sessionUid,
       suggestion,
       ticket,
       toast,

@@ -14,7 +14,7 @@ const loadSessionReport = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listReportSessions: () => listReportSessions(),
-    loadSessionReport: (id: number) => loadSessionReport(id),
+    loadSessionReport: (uid: string) => loadSessionReport(uid),
   },
 }));
 
@@ -26,6 +26,7 @@ class FakeError extends AppError {
 const SESSIONS: Session[] = [
   {
     id: 1,
+    uid: 'session-1',
     openedAt: 1000,
     closedAt: 2000,
     cashInitial: 0,
@@ -34,6 +35,7 @@ const SESSIONS: Session[] = [
   },
   {
     id: 2,
+    uid: 'session-2',
     openedAt: 5000,
     closedAt: null,
     cashInitial: 0,
@@ -58,13 +60,13 @@ function makeReport(total: number): SessionReport {
 }
 
 function Probe() {
-  const { sessions, selectedSessionId, select, report } = useReports();
+  const { sessions, selectedSessionUid, select, report } = useReports();
   return (
     <div>
       <span>count:{sessions.length}</span>
-      <span>selected:{selectedSessionId ?? 'none'}</span>
+      <span>selected:{selectedSessionUid ?? 'none'}</span>
       <span>report:{report ? report.summary.totalSales : 'none'}</span>
-      <button onClick={() => select(1)}>select-1</button>
+      <button onClick={() => select('session-1')}>select-1</button>
     </div>
   );
 }
@@ -89,10 +91,10 @@ describe('useReports', () => {
   it('loads sessions and selects the most recent by default', async () => {
     renderProbe();
     await waitFor(() =>
-      expect(screen.getByText('selected:2')).toBeInTheDocument(),
+      expect(screen.getByText('selected:session-2')).toBeInTheDocument(),
     );
     expect(screen.getByText('count:2')).toBeInTheDocument();
-    expect(loadSessionReport).toHaveBeenCalledWith(2);
+    expect(loadSessionReport).toHaveBeenCalledWith('session-2');
   });
 
   it('handles an empty session list with no selection', async () => {
@@ -105,23 +107,6 @@ describe('useReports', () => {
     expect(loadSessionReport).not.toHaveBeenCalled();
   });
 
-  it('ignores sessions without an id when defaulting', async () => {
-    listReportSessions.mockResolvedValue(
-      right([
-        {
-          openedAt: 9000,
-          closedAt: null,
-          cashInitial: 0,
-          cashFinal: null,
-          notes: '',
-        },
-      ]),
-    );
-    renderProbe();
-    await waitFor(() => expect(listReportSessions).toHaveBeenCalled());
-    expect(screen.getByText('selected:none')).toBeInTheDocument();
-  });
-
   it('loads the report when the selection changes', async () => {
     renderProbe();
     await waitFor(() =>
@@ -130,9 +115,9 @@ describe('useReports', () => {
     loadSessionReport.mockResolvedValue(right(makeReport(99)));
     await userEvent.click(screen.getByText('select-1'));
     await waitFor(() =>
-      expect(screen.getByText('selected:1')).toBeInTheDocument(),
+      expect(screen.getByText('selected:session-1')).toBeInTheDocument(),
     );
-    expect(loadSessionReport).toHaveBeenLastCalledWith(1);
+    expect(loadSessionReport).toHaveBeenLastCalledWith('session-1');
     await waitFor(() =>
       expect(screen.getByText('report:99')).toBeInTheDocument(),
     );
@@ -179,7 +164,9 @@ describe('useReports', () => {
       }),
     );
     const { unmount } = renderProbe();
-    await waitFor(() => expect(loadSessionReport).toHaveBeenCalledWith(2));
+    await waitFor(() =>
+      expect(loadSessionReport).toHaveBeenCalledWith('session-2'),
+    );
     unmount();
     resolveReport(right(makeReport(77)));
     await Promise.resolve();

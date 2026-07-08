@@ -29,6 +29,7 @@ import {
 
 const group = (over: Partial<CustomizationGroup> = {}): CustomizationGroup => ({
   id: 1,
+  uid: 'group-1',
   name: 'Adicionais',
   required: false,
   minQty: 0,
@@ -38,7 +39,8 @@ const group = (over: Partial<CustomizationGroup> = {}): CustomizationGroup => ({
 });
 const cItem = (over: Partial<CustomizationItem> = {}): CustomizationItem => ({
   id: 1,
-  groupId: 1,
+  uid: 'item-1',
+  groupUid: 'group-1',
   name: 'Bacon',
   price: 3,
   maxQty: 2,
@@ -74,7 +76,7 @@ const groupInput = {
   chargeAfter: 0,
 };
 const itemInput = {
-  groupId: 1,
+  groupUid: 'group-1',
   name: 'Extra',
   price: 0,
   maxQty: 1,
@@ -199,13 +201,16 @@ describe('makeRemoveGroup', () => {
     it('loads the product groups in order with only their active items', async () => {
       const repo = fakeRepo();
       repo.listGroups = vi.fn(async () =>
-        right([group({ id: 1 }), group({ id: 2, name: 'Ponto' })]),
+        right([
+          group({ id: 1, uid: 'group-1' }),
+          group({ id: 2, uid: 'group-2', name: 'Ponto' }),
+        ]),
       );
       repo.listItems = vi.fn(async () =>
         right([
-          cItem({ id: 10, groupId: 1, name: 'Bacon' }),
-          cItem({ id: 11, groupId: 1, name: 'Oculto', active: false }),
-          cItem({ id: 12, groupId: 2, name: 'Bem passado' }),
+          cItem({ id: 10, groupUid: 'group-1', name: 'Bacon' }),
+          cItem({ id: 11, groupUid: 'group-1', name: 'Oculto', active: false }),
+          cItem({ id: 12, groupUid: 'group-2', name: 'Bem passado' }),
         ]),
       );
       const result = await makeLoadProductCustomizations(repo)([2, 1]);

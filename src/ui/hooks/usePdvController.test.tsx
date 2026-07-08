@@ -11,12 +11,14 @@ import type { FinalizeOrderInput } from '../../application/order/finalize-order.
 const finalizeOrder = vi.fn();
 const peekTicketSuggestion = vi.fn();
 const searchCustomersByPhone = vi.fn();
+const readConfig = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
     finalizeOrder: (input: FinalizeOrderInput) => finalizeOrder(input),
     peekTicketSuggestion: () => peekTicketSuggestion(),
     searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
+    readConfig: () => readConfig(),
   },
 }));
 
@@ -26,6 +28,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 function product(partial: Partial<Product> & { id: number }): Product {
   return {
+    uid: `product-${partial.id}`,
     name: 'X',
     category: 'c',
     costPrice: 5,
@@ -41,7 +44,7 @@ function product(partial: Partial<Product> & { id: number }): Product {
 
 async function setup() {
   peekTicketSuggestion.mockResolvedValue(right('0001'));
-  const view = renderHook(() => usePdvController(7), { wrapper });
+  const view = renderHook(() => usePdvController('session-7'), { wrapper });
   await waitFor(() => expect(view.result.current.ticket).toBe('0001'));
   return view;
 }
@@ -51,8 +54,23 @@ describe('usePdvController', () => {
     finalizeOrder.mockReset();
     peekTicketSuggestion.mockReset();
     searchCustomersByPhone.mockReset();
+    readConfig.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
     searchCustomersByPhone.mockResolvedValue(right([]));
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'tab',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
   });
   afterEach(cleanup);
 
@@ -62,15 +80,17 @@ describe('usePdvController', () => {
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     expect(result.current.cart).toHaveLength(2);
-    const burger = result.current.cart.find((item) => item.productId === 1)!;
+    const burger = result.current.cart.find(
+      (item) => item.productUid === 'product-1',
+    )!;
     expect(burger.qty).toBe(2);
     expect(result.current.total).toBe(25);
     expect(result.current.totalQty).toBe(3);
 
     act(() => result.current.updateQty(burger.cartId, 1));
-    expect(result.current.cart.find((item) => item.productId === 1)!.qty).toBe(
-      3,
-    );
+    expect(
+      result.current.cart.find((item) => item.productUid === 'product-1')!.qty,
+    ).toBe(3);
     act(() => result.current.updateQty(burger.cartId, -3));
     expect(result.current.cart).toHaveLength(1);
 
@@ -84,7 +104,7 @@ describe('usePdvController', () => {
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     act(() =>
       result.current.addCustomizedToCart({
-        productId: 9,
+        productUid: 'product-9',
         name: 'Combo',
         salePrice: 30,
         costPrice: 10,
@@ -101,7 +121,18 @@ describe('usePdvController', () => {
 
   it('searches and selects a customer, mapping Consumidor to empty name', async () => {
     searchCustomersByPhone.mockResolvedValue(
-      right([{ id: 1, name: 'Consumidor', phone: '99887766', addresses: [] }]),
+      right([
+        {
+          id: 1,
+          uid: 'customer-1',
+          name: 'Consumidor',
+          phone: '99887766',
+          addresses: [],
+          extra: {},
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      ]),
     );
     const { result } = await setup();
     await act(async () => result.current.onPhoneChange('9988'));
@@ -122,9 +153,11 @@ describe('usePdvController', () => {
     act(() =>
       result.current.selectCustomer({
         id: 2,
+        uid: 'customer-2',
         name: 'Maria',
         phone: '11112222',
         addresses: ['Rua X'],
+        extra: {},
         createdAt: 0,
         updatedAt: 0,
       }),
@@ -138,7 +171,9 @@ describe('usePdvController', () => {
     peekTicketSuggestion
       .mockResolvedValueOnce(right('0001'))
       .mockResolvedValueOnce(right('0002'));
-    const { result } = renderHook(() => usePdvController(7), { wrapper });
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
     await waitFor(() => expect(result.current.ticket).toBe('0001'));
 
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
@@ -151,12 +186,13 @@ describe('usePdvController', () => {
     expect(ok).toBe(true);
     expect(finalizeOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        sessionId: 7,
+        sessionUid: 'session-7',
+        businessTypeId: 'tab',
         status: 'paid',
         paymentMethod: 'pix',
         ticket: null,
         customerName: 'Joao',
-        items: [expect.objectContaining({ productId: 1, qty: 1 })],
+        items: [expect.objectContaining({ productUid: 'product-1', qty: 1 })],
       }),
     );
     await waitFor(() => expect(result.current.cart).toHaveLength(0));

@@ -67,13 +67,13 @@ export function OrdersPage() {
   }
 
   async function handleMarkPaid(method: string) {
-    const ok = await markPaid(detailOrder!.id!, method);
+    const ok = await markPaid(detailOrder!.uid, method);
     if (ok) setDetailOrder(null);
   }
 
   async function handleCancel() {
     if (!window.confirm('Cancelar este pedido?')) return;
-    const ok = await cancel(detailOrder!.id!);
+    const ok = await cancel(detailOrder!.uid);
     if (ok) setDetailOrder(null);
   }
 

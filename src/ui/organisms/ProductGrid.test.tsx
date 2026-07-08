@@ -11,6 +11,7 @@ function make(
   partial: Partial<Product> & { id: number; name: string },
 ): Product {
   return {
+    uid: `product-${partial.id}`,
     category: 'Lanches',
     costPrice: 1,
     salePrice: 10,
@@ -44,7 +45,7 @@ describe('ProductGrid', () => {
     const cart: CartItem[] = [
       {
         cartId: 'a',
-        productId: 1,
+        productUid: 'product-1',
         name: 'X-Burger',
         salePrice: 10,
         costPrice: 1,

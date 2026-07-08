@@ -20,9 +20,9 @@ const removeCustomer = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listCustomers: () => listCustomers(),
-    saveCustomer: (input: CustomerInput, id?: number) =>
-      saveCustomer(input, id),
-    removeCustomer: (id: number) => removeCustomer(id),
+    saveCustomer: (input: CustomerInput, uid?: string) =>
+      saveCustomer(input, uid),
+    removeCustomer: (uid: string) => removeCustomer(uid),
   },
 }));
 
@@ -33,18 +33,22 @@ class FakeError extends AppError {
 
 const ana = {
   id: 1,
+  uid: 'customer-1',
   name: 'Ana',
   phone: '11912345678',
   addresses: ['Rua A', 'Rua B'],
+  extra: {},
   createdAt: 0,
   updatedAt: 0,
 };
 
 const bruno = {
   id: 2,
+  uid: 'customer-2',
   name: 'Bruno',
   phone: '21999990000',
   addresses: ['Av C'],
+  extra: {},
   createdAt: 0,
   updatedAt: 0,
 };
@@ -166,7 +170,7 @@ describe('CustomersPage', () => {
     );
     expect(saveCustomer).toHaveBeenCalledWith(
       { name: 'Ana', phone: '11912345678', addresses: ['Rua A', 'Rua Nova'] },
-      1,
+      'customer-1',
     );
   });
 
@@ -205,7 +209,7 @@ describe('CustomersPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(removeCustomer).toHaveBeenCalledWith(1);
+    expect(removeCustomer).toHaveBeenCalledWith('customer-1');
   });
 
   it('does not remove when confirmation is cancelled', async () => {

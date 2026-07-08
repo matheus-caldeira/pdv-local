@@ -15,6 +15,7 @@ import {
 
 const product = (over: Partial<Product> = {}): Product => ({
   id: 1,
+  uid: 'product-1',
   name: 'X',
   category: 'C',
   costPrice: 1,

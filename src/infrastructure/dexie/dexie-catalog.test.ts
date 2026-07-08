@@ -19,7 +19,10 @@ afterEach(async () => {
   await db.delete();
 });
 
+let productUidCounter = 0;
+
 const newProduct = (over: Partial<NewProduct> = {}): NewProduct => ({
+  uid: `product-${++productUidCounter}`,
   name: 'P',
   category: 'C',
   costPrice: 1,

@@ -10,7 +10,7 @@ const loadDashboard = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
-    loadDashboard: (id: number) => loadDashboard(id),
+    loadDashboard: (uid: string) => loadDashboard(uid),
   },
 }));
 
@@ -32,15 +32,15 @@ const DATA: DashboardData = {
   recent: [],
 };
 
-function Probe({ sessionId }: { sessionId: number | undefined }) {
-  const { data } = useDashboard(sessionId);
+function Probe({ sessionUid }: { sessionUid: string | undefined }) {
+  const { data } = useDashboard(sessionUid);
   return <span>sales:{data ? data.summary.totalSales : 'none'}</span>;
 }
 
-function renderProbe(sessionId: number | undefined) {
+function renderProbe(sessionUid: string | undefined) {
   return render(
     <ToastProvider>
-      <Probe sessionId={sessionId} />
+      <Probe sessionUid={sessionUid} />
     </ToastProvider>,
   );
 }
@@ -61,32 +61,36 @@ describe('useDashboard', () => {
   });
 
   it('loads the dashboard for the given session', async () => {
-    renderProbe(7);
+    renderProbe('session-7');
     await waitFor(() =>
       expect(screen.getByText('sales:100')).toBeInTheDocument(),
     );
-    expect(loadDashboard).toHaveBeenCalledWith(7);
+    expect(loadDashboard).toHaveBeenCalledWith('session-7');
   });
 
   it('reloads when the session changes', async () => {
-    const { rerender } = renderProbe(1);
-    await waitFor(() => expect(loadDashboard).toHaveBeenCalledWith(1));
+    const { rerender } = renderProbe('session-1');
+    await waitFor(() =>
+      expect(loadDashboard).toHaveBeenCalledWith('session-1'),
+    );
     rerender(
       <ToastProvider>
-        <Probe sessionId={2} />
+        <Probe sessionUid="session-2" />
       </ToastProvider>,
     );
-    await waitFor(() => expect(loadDashboard).toHaveBeenCalledWith(2));
+    await waitFor(() =>
+      expect(loadDashboard).toHaveBeenCalledWith('session-2'),
+    );
   });
 
   it('clears data when the session becomes undefined', async () => {
-    const { rerender } = renderProbe(1);
+    const { rerender } = renderProbe('session-1');
     await waitFor(() =>
       expect(screen.getByText('sales:100')).toBeInTheDocument(),
     );
     rerender(
       <ToastProvider>
-        <Probe sessionId={undefined} />
+        <Probe sessionUid={undefined} />
       </ToastProvider>,
     );
     await waitFor(() =>
@@ -96,7 +100,7 @@ describe('useDashboard', () => {
 
   it('toasts when loading fails', async () => {
     loadDashboard.mockResolvedValue(left(new FakeError('falha painel')));
-    renderProbe(5);
+    renderProbe('session-5');
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('falha painel'),
     );
@@ -110,8 +114,10 @@ describe('useDashboard', () => {
         resolveLoad = resolve;
       }),
     );
-    const { unmount } = renderProbe(3);
-    await waitFor(() => expect(loadDashboard).toHaveBeenCalledWith(3));
+    const { unmount } = renderProbe('session-3');
+    await waitFor(() =>
+      expect(loadDashboard).toHaveBeenCalledWith('session-3'),
+    );
     unmount();
     resolveLoad(right(DATA));
     await Promise.resolve();

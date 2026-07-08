@@ -20,7 +20,8 @@ describe('useFinalizeOrder', () => {
     finalizeOrder.mockResolvedValue(right(order));
     const { result } = renderHook(() => useFinalizeOrder());
     const input: FinalizeOrderInput = {
-      sessionId: 1,
+      sessionUid: 'session-1',
+      businessTypeId: 'tab',
       items: [],
       paymentMethod: null,
       status: 'open',

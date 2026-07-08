@@ -42,6 +42,8 @@ const BASE_CONFIG: BusinessConfig = {
   ticketLimit: 0,
   ticketAutoReset: false,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 const ACTIVE_SESSION = {

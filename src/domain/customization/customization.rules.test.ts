@@ -22,7 +22,7 @@ const groupInput = (
 const itemInput = (
   over: Partial<CustomizationItemInput> = {},
 ): CustomizationItemInput => ({
-  groupId: 1,
+  groupUid: 'group-1',
   name: 'Bem passado',
   price: 0,
   maxQty: 1,
@@ -53,7 +53,7 @@ describe('buildCustomizationItem', () => {
     expect(isRight(result)).toBe(true);
     if (isRight(result)) {
       expect(result.right.name).toBe('Extra');
-      expect(result.right.groupId).toBe(1);
+      expect(result.right.groupUid).toBe('group-1');
     }
   });
 

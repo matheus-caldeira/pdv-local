@@ -19,10 +19,10 @@ interface CustomizationState {
   groups: LoadedCustomizationGroup[];
 }
 
-function PdvSession({ sessionId }: { sessionId: number }) {
+function PdvSession({ sessionUid }: { sessionUid: string }) {
   const products = useProducts();
   const loadCustomizations = useCustomizationLoader();
-  const controller = usePdvController(sessionId);
+  const controller = usePdvController(sessionUid);
 
   const [customization, setCustomization] = useState<CustomizationState | null>(
     null,
@@ -106,7 +106,7 @@ export function PdvPage() {
 
   if (loading) return null;
 
-  if (!activeSession?.id) {
+  if (!activeSession?.uid) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <h2 className="text-xl text-ink-secondary">Abra o caixa para vender</h2>
@@ -115,5 +115,5 @@ export function PdvPage() {
     );
   }
 
-  return <PdvSession sessionId={activeSession.id} />;
+  return <PdvSession sessionUid={activeSession.uid} />;
 }

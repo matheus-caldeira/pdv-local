@@ -16,18 +16,26 @@ vi.mock('../hooks/useSession', () => ({
 
 vi.mock('../../app/container', () => ({
   container: {
-    observeSessionOrders: (sessionId: number) =>
-      observeSessionOrders(sessionId),
-    setOrderStage: (id: number, stage: string) => setOrderStage(id, stage),
+    observeSessionOrders: (sessionUid: string) =>
+      observeSessionOrders(sessionUid),
+    setOrderStage: (uid: string, stage: string) => setOrderStage(uid, stage),
   },
 }));
 
 function makeOrder(partial: Partial<Order>): Order {
   return {
     id: 1,
-    sessionId: 1,
+    uid: 'order-1',
+    businessTypeId: 'tab',
+    sessionUid: 'session-1',
     items: [
-      { productId: 1, name: 'X-Burger', salePrice: 5, costPrice: 1, qty: 2 },
+      {
+        productUid: 'product-1',
+        name: 'X-Burger',
+        salePrice: 5,
+        costPrice: 1,
+        qty: 2,
+      },
     ],
     total: 10,
     paymentMethod: null,
@@ -43,8 +51,14 @@ function makeOrder(partial: Partial<Order>): Order {
 }
 
 const ORDERS: Order[] = [
-  makeOrder({ id: 1, ticket: '001', stage: 'aceito', customerName: 'Ana' }),
-  makeOrder({ id: 2, ticket: '002', stage: 'finalizado' }),
+  makeOrder({
+    id: 1,
+    uid: 'order-1',
+    ticket: '001',
+    stage: 'aceito',
+    customerName: 'Ana',
+  }),
+  makeOrder({ id: 2, uid: 'order-2', ticket: '002', stage: 'finalizado' }),
 ];
 
 function fakeObservable(orders: Order[]) {
@@ -85,18 +99,21 @@ describe('KdsPage', () => {
 
   it('renders the board with cards and item summaries', () => {
     useSession.mockReturnValue({
-      activeSession: { id: 9 },
+      activeSession: { uid: 'session-9' },
       loading: false,
     });
     renderPage();
-    expect(observeSessionOrders).toHaveBeenCalledWith(9);
+    expect(observeSessionOrders).toHaveBeenCalledWith('session-9');
     expect(screen.getByText('#001')).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
     expect(screen.getAllByText('2x X-Burger').length).toBe(2);
   });
 
   it('advances a card on the first stage with no back button', async () => {
-    useSession.mockReturnValue({ activeSession: { id: 9 }, loading: false });
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
     renderPage();
     const card = screen.getByText('#001').closest('div')!.parentElement!;
     expect(
@@ -105,17 +122,20 @@ describe('KdsPage', () => {
     await userEvent.click(
       within(card).getByRole('button', { name: /Avançar/ }),
     );
-    expect(setOrderStage).toHaveBeenCalledWith(1, 'em_preparo');
+    expect(setOrderStage).toHaveBeenCalledWith('order-1', 'em_preparo');
   });
 
   it('moves a card back from the last stage with no advance button', async () => {
-    useSession.mockReturnValue({ activeSession: { id: 9 }, loading: false });
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
     renderPage();
     const card = screen.getByText('#002').closest('div')!.parentElement!;
     expect(
       within(card).queryByRole('button', { name: /Avançar/ }),
     ).not.toBeInTheDocument();
     await userEvent.click(within(card).getByRole('button', { name: /Voltar/ }));
-    expect(setOrderStage).toHaveBeenCalledWith(2, 'a_caminho');
+    expect(setOrderStage).toHaveBeenCalledWith('order-2', 'a_caminho');
   });
 });

@@ -14,9 +14,9 @@ const removeCustomer = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listCustomers: () => listCustomers(),
-    saveCustomer: (input: CustomerInput, id?: number) =>
-      saveCustomer(input, id),
-    removeCustomer: (id: number) => removeCustomer(id),
+    saveCustomer: (input: CustomerInput, uid?: string) =>
+      saveCustomer(input, uid),
+    removeCustomer: (uid: string) => removeCustomer(uid),
   },
 }));
 
@@ -37,8 +37,8 @@ function Probe() {
     <div>
       <span>customers:{customers.map((c) => c.name).join(',')}</span>
       <button onClick={() => saveCustomer(INPUT)}>create</button>
-      <button onClick={() => saveCustomer(INPUT, 7)}>update</button>
-      <button onClick={() => removeCustomer(9)}>remove</button>
+      <button onClick={() => saveCustomer(INPUT, 'customer-7')}>update</button>
+      <button onClick={() => removeCustomer('customer-9')}>remove</button>
     </div>
   );
 }
@@ -101,7 +101,7 @@ describe('useCustomers', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('Cliente salvo'),
     );
-    expect(saveCustomer).toHaveBeenCalledWith(INPUT, 7);
+    expect(saveCustomer).toHaveBeenCalledWith(INPUT, 'customer-7');
   });
 
   it('toasts and returns false when saving fails', async () => {
@@ -125,7 +125,7 @@ describe('useCustomers', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('Cliente excluído'),
     );
-    expect(removeCustomer).toHaveBeenCalledWith(9);
+    expect(removeCustomer).toHaveBeenCalledWith('customer-9');
     expect(listCustomers).toHaveBeenCalledTimes(2);
   });
 

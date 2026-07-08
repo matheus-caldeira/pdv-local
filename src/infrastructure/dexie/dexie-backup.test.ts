@@ -34,6 +34,7 @@ afterEach(async () => {
 });
 
 const product = (over: Record<string, unknown> = {}) => ({
+  uid: 'product-1',
   name: 'X-Burger',
   category: 'Lanches',
   costPrice: 8,

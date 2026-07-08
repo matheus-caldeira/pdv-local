@@ -11,7 +11,7 @@ import {
 import { fold } from '../../domain/shared/either';
 import type {
   OrderItem,
-  OrderCustomization,
+  OrderCustomizationItem,
 } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 import type { LoadedCustomizationGroup } from '../hooks/useCustomizationLoader';
@@ -90,22 +90,23 @@ export function CustomizationModal({
     );
     if (!proceed) return;
 
-    const customizations: OrderCustomization[] = [];
+    const customizations: OrderCustomizationItem[] = [];
     for (const group of groups) {
       const sel = selections[group.id!] || {};
-      const items = Object.entries(sel)
-        .filter(([, qty]) => qty > 0)
-        .map(([itemId, qty]) => {
-          const item = group.items.find((i) => i.id === Number(itemId))!;
-          return { name: item.name, qty, price: item.price };
+      for (const [itemId, qty] of Object.entries(sel)) {
+        if (qty <= 0) continue;
+        const item = group.items.find((i) => i.id === Number(itemId))!;
+        customizations.push({
+          groupName: group.name,
+          name: item.name,
+          qty,
+          price: item.price,
         });
-      if (items.length > 0) {
-        customizations.push({ groupName: group.name, items });
       }
     }
 
     onConfirm({
-      productId: product.id!,
+      productUid: product.uid,
       name: product.name,
       salePrice: product.salePrice,
       costPrice: product.costPrice,

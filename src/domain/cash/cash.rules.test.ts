@@ -11,7 +11,8 @@ import type { CashMovement } from './cash.entity';
 
 const movement = (over: Partial<CashMovement> = {}): CashMovement => ({
   id: 1,
-  sessionId: 1,
+  uid: 'movement-1',
+  sessionUid: 'session-1',
   type: 'suprimento',
   amount: 10,
   reason: '',
