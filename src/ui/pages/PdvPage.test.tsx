@@ -6,10 +6,11 @@ import { PdvPage } from './PdvPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { EmptyCartError } from '../../domain/errors';
-import type { FinalizeOrderInput } from '../../application/order/finalize-order.usecase';
+import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
+import type { RegisterOrderInput } from '../../application/order/register-order.usecase';
 
 const navigate = vi.fn();
-const finalizeOrder = vi.fn();
+const registerOrder = vi.fn();
 const getActiveSession = vi.fn();
 const listActiveProducts = vi.fn();
 const peekTicketSuggestion = vi.fn();
@@ -24,7 +25,11 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('../../app/container', () => ({
   container: {
-    finalizeOrder: (input: FinalizeOrderInput) => finalizeOrder(input),
+    registerOrder: (
+      businessTypeId: string,
+      definition: BusinessTypeDefinition,
+      input: RegisterOrderInput,
+    ) => registerOrder(businessTypeId, definition, input),
     getActiveSession: () => getActiveSession(),
     listActiveProducts: () => listActiveProducts(),
     peekTicketSuggestion: () => peekTicketSuggestion(),
@@ -71,7 +76,7 @@ const customProduct = {
 describe('PdvPage', () => {
   beforeEach(() => {
     navigate.mockReset();
-    finalizeOrder.mockReset();
+    registerOrder.mockReset();
     getActiveSession.mockReset();
     listActiveProducts.mockReset();
     peekTicketSuggestion.mockReset();
@@ -113,7 +118,7 @@ describe('PdvPage', () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
 
@@ -132,7 +137,9 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument(),
     );
-    expect(finalizeOrder).toHaveBeenCalledWith(
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      expect.objectContaining({ id: 'tab' }),
       expect.objectContaining({ sessionUid: 'session-3', status: 'open' }),
     );
   });
@@ -152,14 +159,14 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument(),
     );
-    expect(finalizeOrder).not.toHaveBeenCalled();
+    expect(registerOrder).not.toHaveBeenCalled();
   });
 
   it('keeps the payment panel open when the use case returns a Left', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
-    finalizeOrder.mockResolvedValue(left(new EmptyCartError()));
+    registerOrder.mockResolvedValue(left(new EmptyCartError()));
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await userEvent.click(screen.getByText('Coca'));
@@ -169,7 +176,7 @@ describe('PdvPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Abrir comanda' }),
     );
-    expect(finalizeOrder).toHaveBeenCalled();
+    expect(registerOrder).toHaveBeenCalled();
     expect(screen.getByText('Como deseja pagar?')).toBeInTheDocument();
   });
 

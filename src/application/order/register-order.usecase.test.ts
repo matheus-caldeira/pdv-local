@@ -310,13 +310,46 @@ describe('RegisterOrderUseCase', () => {
       repositories.claimTicketResult = left(new ConnectorError('down'));
       const result = await new RegisterOrderUseCase(
         uow,
-        definitionWith('required'),
+        definitionWith('optional'),
       ).run({
         sessionUid: 's1',
         items: [itemWithProduct()],
       });
       expect(isLeft(result)).toBe(true);
       expect(repositories.createdOrder).toBeNull();
+    });
+
+    it('usa o customerUid informado sem consultar findOrCreate', async () => {
+      const { repositories, uow } = setup();
+      const result = await new RegisterOrderUseCase(
+        uow,
+        definitionWith('none'),
+      ).run({
+        sessionUid: 's1',
+        items: [itemWithProduct()],
+        customerUid: 'cust-existing',
+      });
+      expect(isRight(result)).toBe(true);
+      expect(repositories.findOrCreateInput).toBeNull();
+      expect(repositories.createdOrder?.customerUid).toBe('cust-existing');
+    });
+
+    it('faz upsert do cliente usando apenas o telefone quando não há nome', async () => {
+      const { repositories, uow } = setup();
+      const result = await new RegisterOrderUseCase(
+        uow,
+        definitionWith('none'),
+      ).run({
+        sessionUid: 's1',
+        items: [itemWithProduct()],
+        customerPhone: '41999',
+      });
+      expect(isRight(result)).toBe(true);
+      expect(repositories.findOrCreateInput).toEqual({
+        phone: '41999',
+        name: '',
+        address: '',
+      });
     });
 
     it('aborta quando o upsert do cliente falha', async () => {

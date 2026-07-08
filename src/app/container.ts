@@ -9,10 +9,6 @@ import { DexieConfigRepository } from '../infrastructure/dexie/repositories/dexi
 import { DexieBackupRepository } from '../infrastructure/dexie/repositories/dexie-backup.repository';
 import { browserFileSaver } from '../infrastructure/dexie/browser-file-saver';
 import {
-  makeFinalizeOrder,
-  type FinalizeOrderInput,
-} from '../application/order/finalize-order.usecase';
-import {
   makeCreateProduct,
   makeListActiveProducts,
   makeListProducts,
@@ -87,7 +83,6 @@ export function createContainer() {
   const backup = new DexieBackupRepository(db, browserFileSaver);
 
   return {
-    finalizeOrder: makeFinalizeOrder(uow),
     listProducts: makeListProducts(products),
     listActiveProducts: makeListActiveProducts(products),
     createProduct: makeCreateProduct(products),
@@ -140,6 +135,5 @@ export function createContainer() {
 }
 
 export type Container = ReturnType<typeof createContainer>;
-export type { FinalizeOrderInput };
 
 export const container = createContainer();

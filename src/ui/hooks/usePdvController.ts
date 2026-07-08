@@ -2,13 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { container } from '../../app/container';
 import { fold } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
+import {
+  BusinessTypeNotSelectedError,
+  UnknownBusinessTypeError,
+} from '../../domain/errors';
 import { calculateOrderTotal } from '../../domain/order/order.rules';
 import { getBusinessType } from '../../domain/business-type/registry';
 import type { OrderItem, OrderStatus } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 import type { Customer } from '../../domain/customer/customer.entity';
 import { useToast } from '../molecules/toast-context';
-import { useFinalizeOrder } from './useFinalizeOrder';
 import { useCustomerSearch } from './useCustomerSearch';
 import { useTicketSuggestion } from './useTicketSuggestion';
 
@@ -30,7 +33,6 @@ function statusForOption(option: PayOption): OrderStatus {
 
 export function usePdvController(sessionUid: string) {
   const toast = useToast();
-  const finalizeOrder = useFinalizeOrder();
   const { suggestion, refresh: refreshTicket } = useTicketSuggestion();
   const customerSearch = useCustomerSearch();
 
@@ -159,8 +161,17 @@ export function usePdvController(sessionUid: string) {
 
   const finalizeSale = useCallback(
     async (option: PayOption, paymentMethod: string | null) => {
+      const definition = getBusinessType(businessTypeId);
+      if (!definition) {
+        const error = businessTypeId
+          ? new UnknownBusinessTypeError(businessTypeId)
+          : new BusinessTypeNotSelectedError();
+        toast(error.message, 'error');
+        return false;
+      }
+
       const edited = ticket.trim() !== suggestion;
-      const orderTicket = edited ? ticket.trim() || '-' : null;
+      const orderTicket = edited ? ticket.trim() || '-' : undefined;
       const realAddress = address === '__new__' ? '' : address.trim();
 
       const items: OrderItem[] = cart.map((item) => ({
@@ -174,16 +185,15 @@ export function usePdvController(sessionUid: string) {
         customizationTotal: item.customizationTotal,
       }));
 
-      const result = await finalizeOrder({
+      const result = await container.registerOrder(businessTypeId, definition, {
         sessionUid,
-        businessTypeId,
         items,
+        ticket: orderTicket,
         paymentMethod: option === 'tab' ? null : paymentMethod,
         status: statusForOption(option),
         customerName,
         customerPhone: phone,
         customerAddress: realAddress,
-        ticket: orderTicket,
       });
 
       return fold(
@@ -209,7 +219,6 @@ export function usePdvController(sessionUid: string) {
       businessTypeId,
       cart,
       customerName,
-      finalizeOrder,
       phone,
       resetForm,
       sessionUid,

@@ -5,17 +5,23 @@ import { usePdvController } from './usePdvController';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { EmptyCartError } from '../../domain/errors';
+import { getBusinessType } from '../../domain/business-type/registry';
 import type { Product } from '../../domain/product/product.entity';
-import type { FinalizeOrderInput } from '../../application/order/finalize-order.usecase';
+import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
+import type { RegisterOrderInput } from '../../application/order/register-order.usecase';
 
-const finalizeOrder = vi.fn();
+const registerOrder = vi.fn();
 const peekTicketSuggestion = vi.fn();
 const searchCustomersByPhone = vi.fn();
 const readConfig = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
-    finalizeOrder: (input: FinalizeOrderInput) => finalizeOrder(input),
+    registerOrder: (
+      businessTypeId: string,
+      definition: BusinessTypeDefinition,
+      input: RegisterOrderInput,
+    ) => registerOrder(businessTypeId, definition, input),
     peekTicketSuggestion: () => peekTicketSuggestion(),
     searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
     readConfig: () => readConfig(),
@@ -51,7 +57,7 @@ async function setup() {
 
 describe('usePdvController', () => {
   beforeEach(() => {
-    finalizeOrder.mockReset();
+    registerOrder.mockReset();
     peekTicketSuggestion.mockReset();
     searchCustomersByPhone.mockReset();
     readConfig.mockReset();
@@ -220,7 +226,7 @@ describe('usePdvController', () => {
   });
 
   it('finalizes a paid sale claiming the suggested ticket and resets', async () => {
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     peekTicketSuggestion
       .mockResolvedValueOnce(right('0001'))
       .mockResolvedValueOnce(right('0002'));
@@ -237,13 +243,14 @@ describe('usePdvController', () => {
       ok = await result.current.finalizeSale('now', 'pix');
     });
     expect(ok).toBe(true);
-    expect(finalizeOrder).toHaveBeenCalledWith(
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
       expect.objectContaining({
         sessionUid: 'session-7',
-        businessTypeId: 'tab',
         status: 'paid',
         paymentMethod: 'pix',
-        ticket: null,
+        ticket: undefined,
         customerName: 'Joao',
         items: [expect.objectContaining({ productUid: 'product-1', qty: 1 })],
       }),
@@ -253,14 +260,16 @@ describe('usePdvController', () => {
   });
 
   it('uses an edited ticket and falls back to a dash when blank', async () => {
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     const { result } = await setup();
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     act(() => result.current.setTicket('   '));
     await act(async () => {
       await result.current.finalizeSale('tab', null);
     });
-    expect(finalizeOrder).toHaveBeenCalledWith(
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
       expect.objectContaining({
         ticket: '-',
         paymentMethod: null,
@@ -270,7 +279,7 @@ describe('usePdvController', () => {
   });
 
   it('uses a typed ticket and maps delivery to pending and trims address', async () => {
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     const { result } = await setup();
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     act(() => result.current.setTicket('MESA-5'));
@@ -278,7 +287,9 @@ describe('usePdvController', () => {
     await act(async () => {
       await result.current.finalizeSale('delivery', 'dinheiro');
     });
-    expect(finalizeOrder).toHaveBeenCalledWith(
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
       expect.objectContaining({
         ticket: 'MESA-5',
         status: 'pending',
@@ -289,20 +300,22 @@ describe('usePdvController', () => {
   });
 
   it('passes a normal address through trimmed', async () => {
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     const { result } = await setup();
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     act(() => result.current.setAddress('  Rua das Flores  '));
     await act(async () => {
       await result.current.finalizeSale('now', 'pix');
     });
-    expect(finalizeOrder).toHaveBeenCalledWith(
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
       expect.objectContaining({ customerAddress: 'Rua das Flores' }),
     );
   });
 
   it('shows the AppError message on a Left and keeps the cart', async () => {
-    finalizeOrder.mockResolvedValue(left(new EmptyCartError()));
+    registerOrder.mockResolvedValue(left(new EmptyCartError()));
     const { result } = await setup();
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     let ok = true;
@@ -314,7 +327,7 @@ describe('usePdvController', () => {
   });
 
   it('shows a generic message when the Left is not an AppError', async () => {
-    finalizeOrder.mockResolvedValue(left({ message: 'boom' }));
+    registerOrder.mockResolvedValue(left({ message: 'boom' }));
     const { result } = await setup();
     act(() => result.current.addSimpleToCart(product({ id: 1 })));
     let ok = true;
@@ -322,5 +335,132 @@ describe('usePdvController', () => {
       ok = await result.current.finalizeSale('now', 'pix');
     });
     expect(ok).toBe(false);
+  });
+
+  it('toasts and does not call registerOrder when no business type is selected', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: '',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.ordering).toBe('optional'));
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.finalizeSale('now', 'pix');
+    });
+    expect(ok).toBe(false);
+    expect(registerOrder).not.toHaveBeenCalled();
+  });
+
+  it('toasts and does not call registerOrder when the business type is unknown', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'ghost',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.ticket).toBe('0001'));
+    await waitFor(() => expect(readConfig).toHaveBeenCalled());
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.finalizeSale('now', 'pix');
+    });
+    expect(ok).toBe(false);
+    expect(registerOrder).not.toHaveBeenCalled();
+  });
+
+  it('does not claim a ticket for a quick-sale business type with no ordering', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'quick_sale',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    registerOrder.mockResolvedValue(right({ id: 1, ticket: '' }));
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.ordering).toBe('none'));
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.finalizeSale('now', 'pix');
+    });
+    expect(ok).toBe(true);
+    expect(registerOrder).toHaveBeenCalledWith(
+      'quick_sale',
+      getBusinessType('quick_sale'),
+      expect.objectContaining({ ticket: undefined }),
+    );
+  });
+
+  it('requires a ticket for a required-ordering business type and lets the use case claim it', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'scout',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    registerOrder.mockResolvedValue(right({ id: 1, ticket: '0001' }));
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.ordering).toBe('required'));
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.finalizeSale('now', 'pix');
+    });
+    expect(ok).toBe(true);
+    expect(registerOrder).toHaveBeenCalledWith(
+      'scout',
+      getBusinessType('scout'),
+      expect.objectContaining({ ticket: undefined }),
+    );
   });
 });
