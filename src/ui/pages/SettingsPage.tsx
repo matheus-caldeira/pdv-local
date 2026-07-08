@@ -246,7 +246,6 @@ export function SettingsPage() {
                   p && {
                     ...p,
                     businessTypeId: e.target.value,
-                    extra: {},
                   },
               )
             }

@@ -179,6 +179,30 @@ describe('SettingsPage', () => {
     );
   });
 
+  it('preserves extra values from a previous type when switching type', async () => {
+    readConfig.mockResolvedValue(
+      right({ ...CONFIG, businessTypeId: 'scout', extra: { group: 'Antigo' } }),
+    );
+    saveConfig.mockResolvedValue(right(CONFIG));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Negócio')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Negócio'),
+      'quick_sale',
+    );
+    await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[1]);
+    await waitFor(() =>
+      expect(saveConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          businessTypeId: 'quick_sale',
+          extra: { group: 'Antigo' },
+        }),
+      ),
+    );
+  });
+
   it('toasts when saving fails', async () => {
     saveConfig.mockResolvedValue(left(new FakeError('falha salvar')));
     renderPage();
