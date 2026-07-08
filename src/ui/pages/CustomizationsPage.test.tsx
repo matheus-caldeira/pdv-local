@@ -47,6 +47,7 @@ class FakeError extends AppError {
 
 const adicionais = {
   id: 1,
+  uid: 'group-1',
   name: 'Adicionais',
   required: true,
   minQty: 1,
@@ -56,6 +57,7 @@ const adicionais = {
 
 const molhos = {
   id: 2,
+  uid: 'group-2',
   name: 'Molhos',
   required: false,
   minQty: 0,
@@ -65,7 +67,8 @@ const molhos = {
 
 const bacon = {
   id: 11,
-  groupId: 1,
+  uid: 'item-11',
+  groupUid: 'group-1',
   name: 'Bacon',
   price: 3,
   maxQty: 2,
@@ -75,7 +78,8 @@ const bacon = {
 
 const cheddar = {
   id: 12,
-  groupId: 1,
+  uid: 'item-12',
+  groupUid: 'group-1',
   name: 'Cheddar',
   price: 0,
   maxQty: 0,
@@ -286,7 +290,7 @@ describe('CustomizationsPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     expect(createItem).toHaveBeenCalledWith({
-      groupId: 1,
+      groupUid: 'group-1',
       name: 'Ovo',
       price: 2,
       maxQty: 4,

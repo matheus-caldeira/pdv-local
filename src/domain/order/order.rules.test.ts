@@ -14,7 +14,7 @@ import {
 import type { OrderItem } from './order.entity';
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
-  productId: 1,
+  productUid: 'product-1',
   name: 'Item',
   salePrice: 10,
   costPrice: 5,

@@ -1,5 +1,6 @@
 import { left, right, type Either } from '../shared/either';
 import { InvalidProductError } from '../errors';
+import { createUid } from '../shared/uid';
 import type { NewProduct } from './product.entity';
 
 export interface ProductInput {
@@ -24,6 +25,7 @@ export function buildProduct(
   }
   const now = Date.now();
   return right({
+    uid: createUid(),
     name,
     category: input.category.trim(),
     costPrice: input.costPrice,

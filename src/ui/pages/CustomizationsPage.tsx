@@ -30,7 +30,7 @@ interface GroupForm {
 
 interface ItemForm {
   id?: number;
-  groupId: number;
+  groupUid: string;
   name: string;
   price: number;
   maxQty: number;
@@ -46,7 +46,7 @@ const EMPTY_GROUP: GroupForm = {
   chargeAfter: 0,
 };
 
-const EMPTY_ITEM: Omit<ItemForm, 'groupId'> = {
+const EMPTY_ITEM: Omit<ItemForm, 'groupUid'> = {
   name: '',
   price: 0,
   maxQty: 0,
@@ -65,7 +65,7 @@ export function CustomizationsPage() {
   const [itemModal, setItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemForm>({
     ...EMPTY_ITEM,
-    groupId: 0,
+    groupUid: '',
   });
 
   function openNewGroup() {
@@ -102,15 +102,15 @@ export function CustomizationsPage() {
     removeGroup(id);
   }
 
-  function openNewItem(groupId: number) {
-    setEditingItem({ ...EMPTY_ITEM, groupId });
+  function openNewItem(groupUid: string) {
+    setEditingItem({ ...EMPTY_ITEM, groupUid });
     setItemModal(true);
   }
 
   function openEditItem(item: CustomizationItem) {
     setEditingItem({
       id: item.id,
-      groupId: item.groupId,
+      groupUid: item.groupUid,
       name: item.name,
       price: item.price,
       maxQty: item.maxQty,
@@ -122,7 +122,7 @@ export function CustomizationsPage() {
 
   async function handleSaveItem() {
     const input: CustomizationItemInput = {
-      groupId: editingItem.groupId,
+      groupUid: editingItem.groupUid,
       name: editingItem.name,
       price: editingItem.price,
       maxQty: editingItem.maxQty,
@@ -161,7 +161,7 @@ export function CustomizationsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {groups.map((g) => {
-            const groupItems = items.filter((i) => i.groupId === g.id);
+            const groupItems = items.filter((i) => i.groupUid === g.uid);
             const isExpanded = expandedGroup === g.id;
             return (
               <div
@@ -284,7 +284,7 @@ export function CustomizationsPage() {
                       size="sm"
                       fullWidth
                       className="mt-3"
-                      onClick={() => openNewItem(g.id!)}
+                      onClick={() => openNewItem(g.uid)}
                     >
                       <Plus size={14} /> Adicionar Item
                     </Button>

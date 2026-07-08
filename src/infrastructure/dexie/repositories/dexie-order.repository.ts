@@ -40,12 +40,11 @@ export class DexieOrderRepository implements OrderRepository {
   }
 
   async listBySession(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, Order[]>> {
     try {
       const orders = await this.db.orders
-        .where('sessionId')
-        .equals(sessionId)
+        .filter((order) => order.sessionUid === sessionUid)
         .toArray();
       return right(orders);
     } catch (cause) {
@@ -53,9 +52,11 @@ export class DexieOrderRepository implements OrderRepository {
     }
   }
 
-  observeBySession(sessionId: number): Observable<Order[]> {
+  observeBySession(sessionUid: string): Observable<Order[]> {
     return liveQuery(() =>
-      this.db.orders.where('sessionId').equals(sessionId).toArray(),
+      this.db.orders
+        .filter((order) => order.sessionUid === sessionUid)
+        .toArray(),
     );
   }
 
@@ -70,27 +71,31 @@ export class DexieOrderRepository implements OrderRepository {
   }
 
   async markAsPaid(
-    id: number,
+    uid: string,
     paymentMethod: string,
   ): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.orders.update(id, {
-        status: 'paid',
-        paymentMethod,
-        updatedAt: Date.now(),
-      });
+      await this.db.orders
+        .filter((order) => order.uid === uid)
+        .modify({
+          status: 'paid',
+          paymentMethod,
+          updatedAt: Date.now(),
+        });
       return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
   }
 
-  async cancel(id: number): Promise<Either<InfrastructureError, void>> {
+  async cancel(uid: string): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.orders.update(id, {
-        status: 'cancelled',
-        updatedAt: Date.now(),
-      });
+      await this.db.orders
+        .filter((order) => order.uid === uid)
+        .modify({
+          status: 'cancelled',
+          updatedAt: Date.now(),
+        });
       return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));
@@ -98,11 +103,13 @@ export class DexieOrderRepository implements OrderRepository {
   }
 
   async setStage(
-    id: number,
+    uid: string,
     stage: OrderStage,
   ): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.orders.update(id, { stage, updatedAt: Date.now() });
+      await this.db.orders
+        .filter((order) => order.uid === uid)
+        .modify({ stage, updatedAt: Date.now() });
       return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));

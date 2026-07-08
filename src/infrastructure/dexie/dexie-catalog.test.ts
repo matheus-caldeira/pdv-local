@@ -19,7 +19,10 @@ afterEach(async () => {
   await db.delete();
 });
 
+let productUidCounter = 0;
+
 const newProduct = (over: Partial<NewProduct> = {}): NewProduct => ({
+  uid: `product-${++productUidCounter}`,
   name: 'P',
   category: 'C',
   costPrice: 1,
@@ -52,6 +55,37 @@ describe('DexieProductRepository CRUD', () => {
     }
   });
 
+  it('preserves the uid of a product across updates', async () => {
+    const repo = new DexieProductRepository(db);
+    const created = await repo.create(newProduct({ name: 'Original' }));
+    expect(isRight(created)).toBe(true);
+    if (!isRight(created)) return;
+    const originalUid = created.right.uid;
+
+    const updated = await repo.update(
+      created.right.id!,
+      newProduct({ uid: 'attacker-uid', name: 'Renomeado' }),
+    );
+    expect(isRight(updated)).toBe(true);
+    if (isRight(updated)) {
+      expect(updated.right.uid).toBe(originalUid);
+      expect(updated.right.name).toBe('Renomeado');
+    }
+
+    const stored = await db.products.get(created.right.id!);
+    expect(stored?.uid).toBe(originalUid);
+    expect(stored?.name).toBe('Renomeado');
+  });
+
+  it('returns RecordNotFoundError when updating a missing product', async () => {
+    const repo = new DexieProductRepository(db);
+    const result = await repo.update(999, newProduct());
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.left.code).toBe('RECORD_NOT_FOUND');
+    }
+  });
+
   it('removes a customization group reference from products', async () => {
     const repo = new DexieProductRepository(db);
     const withGroup = await repo.create(
@@ -78,6 +112,7 @@ describe('DexieProductRepository CRUD', () => {
 
 describe('DexieCustomizationRepository CRUD', () => {
   const group = {
+    uid: 'group-fixture-uid',
     name: 'Ponto',
     required: true,
     minQty: 1,
@@ -85,7 +120,8 @@ describe('DexieCustomizationRepository CRUD', () => {
     chargeAfter: 0,
   };
   const item = {
-    groupId: 1,
+    uid: 'item-fixture-uid',
+    groupUid: 'group-1',
     name: 'Bem passado',
     price: 0,
     maxQty: 1,
@@ -98,14 +134,19 @@ describe('DexieCustomizationRepository CRUD', () => {
     const created = await repo.createGroup(group);
     expect(isRight(created)).toBe(true);
     const gid = isRight(created) ? created.right.id! : 0;
+    const guid = isRight(created) ? created.right.uid : '';
     await repo.updateGroup(gid, { ...group, name: 'Ponto da carne' });
     expect((await db.customizationGroups.get(gid))?.name).toBe(
       'Ponto da carne',
     );
 
-    const createdItem = await repo.createItem({ ...item, groupId: gid });
+    const createdItem = await repo.createItem({ ...item, groupUid: guid });
     const iid = isRight(createdItem) ? createdItem.right.id! : 0;
-    await repo.updateItem(iid, { ...item, groupId: gid, name: 'Mal passado' });
+    await repo.updateItem(iid, {
+      ...item,
+      groupUid: guid,
+      name: 'Mal passado',
+    });
     expect((await db.customizationItems.get(iid))?.name).toBe('Mal passado');
 
     const groups = await repo.listGroups();
@@ -116,6 +157,109 @@ describe('DexieCustomizationRepository CRUD', () => {
     await repo.removeGroup(gid);
     expect(await db.customizationGroups.count()).toBe(0);
     expect(await db.customizationItems.count()).toBe(0);
+  });
+
+  it('generates a uid for a group created without one', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const groupWithoutUid = {
+      name: group.name,
+      required: group.required,
+      minQty: group.minQty,
+      maxQty: group.maxQty,
+      chargeAfter: group.chargeAfter,
+    };
+    const created = await repo.createGroup(groupWithoutUid as typeof group);
+    expect(isRight(created)).toBe(true);
+    if (isRight(created)) {
+      expect(created.right.uid).toBeTruthy();
+    }
+  });
+
+  it('removes a group with no items left to cascade', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const result = await repo.removeGroup(999);
+    expect(isRight(result)).toBe(true);
+  });
+
+  it('preserves the uid of a group across updates', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const created = await repo.createGroup(group);
+    expect(isRight(created)).toBe(true);
+    if (!isRight(created)) return;
+    const originalUid = created.right.uid;
+
+    const updated = await repo.updateGroup(created.right.id!, {
+      ...group,
+      uid: 'attacker-uid',
+      name: 'Renomeado',
+    });
+    expect(isRight(updated)).toBe(true);
+    if (isRight(updated)) {
+      expect(updated.right.uid).toBe(originalUid);
+      expect(updated.right.name).toBe('Renomeado');
+    }
+
+    const stored = await db.customizationGroups.get(created.right.id!);
+    expect(stored?.uid).toBe(originalUid);
+    expect(stored?.name).toBe('Renomeado');
+  });
+
+  it('returns RecordNotFoundError when updating a missing group', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const result = await repo.updateGroup(999, group);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.left.code).toBe('RECORD_NOT_FOUND');
+    }
+  });
+
+  it('generates a uid for an item created without one', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const itemWithoutUid = {
+      groupUid: item.groupUid,
+      name: item.name,
+      price: item.price,
+      maxQty: item.maxQty,
+      chargeAfter: item.chargeAfter,
+      active: item.active,
+    };
+    const created = await repo.createItem(itemWithoutUid as typeof item);
+    expect(isRight(created)).toBe(true);
+    if (isRight(created)) {
+      expect(created.right.uid).toBeTruthy();
+    }
+  });
+
+  it('preserves the uid of an item across updates', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const created = await repo.createItem(item);
+    expect(isRight(created)).toBe(true);
+    if (!isRight(created)) return;
+    const originalUid = created.right.uid;
+
+    const updated = await repo.updateItem(created.right.id!, {
+      ...item,
+      uid: 'attacker-uid',
+      name: 'Renomeado',
+    });
+    expect(isRight(updated)).toBe(true);
+    if (isRight(updated)) {
+      expect(updated.right.uid).toBe(originalUid);
+      expect(updated.right.name).toBe('Renomeado');
+    }
+
+    const stored = await db.customizationItems.get(created.right.id!);
+    expect(stored?.uid).toBe(originalUid);
+    expect(stored?.name).toBe('Renomeado');
+  });
+
+  it('returns RecordNotFoundError when updating a missing item', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const result = await repo.updateItem(999, item);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.left.code).toBe('RECORD_NOT_FOUND');
+    }
   });
 
   it('removes a single item', async () => {

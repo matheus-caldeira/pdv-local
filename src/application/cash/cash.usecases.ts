@@ -1,5 +1,6 @@
 import { isLeft, left, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
+import { createUid } from '../../domain/shared/uid';
 import {
   NoOpenSessionError,
   SessionAlreadyOpenError,
@@ -37,7 +38,7 @@ export function makeLoadCashSummary(
       .filter((current) => current.closedAt !== null)
       .sort((a, b) => b.openedAt - a.openedAt);
 
-    if (!session?.id) {
+    if (!session?.uid) {
       return right({
         session: null,
         movements: [],
@@ -48,10 +49,10 @@ export function makeLoadCashSummary(
       });
     }
 
-    const movements = await cash.listMovements(session.id);
+    const movements = await cash.listMovements(session.uid);
     if (isLeft(movements)) return movements;
 
-    const sessionOrders = await orders.listBySession(session.id);
+    const sessionOrders = await orders.listBySession(session.uid);
     if (isLeft(sessionOrders)) return sessionOrders;
 
     const salesByMethod: Record<string, number> = {};
@@ -110,11 +111,11 @@ export function makeCloseSession(cash: CashRepository) {
 
     const open = await cash.findOpenSession();
     if (isLeft(open)) return open;
-    if (!open.right?.id) {
+    if (!open.right?.uid) {
       return left(new NoOpenSessionError());
     }
 
-    return cash.closeSession(open.right.id, amount.right, notes.trim());
+    return cash.closeSession(open.right.uid, amount.right, notes.trim());
   };
 }
 
@@ -127,12 +128,13 @@ export function makeAddCashMovement(cash: CashRepository) {
 
     const open = await cash.findOpenSession();
     if (isLeft(open)) return open;
-    if (!open.right?.id) {
+    if (!open.right?.uid) {
       return left(new NoOpenSessionError());
     }
 
     return cash.addMovement({
-      sessionId: open.right.id,
+      uid: createUid(),
+      sessionUid: open.right.uid,
       type: built.right.type,
       amount: built.right.amount,
       reason: built.right.reason,

@@ -7,17 +7,17 @@ export interface OrderRepository {
   create(order: NewOrder): Promise<Either<InfrastructureError, Order>>;
   listAll(): Promise<Either<InfrastructureError, Order[]>>;
   listBySession(
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<InfrastructureError, Order[]>>;
-  observeBySession(sessionId: number): Observable<Order[]>;
+  observeBySession(sessionUid: string): Observable<Order[]>;
   observeActiveStages(): Observable<Order[]>;
   markAsPaid(
-    id: number,
+    uid: string,
     paymentMethod: string,
   ): Promise<Either<InfrastructureError, void>>;
-  cancel(id: number): Promise<Either<InfrastructureError, void>>;
+  cancel(uid: string): Promise<Either<InfrastructureError, void>>;
   setStage(
-    id: number,
+    uid: string,
     stage: OrderStage,
   ): Promise<Either<InfrastructureError, void>>;
 }

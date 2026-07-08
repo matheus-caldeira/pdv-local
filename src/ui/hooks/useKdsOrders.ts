@@ -4,20 +4,20 @@ import { fold } from '../../domain/shared/either';
 import type { Order, OrderStage } from '../../domain/order/order.entity';
 import { useToast } from '../molecules/toast-context';
 
-export function useKdsOrders(sessionId: number | undefined) {
+export function useKdsOrders(sessionUid: string | undefined) {
   const toast = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    if (sessionId === undefined) return;
+    if (sessionUid === undefined) return;
     const subscription = container
-      .observeSessionOrders(sessionId)
+      .observeSessionOrders(sessionUid)
       .subscribe((value) => setOrders(value));
     return () => {
       subscription.unsubscribe();
       setOrders([]);
     };
-  }, [sessionId]);
+  }, [sessionUid]);
 
   const activeOrders = useMemo(
     () =>
@@ -34,8 +34,8 @@ export function useKdsOrders(sessionId: number | undefined) {
   );
 
   const moveStage = useCallback(
-    async (id: number, stage: OrderStage) => {
-      const result = await container.setOrderStage(id, stage);
+    async (uid: string, stage: OrderStage) => {
+      const result = await container.setOrderStage(uid, stage);
       fold(
         result,
         (error) => toast(error.message, 'error'),

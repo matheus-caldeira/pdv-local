@@ -17,6 +17,8 @@ export interface ConfigInput {
   ticketLimit: number;
   ticketAutoReset: boolean;
   statusControlEnabled: boolean;
+  businessTypeId: string;
+  extra: Record<string, string>;
 }
 
 export function makeReadConfig(repository: ConfigRepository) {
@@ -41,6 +43,8 @@ export function makeSaveConfig(repository: ConfigRepository) {
       ticketLimit: normalizeTicketLimit(input.ticketLimit),
       ticketAutoReset: input.ticketAutoReset,
       statusControlEnabled: input.statusControlEnabled,
+      businessTypeId: input.businessTypeId,
+      extra: input.extra,
     });
   };
 }

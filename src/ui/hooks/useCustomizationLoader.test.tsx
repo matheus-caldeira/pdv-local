@@ -17,6 +17,7 @@ vi.mock('../../app/container', () => ({
 function product(ids: number[]): Product {
   return {
     id: 1,
+    uid: 'product-1',
     name: 'X',
     category: 'c',
     costPrice: 1,

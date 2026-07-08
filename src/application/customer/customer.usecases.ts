@@ -22,7 +22,7 @@ export function makeSearchCustomersByPhone(repository: CustomerRepository) {
     const result = await repository.list();
     if (isLeft(result)) return result;
     const matches = result.right
-      .filter((customer) => customer.phone.includes(query))
+      .filter((customer) => (customer.phone ?? '').includes(query))
       .slice(0, PHONE_SEARCH_LIMIT);
     return right(matches);
   };
@@ -31,23 +31,25 @@ export function makeSearchCustomersByPhone(repository: CustomerRepository) {
 export function makeSaveCustomer(repository: CustomerRepository) {
   return async (
     input: CustomerInput,
-    id?: number,
+    uid?: string,
   ): Promise<Either<AppError, Customer>> => {
     const built = buildCustomer(input);
     if (isLeft(built)) return built;
 
     const existing = await repository.findByPhone(built.right.phone);
     if (isLeft(existing)) return existing;
-    if (existing.right && existing.right.id !== id) {
+    if (existing.right && existing.right.uid !== uid) {
       return left(new DuplicatePhoneError());
     }
 
-    return id === undefined
-      ? repository.create(built.right)
-      : repository.update(id, built.right);
+    const data = built.right;
+    return uid === undefined
+      ? repository.create(data)
+      : repository.update(uid, data);
   };
 }
 
 export function makeRemoveCustomer(repository: CustomerRepository) {
-  return (id: number): Promise<Either<AppError, void>> => repository.remove(id);
+  return (uid: string): Promise<Either<AppError, void>> =>
+    repository.remove(uid);
 }

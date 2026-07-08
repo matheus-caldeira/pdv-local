@@ -14,7 +14,9 @@ vi.mock('../../app/container', () => ({
 function makeOrder(partial: Partial<Order>): Order {
   return {
     id: 1,
-    sessionId: 1,
+    uid: 'order-1',
+    businessTypeId: 'tab',
+    sessionUid: 'session-1',
     items: [],
     total: 0,
     paymentMethod: null,

@@ -23,8 +23,8 @@ vi.mock('../../app/container', () => ({
   container: {
     listOrders: () => listOrders(),
     readConfig: () => readConfig(),
-    markOrderPaid: (id: number, method: string) => markOrderPaid(id, method),
-    cancelOrder: (id: number) => cancelOrder(id),
+    markOrderPaid: (uid: string, method: string) => markOrderPaid(uid, method),
+    cancelOrder: (uid: string) => cancelOrder(uid),
   },
 }));
 
@@ -36,8 +36,18 @@ class FakeError extends AppError {
 function makeOrder(partial: Partial<Order>): Order {
   return {
     id: 1,
-    sessionId: 1,
-    items: [{ productId: 1, name: 'Item', salePrice: 5, costPrice: 1, qty: 1 }],
+    uid: 'order-1',
+    businessTypeId: 'tab',
+    sessionUid: 'session-1',
+    items: [
+      {
+        productUid: 'product-1',
+        name: 'Item',
+        salePrice: 5,
+        costPrice: 1,
+        qty: 1,
+      },
+    ],
     total: 5,
     paymentMethod: null,
     customerName: '',
@@ -54,17 +64,31 @@ function makeOrder(partial: Partial<Order>): Order {
 const ORDERS: Order[] = [
   makeOrder({
     id: 1,
+    uid: 'order-1',
     ticket: '001',
     customerName: 'Ana',
     status: 'open',
     paymentMethod: 'pix',
     items: [
-      { productId: 1, name: 'X', salePrice: 5, costPrice: 1, qty: 1 },
-      { productId: 2, name: 'Y', salePrice: 5, costPrice: 1, qty: 2 },
+      {
+        productUid: 'product-1',
+        name: 'X',
+        salePrice: 5,
+        costPrice: 1,
+        qty: 1,
+      },
+      {
+        productUid: 'product-2',
+        name: 'Y',
+        salePrice: 5,
+        costPrice: 1,
+        qty: 2,
+      },
     ],
   }),
   makeOrder({
     id: 2,
+    uid: 'order-2',
     ticket: '002',
     customerName: 'Bruno',
     status: 'paid',
@@ -72,6 +96,7 @@ const ORDERS: Order[] = [
   }),
   makeOrder({
     id: 3,
+    uid: 'order-3',
     ticket: '003',
     customerName: '',
     status: 'cancelled',
@@ -79,6 +104,7 @@ const ORDERS: Order[] = [
   }),
   makeOrder({
     id: 4,
+    uid: 'order-4',
     ticket: '004',
     customerName: 'Davi',
     status: 'pending',
@@ -95,6 +121,8 @@ const CONFIG: BusinessConfig = {
   ticketLimit: 0,
   ticketAutoReset: false,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 function renderPage() {
@@ -219,7 +247,7 @@ describe('OrdersPage', () => {
       screen.getByRole('button', { name: 'Marcar como Pago' }),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Débito' }));
-    expect(markOrderPaid).toHaveBeenCalledWith(4, 'debito');
+    expect(markOrderPaid).toHaveBeenCalledWith('order-4', 'debito');
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
@@ -251,7 +279,7 @@ describe('OrdersPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Cancelar Pedido' }),
     );
-    expect(cancelOrder).toHaveBeenCalledWith(1);
+    expect(cancelOrder).toHaveBeenCalledWith('order-1');
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );

@@ -18,10 +18,10 @@ import {
 } from './order-management.usecases';
 
 class FakeOrderRepository implements OrderRepository {
-  paid: { id: number; method: string } | null = null;
-  cancelled: number | null = null;
-  staged: { id: number; stage: OrderStage } | null = null;
-  observedSession: number | null = null;
+  paid: { uid: string; method: string } | null = null;
+  cancelled: string | null = null;
+  staged: { uid: string; stage: OrderStage } | null = null;
+  observedSession: string | null = null;
   observedActive = false;
   readonly stream: Observable<Order[]> = {
     subscribe: () => ({ unsubscribe: () => {} }),
@@ -39,8 +39,8 @@ class FakeOrderRepository implements OrderRepository {
     return right([]);
   }
 
-  observeBySession(sessionId: number): Observable<Order[]> {
-    this.observedSession = sessionId;
+  observeBySession(sessionUid: string): Observable<Order[]> {
+    this.observedSession = sessionUid;
     return this.stream;
   }
 
@@ -50,23 +50,23 @@ class FakeOrderRepository implements OrderRepository {
   }
 
   async markAsPaid(
-    id: number,
+    uid: string,
     paymentMethod: string,
   ): Promise<Either<InfrastructureError, void>> {
-    this.paid = { id, method: paymentMethod };
+    this.paid = { uid, method: paymentMethod };
     return right(undefined);
   }
 
-  async cancel(id: number): Promise<Either<InfrastructureError, void>> {
-    this.cancelled = id;
+  async cancel(uid: string): Promise<Either<InfrastructureError, void>> {
+    this.cancelled = uid;
     return right(undefined);
   }
 
   async setStage(
-    id: number,
+    uid: string,
     stage: OrderStage,
   ): Promise<Either<InfrastructureError, void>> {
-    this.staged = { id, stage };
+    this.staged = { uid, stage };
     return right(undefined);
   }
 }
@@ -80,8 +80,8 @@ describe('order management use cases', () => {
 
   it('observes orders of a session', () => {
     const repo = new FakeOrderRepository();
-    const stream = makeObserveSessionOrders(repo)(7);
-    expect(repo.observedSession).toBe(7);
+    const stream = makeObserveSessionOrders(repo)('s7');
+    expect(repo.observedSession).toBe('s7');
     expect(stream).toBe(repo.stream);
   });
 
@@ -94,20 +94,20 @@ describe('order management use cases', () => {
 
   it('marks an order as paid', async () => {
     const repo = new FakeOrderRepository();
-    await makeMarkOrderPaid(repo)(3, 'pix');
-    expect(repo.paid).toEqual({ id: 3, method: 'pix' });
+    await makeMarkOrderPaid(repo)('order-3', 'pix');
+    expect(repo.paid).toEqual({ uid: 'order-3', method: 'pix' });
   });
 
   it('cancels an order', async () => {
     const repo = new FakeOrderRepository();
-    await makeCancelOrder(repo)(5);
-    expect(repo.cancelled).toBe(5);
+    await makeCancelOrder(repo)('order-5');
+    expect(repo.cancelled).toBe('order-5');
   });
 
   it('sets an order stage', async () => {
     const repo = new FakeOrderRepository();
-    await makeSetOrderStage(repo)(9, 'em_preparo');
-    expect(repo.staged).toEqual({ id: 9, stage: 'em_preparo' });
+    await makeSetOrderStage(repo)('order-9', 'em_preparo');
+    expect(repo.staged).toEqual({ uid: 'order-9', stage: 'em_preparo' });
   });
 
   it('subscribes to the returned observable', () => {

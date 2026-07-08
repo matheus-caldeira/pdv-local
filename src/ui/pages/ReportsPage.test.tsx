@@ -14,13 +14,14 @@ const loadSessionReport = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listReportSessions: () => listReportSessions(),
-    loadSessionReport: (id: number) => loadSessionReport(id),
+    loadSessionReport: (uid: string) => loadSessionReport(uid),
   },
 }));
 
 const SESSIONS: Session[] = [
   {
     id: 1,
+    uid: 'session-1',
     openedAt: 1700000000000,
     closedAt: 1700003600000,
     cashInitial: 0,
@@ -29,6 +30,7 @@ const SESSIONS: Session[] = [
   },
   {
     id: 2,
+    uid: 'session-2',
     openedAt: 1700100000000,
     closedAt: null,
     cashInitial: 0,
@@ -40,7 +42,9 @@ const SESSIONS: Session[] = [
 function makeOrder(ticket: string, status: OrderStatus, name: string): Order {
   return {
     id: Number(ticket),
-    sessionId: 2,
+    uid: `order-${ticket}`,
+    businessTypeId: 'tab',
+    sessionUid: 'session-2',
     items: [],
     total: 30,
     paymentMethod: null,
@@ -138,7 +142,9 @@ describe('ReportsPage', () => {
 
   it('switches the report when a different session is selected', async () => {
     renderPage();
-    await waitFor(() => expect(loadSessionReport).toHaveBeenCalledWith(2));
+    await waitFor(() =>
+      expect(loadSessionReport).toHaveBeenCalledWith('session-2'),
+    );
     loadSessionReport.mockResolvedValue(
       right({ ...FULL_REPORT, summary: { ...FULL_REPORT.summary, margin: 0 } }),
     );
@@ -146,7 +152,9 @@ describe('ReportsPage', () => {
       .getAllByRole('button')
       .find((button) => button.getAttribute('aria-pressed') === 'false')!;
     await userEvent.click(closedPill);
-    await waitFor(() => expect(loadSessionReport).toHaveBeenCalledWith(1));
+    await waitFor(() =>
+      expect(loadSessionReport).toHaveBeenCalledWith('session-1'),
+    );
     await waitFor(() => expect(screen.getByText('0.0%')).toBeInTheDocument());
   });
 

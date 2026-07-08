@@ -70,7 +70,7 @@ export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
         ) : (
           filtered.map((product) => {
             const inCartQty = cart
-              .filter((item) => item.productId === product.id)
+              .filter((item) => item.productUid === product.uid)
               .reduce((sum, item) => sum + item.qty, 0);
             const hasCustom = (product.customizationGroupIds?.length || 0) > 0;
             return (

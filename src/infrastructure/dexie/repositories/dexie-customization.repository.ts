@@ -6,7 +6,8 @@ import type {
   NewCustomizationItem,
 } from '../../../domain/customization/customization.entity';
 import type { CustomizationRepository } from '../../../domain/customization/customization.repository';
-import type { InfrastructureError } from '../../errors';
+import { createUid } from '../../../domain/shared/uid';
+import { RecordNotFoundError, type InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
 import { toInfrastructureError } from '../dexie-errors';
 
@@ -39,10 +40,9 @@ export class DexieCustomizationRepository implements CustomizationRepository {
     group: NewCustomizationGroup,
   ): Promise<Either<InfrastructureError, CustomizationGroup>> {
     try {
-      const id = await this.db.customizationGroups.add(
-        group as CustomizationGroup,
-      );
-      return right({ ...group, id });
+      const withUid = { ...group, uid: group.uid ?? createUid() };
+      const id = await this.db.customizationGroups.add(withUid);
+      return right({ ...withUid, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
@@ -53,8 +53,13 @@ export class DexieCustomizationRepository implements CustomizationRepository {
     group: NewCustomizationGroup,
   ): Promise<Either<InfrastructureError, CustomizationGroup>> {
     try {
-      await this.db.customizationGroups.update(id, group);
-      return right({ ...group, id });
+      const existing = await this.db.customizationGroups.get(id);
+      if (!existing) {
+        return left(new RecordNotFoundError('Grupo não encontrado.'));
+      }
+      const patch = { ...group, uid: existing.uid };
+      await this.db.customizationGroups.update(id, patch);
+      return right({ ...patch, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
@@ -62,7 +67,13 @@ export class DexieCustomizationRepository implements CustomizationRepository {
 
   async removeGroup(id: number): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.customizationItems.where('groupId').equals(id).delete();
+      const group = await this.db.customizationGroups.get(id);
+      if (group?.uid) {
+        await this.db.customizationItems
+          .where('groupUid')
+          .equals(group.uid)
+          .delete();
+      }
       await this.db.customizationGroups.delete(id);
       return right(undefined);
     } catch (cause) {
@@ -74,10 +85,9 @@ export class DexieCustomizationRepository implements CustomizationRepository {
     item: NewCustomizationItem,
   ): Promise<Either<InfrastructureError, CustomizationItem>> {
     try {
-      const id = await this.db.customizationItems.add(
-        item as CustomizationItem,
-      );
-      return right({ ...item, id });
+      const withUid = { ...item, uid: item.uid ?? createUid() };
+      const id = await this.db.customizationItems.add(withUid);
+      return right({ ...withUid, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
@@ -88,8 +98,13 @@ export class DexieCustomizationRepository implements CustomizationRepository {
     item: NewCustomizationItem,
   ): Promise<Either<InfrastructureError, CustomizationItem>> {
     try {
-      await this.db.customizationItems.update(id, item);
-      return right({ ...item, id });
+      const existing = await this.db.customizationItems.get(id);
+      if (!existing) {
+        return left(new RecordNotFoundError('Item não encontrado.'));
+      }
+      const patch = { ...item, uid: existing.uid };
+      await this.db.customizationItems.update(id, patch);
+      return right({ ...patch, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }

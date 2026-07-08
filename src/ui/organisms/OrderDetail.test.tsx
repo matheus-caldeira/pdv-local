@@ -13,7 +13,9 @@ import type { Order } from '../../domain/order/order.entity';
 function makeOrder(partial: Partial<Order>): Order {
   return {
     id: 1,
-    sessionId: 1,
+    uid: 'order-1',
+    businessTypeId: 'tab',
+    sessionUid: 'session-1',
     items: [],
     total: 30,
     paymentMethod: null,
@@ -31,7 +33,7 @@ function makeOrder(partial: Partial<Order>): Order {
 const RICH_ORDER = makeOrder({
   items: [
     {
-      productId: 1,
+      productUid: 'product-1',
       name: 'X-Burger',
       salePrice: 20,
       costPrice: 5,
@@ -39,17 +41,12 @@ const RICH_ORDER = makeOrder({
       observation: 'Sem cebola',
       customizationTotal: 5,
       customizations: [
-        {
-          groupName: 'Adicionais',
-          items: [
-            { name: 'Bacon', qty: 2, price: 5 },
-            { name: 'Queijo', qty: 1, price: 0 },
-          ],
-        },
+        { groupName: 'Adicionais', name: 'Bacon', qty: 2, price: 5 },
+        { groupName: 'Adicionais', name: 'Queijo', qty: 1, price: 0 },
       ],
     },
     {
-      productId: 2,
+      productUid: 'product-2',
       name: 'Refri',
       salePrice: 8,
       costPrice: 2,
@@ -80,7 +77,7 @@ describe('OrderDetail', () => {
     renderDetail(RICH_ORDER);
     expect(screen.getByText('X-Burger')).toBeInTheDocument();
     expect(screen.getByText('Refri')).toBeInTheDocument();
-    expect(screen.getByText('Adicionais:')).toBeInTheDocument();
+    expect(screen.getAllByText('Adicionais:').length).toBe(2);
     expect(screen.getByText(/Bacon/)).toBeInTheDocument();
     expect(screen.getByText('Sem cebola')).toBeInTheDocument();
     expect(screen.getByText(/Produto:/)).toBeInTheDocument();

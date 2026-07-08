@@ -30,7 +30,7 @@ const STATUS_TONES: Record<
 export function DashboardPage() {
   const navigate = useNavigate();
   const { activeSession, loading } = useSession();
-  const { data } = useDashboard(activeSession?.id);
+  const { data } = useDashboard(activeSession?.uid);
 
   if (loading) {
     return (

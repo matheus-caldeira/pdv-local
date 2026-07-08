@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { isLeft, isRight } from '../../domain/shared/either';
+import { createUid } from '../../domain/shared/uid';
 import { PDVDatabase } from './dexie-database';
 import { DexieCashRepository } from './repositories/dexie-cash.repository';
 
@@ -24,33 +25,35 @@ describe('DexieCashRepository', () => {
     const opened = await repo.openSession(100);
     expect(isRight(opened)).toBe(true);
     if (!isRight(opened)) return;
-    const sessionId = opened.right.id!;
+    const sessionUid = opened.right.uid;
 
     const open = await repo.findOpenSession();
-    expect(isRight(open) && open.right?.id).toBe(sessionId);
+    expect(isRight(open) && open.right?.uid).toBe(sessionUid);
 
     await repo.addMovement({
-      sessionId,
+      uid: createUid(),
+      sessionUid,
       type: 'suprimento',
       amount: 50,
       reason: 'troco',
       createdAt: 2,
     });
     await repo.addMovement({
-      sessionId,
+      uid: createUid(),
+      sessionUid,
       type: 'sangria',
       amount: 20,
       reason: '',
       createdAt: 1,
     });
 
-    const movements = await repo.listMovements(sessionId);
+    const movements = await repo.listMovements(sessionUid);
     expect(isRight(movements)).toBe(true);
     if (isRight(movements)) {
       expect(movements.right.map((m) => m.amount)).toEqual([50, 20]);
     }
 
-    const closed = await repo.closeSession(sessionId, 130, '  fim  ');
+    const closed = await repo.closeSession(sessionUid, 130, '  fim  ');
     expect(isRight(closed)).toBe(true);
     if (isRight(closed)) {
       expect(closed.right.cashFinal).toBe(130);
@@ -75,7 +78,7 @@ describe('DexieCashRepository', () => {
 
   it('keeps fallbacks when closing a missing session', async () => {
     const repo = new DexieCashRepository(db);
-    const closed = await repo.closeSession(999, 10, '');
+    const closed = await repo.closeSession('missing-uid', 10, '');
     expect(isRight(closed)).toBe(true);
     if (isRight(closed)) {
       expect(closed.right.cashInitial).toBe(0);
@@ -89,12 +92,13 @@ describe('DexieCashRepository', () => {
     expect(isLeft(await repo.findOpenSession())).toBe(true);
     expect(isLeft(await repo.listSessions())).toBe(true);
     expect(isLeft(await repo.openSession(10))).toBe(true);
-    expect(isLeft(await repo.closeSession(1, 10, ''))).toBe(true);
-    expect(isLeft(await repo.listMovements(1))).toBe(true);
+    expect(isLeft(await repo.closeSession('sess-1', 10, ''))).toBe(true);
+    expect(isLeft(await repo.listMovements('sess-1'))).toBe(true);
     expect(
       isLeft(
         await repo.addMovement({
-          sessionId: 1,
+          uid: createUid(),
+          sessionUid: 'sess-1',
           type: 'sangria',
           amount: 5,
           reason: '',

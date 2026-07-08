@@ -23,6 +23,8 @@ function withDefaults(stored?: BusinessConfig): BusinessConfig {
     address: '',
     ...TICKET_DEFAULTS,
     ...ORDER_DEFAULTS,
+    businessTypeId: '',
+    extra: {},
     ...stored,
   };
 }

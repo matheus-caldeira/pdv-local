@@ -48,7 +48,7 @@ export function makeLoadProductCustomizations(
       loaded.push({
         ...group,
         items: itemsResult.right.filter(
-          (item) => item.groupId === groupId && item.active !== false,
+          (item) => item.groupUid === group.uid && item.active !== false,
         ),
       });
     }

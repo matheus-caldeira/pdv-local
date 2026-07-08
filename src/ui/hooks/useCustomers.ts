@@ -24,8 +24,8 @@ export function useCustomers() {
   }, [loadCustomers]);
 
   const saveCustomer = useCallback(
-    async (input: CustomerInput, id?: number) => {
-      const result = await container.saveCustomer(input, id);
+    async (input: CustomerInput, uid?: string) => {
+      const result = await container.saveCustomer(input, uid);
       return fold(
         result,
         (error) => {
@@ -43,8 +43,8 @@ export function useCustomers() {
   );
 
   const removeCustomer = useCallback(
-    async (id: number) => {
-      const result = await container.removeCustomer(id);
+    async (uid: string) => {
+      const result = await container.removeCustomer(uid);
       return fold(
         result,
         (error) => {

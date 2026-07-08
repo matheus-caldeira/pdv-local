@@ -94,27 +94,22 @@ export function OrderDetail({
 
               {item.customizations && item.customizations.length > 0 && (
                 <div className="flex flex-col gap-0.5 text-sm text-ink-secondary">
-                  {item.customizations.map((group, groupIndex) => (
-                    <div key={groupIndex}>
+                  {item.customizations.map((customization, itemIndex) => (
+                    <div key={itemIndex}>
                       <span className="text-ink-tertiary">
-                        {group.groupName}:
+                        {customization.groupName}:
                       </span>{' '}
-                      {group.items.map((customization, itemIndex) => (
-                        <span key={itemIndex}>
-                          {itemIndex > 0 ? ', ' : ''}
-                          {customization.qty > 1
-                            ? `${customization.qty}x `
-                            : ''}
-                          {customization.name}
-                          {customization.price > 0 && (
-                            <span className="text-ink-tertiary">
-                              {' '}
-                              (+
-                              <Money value={customization.price} />)
-                            </span>
-                          )}
-                        </span>
-                      ))}
+                      <span>
+                        {customization.qty > 1 ? `${customization.qty}x ` : ''}
+                        {customization.name}
+                        {customization.price > 0 && (
+                          <span className="text-ink-tertiary">
+                            {' '}
+                            (+
+                            <Money value={customization.price} />)
+                          </span>
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>

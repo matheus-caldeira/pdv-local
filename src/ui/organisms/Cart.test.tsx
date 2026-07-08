@@ -9,9 +9,11 @@ afterEach(cleanup);
 
 const customer: Customer = {
   id: 1,
+  uid: 'customer-1',
   name: 'Joao',
   phone: '99887766',
   addresses: ['Rua A, 10', 'Rua B, 20'],
+  extra: {},
   createdAt: 0,
   updatedAt: 0,
 };
@@ -28,6 +30,7 @@ function baseProps() {
     onAddressChange: vi.fn(),
     ticket: '0001',
     onTicketChange: vi.fn(),
+    ordering: 'required' as const,
     matchedCustomer: null as Customer | null,
     customerSuggestions: [] as Customer[],
     onSelectCustomer: vi.fn(),
@@ -40,7 +43,7 @@ function baseProps() {
 
 const cartItem: CartItem = {
   cartId: 'a',
-  productId: 1,
+  productUid: 'product-1',
   name: 'X-Burger',
   salePrice: 20,
   costPrice: 5,
@@ -48,7 +51,7 @@ const cartItem: CartItem = {
   observation: 'Sem cebola',
   customizationTotal: 3,
   customizations: [
-    { groupName: 'Adicionais', items: [{ name: 'Bacon', qty: 2, price: 3 }] },
+    { groupName: 'Adicionais', name: 'Bacon', qty: 2, price: 3 },
   ],
 };
 
@@ -78,7 +81,7 @@ describe('Cart', () => {
       cartId: 'b',
       observation: undefined,
       customizations: [
-        { groupName: 'Molho', items: [{ name: 'Maionese', qty: 1, price: 0 }] },
+        { groupName: 'Molho', name: 'Maionese', qty: 1, price: 0 },
       ],
     };
     render(<Cart {...baseProps()} cart={[single]} total={23} />);
@@ -174,5 +177,26 @@ describe('Cart', () => {
     expect(props.onCustomerNameChange).toHaveBeenCalled();
     expect(props.onTicketChange).toHaveBeenCalled();
     expect(props.onAddressChange).toHaveBeenCalled();
+  });
+
+  it('shows the ticket field when ordering is required', () => {
+    render(<Cart {...baseProps()} ordering="required" />);
+    expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument();
+  });
+
+  it('hides the ticket field when ordering is optional', () => {
+    render(<Cart {...baseProps()} ordering="optional" />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
+  it('hides the ticket field when ordering is none', () => {
+    render(<Cart {...baseProps()} ordering="none" />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
+  it('hides the ticket field by default when ordering is not provided', () => {
+    const props = baseProps();
+    render(<Cart {...props} ordering={undefined} />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
   });
 });

@@ -19,7 +19,7 @@ let sessionState: { activeSession: Session | null; loading: boolean } = {
 
 vi.mock('../../app/container', () => ({
   container: {
-    loadDashboard: (id: number) => loadDashboard(id),
+    loadDashboard: (uid: string) => loadDashboard(uid),
   },
 }));
 
@@ -38,6 +38,7 @@ class FakeError extends AppError {
 
 const ACTIVE_SESSION: Session = {
   id: 1,
+  uid: 'session-1',
   openedAt: 1700000000000,
   closedAt: null,
   cashInitial: 0,
@@ -52,7 +53,9 @@ function makeOrder(
 ): Order {
   return {
     id: Number(ticket),
-    sessionId: 1,
+    uid: `order-${ticket}`,
+    businessTypeId: 'tab',
+    sessionUid: 'session-1',
     items: [],
     total: 25,
     paymentMethod: null,
@@ -134,7 +137,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Pendente')).toBeInTheDocument();
     expect(screen.getByText('Cancelado')).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
-    expect(loadDashboard).toHaveBeenCalledWith(1);
+    expect(loadDashboard).toHaveBeenCalledWith('session-1');
   });
 
   it('navigates to pdv from nova venda', async () => {

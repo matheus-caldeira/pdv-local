@@ -48,7 +48,7 @@ const GROUP_INPUT: CustomizationGroupInput = {
 };
 
 const ITEM_INPUT: CustomizationItemInput = {
-  groupId: 1,
+  groupUid: 'group-1',
   name: 'Bacon',
   price: 3,
   maxQty: 0,

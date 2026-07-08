@@ -9,10 +9,6 @@ import { DexieConfigRepository } from '../infrastructure/dexie/repositories/dexi
 import { DexieBackupRepository } from '../infrastructure/dexie/repositories/dexie-backup.repository';
 import { browserFileSaver } from '../infrastructure/dexie/browser-file-saver';
 import {
-  makeFinalizeOrder,
-  type FinalizeOrderInput,
-} from '../application/order/finalize-order.usecase';
-import {
   makeCreateProduct,
   makeListActiveProducts,
   makeListProducts,
@@ -70,6 +66,10 @@ import {
   makeLoadDemo,
   makeWipeData,
 } from '../application/backup/backup.usecases';
+import { makeResolveActiveType } from '../application/business-type/resolve-active-type.usecase';
+import { resolveRegisterOrder } from '../application/use-case-registry';
+import type { BusinessTypeDefinition } from '../domain/business-type/registry';
+import type { RegisterOrderInput } from '../application/order/register-order.usecase';
 
 export function createContainer() {
   const db = getDatabase();
@@ -83,7 +83,6 @@ export function createContainer() {
   const backup = new DexieBackupRepository(db, browserFileSaver);
 
   return {
-    finalizeOrder: makeFinalizeOrder(uow),
     listProducts: makeListProducts(products),
     listActiveProducts: makeListActiveProducts(products),
     createProduct: makeCreateProduct(products),
@@ -126,10 +125,15 @@ export function createContainer() {
     hasData: makeHasData(backup),
     loadDemo: makeLoadDemo(backup),
     wipeData: makeWipeData(backup),
+    resolveActiveType: makeResolveActiveType({ configRepo: config }),
+    registerOrder: (
+      businessTypeId: string,
+      definition: BusinessTypeDefinition,
+      input: RegisterOrderInput,
+    ) => resolveRegisterOrder(businessTypeId, uow, definition).run(input),
   };
 }
 
 export type Container = ReturnType<typeof createContainer>;
-export type { FinalizeOrderInput };
 
 export const container = createContainer();

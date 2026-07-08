@@ -23,6 +23,7 @@ const data = (
   name: 'Maria',
   phone: '41999',
   addresses: [] as string[],
+  extra: {} as Record<string, string>,
   ...over,
 });
 
@@ -46,7 +47,7 @@ describe('DexieCustomerRepository CRUD', () => {
 
     if (isRight(created)) {
       const updated = await repo.update(
-        created.right.id!,
+        created.right.uid,
         data({ name: 'Ana Paula', phone: '2', addresses: ['Rua X'] }),
       );
       expect(isRight(updated) && updated.right.name).toBe('Ana Paula');
@@ -54,14 +55,36 @@ describe('DexieCustomerRepository CRUD', () => {
       expect(stored?.addresses).toEqual(['Rua X']);
       expect(stored?.createdAt).toBe(created.right.createdAt);
 
-      await repo.remove(created.right.id!);
+      await repo.remove(created.right.uid);
       expect(await db.customers.get(created.right.id!)).toBeUndefined();
     }
   });
 
+  it('defaults extra to an empty object when creating without one', async () => {
+    const repo = new DexieCustomerRepository(db);
+    const withoutExtra = { name: 'Sem Extra', phone: '3', addresses: [] };
+    const created = await repo.create(
+      withoutExtra as unknown as Parameters<typeof repo.create>[0],
+    );
+    expect(isRight(created) && created.right.extra).toEqual({});
+  });
+
+  it('defaults extra to an empty object when updating without one', async () => {
+    const repo = new DexieCustomerRepository(db);
+    const created = await repo.create(data({ phone: '4' }));
+    expect(isRight(created)).toBe(true);
+    if (!isRight(created)) return;
+    const withoutExtra = { name: 'Sem Extra', phone: '4', addresses: [] };
+    const updated = await repo.update(
+      created.right.uid,
+      withoutExtra as unknown as Parameters<typeof repo.update>[1],
+    );
+    expect(isRight(updated) && updated.right.extra).toEqual({});
+  });
+
   it('returns Left when updating a record that does not exist', async () => {
     const repo = new DexieCustomerRepository(db);
-    const updated = await repo.update(999, data());
+    const updated = await repo.update('nonexistent-uid', data());
     expect(isLeft(updated)).toBe(true);
     if (isLeft(updated)) expect(updated.left.code).toBe('RECORD_NOT_FOUND');
   });
@@ -72,7 +95,7 @@ describe('DexieCustomerRepository CRUD', () => {
     expect(isLeft(await repo.list())).toBe(true);
     expect(isLeft(await repo.findByPhone('1'))).toBe(true);
     expect(isLeft(await repo.create(data()))).toBe(true);
-    expect(isLeft(await repo.update(1, data()))).toBe(true);
-    expect(isLeft(await repo.remove(1))).toBe(true);
+    expect(isLeft(await repo.update('uid', data()))).toBe(true);
+    expect(isLeft(await repo.remove('uid'))).toBe(true);
   });
 });

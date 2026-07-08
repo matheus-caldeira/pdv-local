@@ -12,7 +12,7 @@ function sortByRecent(sessions: Session[]): Session[] {
 export function useReports() {
   const toast = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(
+  const [selectedSessionUid, setSelectedSessionUid] = useState<string | null>(
     null,
   );
   const [report, setReport] = useState<SessionReport | null>(null);
@@ -27,8 +27,8 @@ export function useReports() {
         (value) => {
           const sorted = sortByRecent(value);
           setSessions(sorted);
-          if (sorted.length > 0 && sorted[0].id !== undefined) {
-            setSelectedSessionId(sorted[0].id);
+          if (sorted.length > 0) {
+            setSelectedSessionUid(sorted[0].uid);
           }
         },
       );
@@ -40,7 +40,7 @@ export function useReports() {
 
   useEffect(() => {
     let cancelled = false;
-    if (selectedSessionId === null) {
+    if (selectedSessionUid === null) {
       Promise.resolve().then(() => {
         if (!cancelled) setReport(null);
       });
@@ -48,7 +48,7 @@ export function useReports() {
         cancelled = true;
       };
     }
-    container.loadSessionReport(selectedSessionId).then((result) => {
+    container.loadSessionReport(selectedSessionUid).then((result) => {
       if (cancelled) return;
       fold(
         result,
@@ -59,11 +59,11 @@ export function useReports() {
     return () => {
       cancelled = true;
     };
-  }, [selectedSessionId, toast]);
+  }, [selectedSessionUid, toast]);
 
-  const select = useCallback((id: number) => {
-    setSelectedSessionId(id);
+  const select = useCallback((uid: string) => {
+    setSelectedSessionUid(uid);
   }, []);
 
-  return { sessions, selectedSessionId, select, report };
+  return { sessions, selectedSessionUid, select, report };
 }

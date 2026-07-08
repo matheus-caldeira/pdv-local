@@ -3,15 +3,16 @@ import type { InfrastructureError } from '../../infrastructure/errors';
 import type { Customer } from './customer.entity';
 
 export interface FindOrCreateCustomerInput {
-  phone: string;
+  phone?: string;
   name: string;
   address: string;
 }
 
 export interface NewCustomerData {
   name: string;
-  phone: string;
+  phone?: string;
   addresses: string[];
+  extra: Record<string, string>;
 }
 
 export interface CustomerRepository {
@@ -21,11 +22,11 @@ export interface CustomerRepository {
   ): Promise<Either<InfrastructureError, Customer | undefined>>;
   create(data: NewCustomerData): Promise<Either<InfrastructureError, Customer>>;
   update(
-    id: number,
+    uid: string,
     data: NewCustomerData,
   ): Promise<Either<InfrastructureError, Customer>>;
-  remove(id: number): Promise<Either<InfrastructureError, void>>;
+  remove(uid: string): Promise<Either<InfrastructureError, void>>;
   findOrCreate(
     input: FindOrCreateCustomerInput,
-  ): Promise<Either<InfrastructureError, number | undefined>>;
+  ): Promise<Either<InfrastructureError, string | undefined>>;
 }

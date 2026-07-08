@@ -5,6 +5,7 @@ import type {
   NewCustomerData,
 } from '../../../domain/customer/customer.repository';
 import type { Customer } from '../../../domain/customer/customer.entity';
+import { createUid } from '../../../domain/shared/uid';
 import { RecordNotFoundError, type InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
 import { toInfrastructureError } from '../dexie-errors';
@@ -47,7 +48,14 @@ export class DexieCustomerRepository implements CustomerRepository {
   ): Promise<Either<InfrastructureError, Customer>> {
     try {
       const now = Date.now();
-      const customer = { ...data, createdAt: now, updatedAt: now };
+      const uid = createUid();
+      const customer = {
+        ...data,
+        uid,
+        extra: data.extra ?? {},
+        createdAt: now,
+        updatedAt: now,
+      };
       const id = await this.db.customers.add(customer);
       return right({ ...customer, id });
     } catch (cause) {
@@ -56,25 +64,38 @@ export class DexieCustomerRepository implements CustomerRepository {
   }
 
   async update(
-    id: number,
+    uid: string,
     data: NewCustomerData,
   ): Promise<Either<InfrastructureError, Customer>> {
     try {
-      const existing = await this.db.customers.get(id);
-      if (!existing) {
+      const existing = await this.db.customers
+        .filter((customer) => customer.uid === uid)
+        .first();
+      if (!existing?.id) {
         return left(new RecordNotFoundError('Cliente não encontrado.'));
       }
-      const patch = { ...data, updatedAt: Date.now() };
-      await this.db.customers.update(id, patch);
-      return right({ createdAt: existing.createdAt, ...patch, id });
+      const patch = {
+        ...data,
+        extra: data.extra ?? {},
+        updatedAt: Date.now(),
+      };
+      await this.db.customers.update(existing.id, patch);
+      return right({
+        createdAt: existing.createdAt,
+        ...patch,
+        uid,
+        id: existing.id,
+      });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
   }
 
-  async remove(id: number): Promise<Either<InfrastructureError, void>> {
+  async remove(uid: string): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.customers.delete(id);
+      await this.db.customers
+        .filter((customer) => customer.uid === uid)
+        .delete();
       return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));
@@ -83,9 +104,9 @@ export class DexieCustomerRepository implements CustomerRepository {
 
   async findOrCreate(
     input: FindOrCreateCustomerInput,
-  ): Promise<Either<InfrastructureError, number | undefined>> {
+  ): Promise<Either<InfrastructureError, string | undefined>> {
     try {
-      const phone = input.phone.trim();
+      const phone = input.phone?.trim();
       if (!phone) return right(undefined);
 
       const name = input.name.trim() || DEFAULT_NAME;
@@ -105,17 +126,20 @@ export class DexieCustomerRepository implements CustomerRepository {
           patch.name = name;
         }
         await this.db.customers.update(existing.id, patch);
-        return right(existing.id);
+        return right(existing.uid);
       }
 
-      const id = await this.db.customers.add({
+      const uid = createUid();
+      await this.db.customers.add({
+        uid,
         name,
         phone,
         addresses: address ? [address] : [],
+        extra: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      return right(id);
+      return right(uid);
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }

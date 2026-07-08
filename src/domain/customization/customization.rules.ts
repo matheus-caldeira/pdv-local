@@ -1,5 +1,6 @@
 import { left, right, type Either } from '../shared/either';
 import { InvalidCustomizationError } from '../errors';
+import { createUid } from '../shared/uid';
 import type {
   NewCustomizationGroup,
   NewCustomizationItem,
@@ -14,7 +15,7 @@ export interface CustomizationGroupInput {
 }
 
 export interface CustomizationItemInput {
-  groupId: number;
+  groupUid: string;
   name: string;
   price: number;
   maxQty: number;
@@ -30,6 +31,7 @@ export function buildCustomizationGroup(
     return left(new InvalidCustomizationError('Informe o nome do grupo.'));
   }
   return right({
+    uid: createUid(),
     name,
     required: input.required,
     minQty: input.minQty,
@@ -46,7 +48,8 @@ export function buildCustomizationItem(
     return left(new InvalidCustomizationError('Informe o nome do item.'));
   }
   return right({
-    groupId: input.groupId,
+    uid: createUid(),
+    groupUid: input.groupUid,
     name,
     price: input.price,
     maxQty: input.maxQty,

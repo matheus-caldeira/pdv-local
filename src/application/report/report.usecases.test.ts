@@ -24,7 +24,7 @@ import {
 } from './report.usecases';
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
-  productId: 1,
+  productUid: 'product-1',
   name: 'X-Burger',
   salePrice: 20,
   costPrice: 8,
@@ -34,7 +34,9 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: 1,
-  sessionId: 1,
+  uid: 'order-1',
+  businessTypeId: 'tab',
+  sessionUid: 'session-1',
   items: [item()],
   total: 20,
   paymentMethod: 'pix',
@@ -122,7 +124,7 @@ describe('report use cases', () => {
         }),
         order({ id: 2, status: 'open', total: 30 }),
       ]);
-      const result = await makeLoadSessionReport(orders)(1);
+      const result = await makeLoadSessionReport(orders)('session-1');
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         expect(result.right.summary.totalSales).toBe(100);
@@ -135,7 +137,7 @@ describe('report use cases', () => {
     it('propagates a repository failure', async () => {
       const orders = new FakeOrderRepository();
       orders.listResult = left(new ConnectorError('down'));
-      const result = await makeLoadSessionReport(orders)(1);
+      const result = await makeLoadSessionReport(orders)('session-1');
       expect(isLeft(result)).toBe(true);
     });
   });
@@ -147,7 +149,7 @@ describe('report use cases', () => {
         order({ id: 1, createdAt: 1, total: 20 }),
         order({ id: 2, createdAt: 3, status: 'open', total: 15 }),
       ]);
-      const result = await makeLoadDashboard(orders)(1);
+      const result = await makeLoadDashboard(orders)('session-1');
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         expect(result.right.summary.paidCount).toBe(1);
@@ -160,7 +162,7 @@ describe('report use cases', () => {
     it('propagates a repository failure', async () => {
       const orders = new FakeOrderRepository();
       orders.listResult = left(new ConnectorError('down'));
-      const result = await makeLoadDashboard(orders)(1);
+      const result = await makeLoadDashboard(orders)('session-1');
       expect(isLeft(result)).toBe(true);
     });
   });

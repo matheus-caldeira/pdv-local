@@ -6,24 +6,30 @@ import { Modal } from '../molecules/Modal';
 import { SearchField } from '../molecules/SearchField';
 import { FormField } from '../molecules/FormField';
 import { TextField } from '../molecules/TextField';
+import { ExtraFields } from '../molecules/ExtraFields';
 import { useCustomers } from '../hooks/useCustomers';
+import { useActiveBusinessType } from '../hooks/useActiveBusinessType';
 import type { Customer } from '../../domain/customer/customer.entity';
 
 interface FormState {
-  id?: number;
+  uid?: string;
   name: string;
   phone: string;
   addresses: string[];
+  extra: Record<string, string>;
 }
 
 const EMPTY_CUSTOMER: FormState = {
   name: '',
   phone: '',
   addresses: [],
+  extra: {},
 };
 
 export function CustomersPage() {
   const { customers, saveCustomer, removeCustomer } = useCustomers();
+  const { definition } = useActiveBusinessType();
+  const activeBusinessTypeId = definition?.id ?? '';
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FormState>(EMPTY_CUSTOMER);
@@ -32,7 +38,8 @@ export function CustomersPage() {
     const term = search.trim().toLowerCase();
     if (!term) return customers;
     return customers.filter(
-      (c) => c.name.toLowerCase().includes(term) || c.phone.includes(term),
+      (c) =>
+        c.name.toLowerCase().includes(term) || (c.phone ?? '').includes(term),
     );
   }, [customers, search]);
 
@@ -43,10 +50,11 @@ export function CustomersPage() {
 
   function openEdit(c: Customer) {
     setEditing({
-      id: c.id,
+      uid: c.uid,
       name: c.name,
-      phone: c.phone,
+      phone: c.phone ?? '',
       addresses: [...c.addresses],
+      extra: { ...c.extra },
     });
     setModalOpen(true);
   }
@@ -57,15 +65,16 @@ export function CustomersPage() {
         name: editing.name,
         phone: editing.phone,
         addresses: editing.addresses,
+        extra: editing.extra,
       },
-      editing.id,
+      editing.uid,
     );
     if (ok) setModalOpen(false);
   }
 
-  async function handleRemove(id: number) {
+  async function handleRemove(uid: string) {
     if (!window.confirm('Excluir este cliente?')) return;
-    const ok = await removeCustomer(id);
+    const ok = await removeCustomer(uid);
     if (ok) setModalOpen(false);
   }
 
@@ -115,7 +124,7 @@ export function CustomersPage() {
         <div className="flex flex-col gap-2">
           {filtered.map((c) => (
             <button
-              key={c.id}
+              key={c.uid}
               type="button"
               onClick={() => openEdit(c)}
               className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-3 text-left transition-colors hover:bg-surface-inset"
@@ -136,7 +145,7 @@ export function CustomersPage() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing.id ? 'Editar Cliente' : 'Novo Cliente'}
+        title={editing.uid ? 'Editar Cliente' : 'Novo Cliente'}
       >
         <div className="grid grid-cols-1 gap-3">
           <FormField label="Nome">
@@ -187,11 +196,17 @@ export function CustomersPage() {
               <Plus size={14} /> Adicionar endereço
             </Button>
           </div>
+          <ExtraFields
+            businessTypeId={activeBusinessTypeId}
+            scope="customer"
+            value={editing.extra}
+            onChange={(next) => setEditing((p) => ({ ...p, extra: next }))}
+          />
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          {editing.id !== undefined && (
-            <Button variant="danger" onClick={() => handleRemove(editing.id!)}>
+          {editing.uid !== undefined && (
+            <Button variant="danger" onClick={() => handleRemove(editing.uid!)}>
               Excluir
             </Button>
           )}

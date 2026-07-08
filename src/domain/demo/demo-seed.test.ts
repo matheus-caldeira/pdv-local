@@ -16,6 +16,9 @@ describe('generateDemoSeed', () => {
   it('produces a coherent multi-entity snapshot', () => {
     const seed = generateDemoSeed(NOW);
     expect(seed.config).toHaveLength(1);
+    const config = (seed.config as Record<string, unknown>[])[0];
+    expect(config.businessTypeId).toBe('quick_sale');
+    expect(config.extra).toEqual({});
     expect((seed.products as Product[]).length).toBeGreaterThanOrEqual(8);
     expect((seed.sessions as Session[]).length).toBe(5);
     expect((seed.orders as Order[]).length).toBeGreaterThanOrEqual(50);
@@ -46,16 +49,59 @@ describe('generateDemoSeed', () => {
 
   it('links orders to existing sessions, products and customers', () => {
     const seed = generateDemoSeed(NOW);
-    const sessionIds = new Set((seed.sessions as Session[]).map((s) => s.id));
-    const productIds = new Set((seed.products as Product[]).map((p) => p.id));
-    const customerIds = new Set(
-      (seed.customers as { id: number }[]).map((c) => c.id),
+    const sessionUids = new Set((seed.sessions as Session[]).map((s) => s.uid));
+    const productUids = new Set((seed.products as Product[]).map((p) => p.uid));
+    const customerUids = new Set(
+      (seed.customers as { uid: string }[]).map((c) => c.uid),
     );
     for (const order of seed.orders as Order[]) {
-      expect(sessionIds.has(order.sessionId)).toBe(true);
-      expect(customerIds.has(order.customerId as number)).toBe(true);
+      expect(sessionUids.has(order.sessionUid)).toBe(true);
+      expect(customerUids.has(order.customerUid as string)).toBe(true);
       for (const item of order.items) {
-        expect(productIds.has(item.productId)).toBe(true);
+        expect(productUids.has(item.productUid as string)).toBe(true);
+      }
+    }
+  });
+
+  it('assigns a truthy uid and businessTypeId to every order', () => {
+    const orders = generateDemoSeed(NOW).orders as Order[];
+    expect(orders.length).toBeGreaterThan(0);
+    for (const order of orders) {
+      expect(order.uid).toBeTruthy();
+      expect(order.sessionUid).toBeTruthy();
+      expect(order.businessTypeId).toBeTruthy();
+    }
+  });
+
+  it('defaults customerPhone to an empty string for customers without a phone', () => {
+    const seed = generateDemoSeed(NOW);
+    const customers = seed.customers as { uid: string; phone?: string }[];
+    const phoneless = customers.filter((c) => !c.phone);
+    expect(phoneless.length).toBeGreaterThan(0);
+    const phonelessUids = new Set(phoneless.map((c) => c.uid));
+    const orders = seed.orders as Order[];
+    const ordersForPhoneless = orders.filter((o) =>
+      phonelessUids.has(o.customerUid as string),
+    );
+    expect(ordersForPhoneless.length).toBeGreaterThan(0);
+    for (const order of ordersForPhoneless) {
+      expect(order.customerPhone).toBe('');
+    }
+  });
+
+  it('flattens customizations without an OrderCustomization wrapper', () => {
+    const orders = generateDemoSeed(NOW).orders as Order[];
+    const customizedItems = orders
+      .flatMap((order) => order.items)
+      .filter((item) => (item.customizations?.length ?? 0) > 0);
+    expect(customizedItems.length).toBeGreaterThan(0);
+    for (const item of customizedItems) {
+      for (const customization of item.customizations ?? []) {
+        expect(customization).not.toHaveProperty('items');
+        expect(typeof customization.groupName).toBe('string');
+        expect(typeof customization.name).toBe('string');
+        expect(typeof customization.qty).toBe('number');
+        expect(typeof customization.price).toBe('number');
       }
     }
   });

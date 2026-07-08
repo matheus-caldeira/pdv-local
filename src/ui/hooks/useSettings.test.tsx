@@ -43,6 +43,8 @@ const CONFIG: BusinessConfig = {
   ticketLimit: 99,
   ticketAutoReset: true,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 const INPUT = {
@@ -53,6 +55,8 @@ const INPUT = {
   ticketLimit: 99,
   ticketAutoReset: true,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 function Probe() {

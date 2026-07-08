@@ -129,6 +129,7 @@ export default defineConfig({
         test: {
           name: 'core',
           environment: 'node',
+          fileParallelism: false,
           setupFiles: ['./src/test/setup.core.ts'],
           include: [
             'src/domain/**/*.test.ts',

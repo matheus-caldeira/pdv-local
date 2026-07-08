@@ -19,9 +19,9 @@ function paymentLabel(method: string): string {
 }
 
 export function ReportsPage() {
-  const { sessions, selectedSessionId, select, report } = useReports();
+  const { sessions, selectedSessionUid, select, report } = useReports();
 
-  const currentSession = sessions.find((s) => s.id === selectedSessionId);
+  const currentSession = sessions.find((s) => s.uid === selectedSessionUid);
   const summary = report?.summary ?? null;
   const byMethod = report?.byMethod ?? {};
   const products = report?.products ?? [];
@@ -47,12 +47,12 @@ export function ReportsPage() {
             <div className="flex flex-wrap gap-2">
               {sessions.map((s) => (
                 <button
-                  key={s.id}
+                  key={s.uid}
                   type="button"
-                  aria-pressed={selectedSessionId === s.id}
-                  onClick={() => select(s.id!)}
+                  aria-pressed={selectedSessionUid === s.uid}
+                  onClick={() => select(s.uid)}
                   className={
-                    selectedSessionId === s.id
+                    selectedSessionUid === s.uid
                       ? 'rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-text'
                       : 'rounded-full border border-border-emphasis bg-surface-2 px-3 py-1 text-sm font-semibold text-ink-secondary hover:bg-surface-inset'
                   }

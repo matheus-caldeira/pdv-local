@@ -44,4 +44,19 @@ describe('buildCustomer', () => {
       expect(result.left).toBeInstanceOf(InvalidCustomerError);
     }
   });
+
+  it('carries the extra fields through', () => {
+    const result = buildCustomer(
+      input({ extra: { section: 'lobinho', guardian: 'Ana' } }),
+    );
+    expect(isRight(result) && result.right.extra).toEqual({
+      section: 'lobinho',
+      guardian: 'Ana',
+    });
+  });
+
+  it('defaults extra to an empty object when omitted', () => {
+    const result = buildCustomer(input());
+    expect(isRight(result) && result.right.extra).toEqual({});
+  });
 });

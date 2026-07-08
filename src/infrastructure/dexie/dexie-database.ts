@@ -113,5 +113,111 @@ export class PDVDatabase extends Dexie {
             if (order.customerPhone == null) order.customerPhone = '';
           });
       });
+    this.version(5)
+      .stores({
+        products: '++id, &uid, name, category, active',
+        orders:
+          '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+        sessions: '++id, &uid, openedAt, closedAt',
+        cashMovements: '++id, &uid, sessionUid, type',
+        config: '++id',
+        customizationGroups: '++id, &uid, name',
+        customizationItems: '++id, &uid, groupUid, active',
+        customers: '++id, &uid, phone, name',
+      })
+      .upgrade(async (tx) => {
+        const assignUid = async (
+          tableName: string,
+        ): Promise<Map<number, string>> => {
+          const table = tx.table(tableName);
+          const map = new Map<number, string>();
+          await table.toCollection().modify((record) => {
+            if (!record.uid) record.uid = crypto.randomUUID();
+            map.set(record.id, record.uid);
+          });
+          return map;
+        };
+
+        const sessionMap = await assignUid('sessions');
+        const customerMap = await assignUid('customers');
+        const productMap = await assignUid('products');
+        const groupMap = await assignUid('customizationGroups');
+        await assignUid('customizationItems');
+        await assignUid('orders');
+        await assignUid('cashMovements');
+
+        await tx
+          .table('customizationItems')
+          .toCollection()
+          .modify((item) => {
+            if (item.groupId != null) {
+              item.groupUid = groupMap.get(item.groupId);
+            }
+            delete item.groupId;
+          });
+
+        await tx
+          .table('orders')
+          .toCollection()
+          .modify((order) => {
+            if (order.sessionId != null) {
+              order.sessionUid = sessionMap.get(order.sessionId);
+            }
+            delete order.sessionId;
+
+            if (order.customerId != null) {
+              order.customerUid = customerMap.get(order.customerId);
+            }
+            delete order.customerId;
+
+            if (Array.isArray(order.items)) {
+              order.items = order.items.map((item: Record<string, unknown>) => {
+                const next: Record<string, unknown> = { ...item };
+                if (next.productId != null) {
+                  next.productUid = productMap.get(next.productId as number);
+                }
+                delete next.productId;
+
+                if (Array.isArray(next.customizations)) {
+                  next.customizations = next.customizations.flatMap(
+                    (group: Record<string, unknown>) => {
+                      const groupName = group.groupName;
+                      const nested = group.items;
+                      if (Array.isArray(nested)) {
+                        return nested.map((entry: Record<string, unknown>) => ({
+                          groupName,
+                          name: entry.name,
+                          qty: entry.qty,
+                          price: entry.price,
+                        }));
+                      }
+                      return [group];
+                    },
+                  );
+                }
+
+                return next;
+              });
+            }
+          });
+
+        await tx
+          .table('cashMovements')
+          .toCollection()
+          .modify((movement) => {
+            if (movement.sessionId != null) {
+              movement.sessionUid = sessionMap.get(movement.sessionId);
+            }
+            delete movement.sessionId;
+          });
+
+        await tx
+          .table('config')
+          .toCollection()
+          .modify((config) => {
+            if (config.businessTypeId == null) config.businessTypeId = '';
+            if (config.extra == null) config.extra = {};
+          });
+      });
   }
 }

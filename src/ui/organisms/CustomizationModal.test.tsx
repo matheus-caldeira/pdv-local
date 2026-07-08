@@ -10,6 +10,7 @@ afterEach(cleanup);
 
 const product: Product = {
   id: 1,
+  uid: 'product-1',
   name: 'X-Burger',
   category: 'Lanches',
   costPrice: 5,
@@ -29,6 +30,7 @@ function group(
   },
 ): LoadedCustomizationGroup {
   return {
+    uid: `group-${partial.id}`,
     required: false,
     minQty: 0,
     maxQty: 3,
@@ -67,7 +69,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Bem passado',
             price: 0,
             maxQty: 0,
@@ -95,7 +98,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Bacon',
             price: 3,
             maxQty: 0,
@@ -108,7 +112,7 @@ describe('CustomizationModal', () => {
     await userEvent.click(screen.getByRole('button', { name: /Adicionar/ }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
-        productId: 1,
+        productUid: 'product-1',
         qty: 1,
         customizations: undefined,
         customizationTotal: undefined,
@@ -126,7 +130,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Bacon',
             price: 3,
             maxQty: 2,
@@ -147,10 +152,7 @@ describe('CustomizationModal', () => {
       expect.objectContaining({
         customizationTotal: 6,
         customizations: [
-          {
-            groupName: 'Adicionais',
-            items: [{ name: 'Bacon', qty: 2, price: 3 }],
-          },
+          { groupName: 'Adicionais', name: 'Bacon', qty: 2, price: 3 },
         ],
       }),
     );
@@ -165,7 +167,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Barbecue',
             price: 0,
             maxQty: 0,
@@ -174,7 +177,8 @@ describe('CustomizationModal', () => {
           },
           {
             id: 12,
-            groupId: 1,
+            uid: 'item-12',
+            groupUid: 'group-1',
             name: 'Maionese',
             price: 0,
             maxQty: 0,
@@ -199,7 +203,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Cheddar',
             price: 2,
             maxQty: 3,
@@ -230,7 +235,8 @@ describe('CustomizationModal', () => {
         items: [
           {
             id: 11,
-            groupId: 1,
+            uid: 'item-11',
+            groupUid: 'group-1',
             name: 'Bacon',
             price: 3,
             maxQty: 0,
@@ -248,6 +254,53 @@ describe('CustomizationModal', () => {
       expect.objectContaining({
         observation: 'Sem cebola',
         customizationTotal: undefined,
+      }),
+    );
+  });
+
+  it('skips items decremented back to zero when confirming', async () => {
+    const { onConfirm } = renderModal([
+      group({
+        id: 1,
+        name: 'Adicionais',
+        maxQty: 5,
+        items: [
+          {
+            id: 11,
+            uid: 'item-11',
+            groupUid: 'group-1',
+            name: 'Bacon',
+            price: 3,
+            maxQty: 0,
+            chargeAfter: 0,
+            active: true,
+          },
+          {
+            id: 12,
+            uid: 'item-12',
+            groupUid: 'group-1',
+            name: 'Cheddar',
+            price: 2,
+            maxQty: 0,
+            chargeAfter: 0,
+            active: true,
+          },
+        ],
+      }),
+    ]);
+    const [addBacon, addCheddar] = screen.getAllByRole('button', {
+      name: 'Aumentar',
+    });
+    await userEvent.click(addBacon);
+    await userEvent.click(addCheddar);
+    const [decBacon] = screen.getAllByRole('button', { name: 'Diminuir' });
+    await userEvent.click(decBacon);
+    await userEvent.click(screen.getByRole('button', { name: /^Adicionar ·/ }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customizations: [
+          { groupName: 'Adicionais', name: 'Cheddar', qty: 1, price: 2 },
+        ],
       }),
     );
   });

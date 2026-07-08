@@ -37,9 +37,9 @@ export function makeListReportSessions(cash: CashRepository) {
 
 export function makeLoadSessionReport(orders: OrderRepository) {
   return async (
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<AppError, SessionReport>> => {
-    const result = await orders.listBySession(sessionId);
+    const result = await orders.listBySession(sessionUid);
     if (isLeft(result)) return result;
     const list = result.right;
     return right({
@@ -53,9 +53,9 @@ export function makeLoadSessionReport(orders: OrderRepository) {
 
 export function makeLoadDashboard(orders: OrderRepository) {
   return async (
-    sessionId: number,
+    sessionUid: string,
   ): Promise<Either<AppError, DashboardData>> => {
-    const result = await orders.listBySession(sessionId);
+    const result = await orders.listBySession(sessionUid);
     if (isLeft(result)) return result;
     const list = result.right;
     return right({

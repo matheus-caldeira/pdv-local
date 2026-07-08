@@ -6,6 +6,7 @@ import { QtyStepper } from '../atoms/QtyStepper';
 import { Modal } from '../molecules/Modal';
 import { TextField } from '../molecules/TextField';
 import type { Customer } from '../../domain/customer/customer.entity';
+import type { BusinessTypeRules } from '../../domain/business-type/business-type.entity';
 import type { CartItem } from '../hooks/usePdvController';
 
 interface CartProps {
@@ -19,6 +20,7 @@ interface CartProps {
   onAddressChange: (value: string) => void;
   ticket: string;
   onTicketChange: (value: string) => void;
+  ordering?: BusinessTypeRules['ordering'];
   matchedCustomer: Customer | null;
   customerSuggestions: Customer[];
   onSelectCustomer: (customer: Customer) => void;
@@ -43,6 +45,7 @@ export function Cart({
   onAddressChange,
   ticket,
   onTicketChange,
+  ordering = 'optional',
   matchedCustomer,
   customerSuggestions,
   onSelectCustomer,
@@ -131,13 +134,15 @@ export function Cart({
             onChange={(event) => onAddressChange(event.target.value)}
           />
         )}
-        <TextField
-          type="text"
-          aria-label="Comanda / Mesa"
-          placeholder="Comanda / Mesa"
-          value={ticket}
-          onChange={(event) => onTicketChange(event.target.value)}
-        />
+        {ordering === 'required' && (
+          <TextField
+            type="text"
+            aria-label="Comanda / Mesa"
+            placeholder="Comanda / Mesa"
+            value={ticket}
+            onChange={(event) => onTicketChange(event.target.value)}
+          />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-3">
@@ -157,20 +162,19 @@ export function Cart({
                   <Money value={itemUnitTotal(item)} /> un.
                 </span>
               </div>
-              {item.customizations &&
-                item.customizations.map((customization, index) => (
-                  <div key={index} className="mb-1 flex flex-wrap gap-1">
-                    {customization.items.map((ci, ciIndex) => (
-                      <span
-                        key={ciIndex}
-                        className="rounded-full bg-surface-inset px-1.5 py-px text-xs text-ink-tertiary"
-                      >
-                        {ci.qty > 1 ? ci.qty + 'x ' : ''}
-                        {ci.name}
-                      </span>
-                    ))}
-                  </div>
-                ))}
+              {item.customizations && item.customizations.length > 0 && (
+                <div className="mb-1 flex flex-wrap gap-1">
+                  {item.customizations.map((customization, index) => (
+                    <span
+                      key={index}
+                      className="rounded-full bg-surface-inset px-1.5 py-px text-xs text-ink-tertiary"
+                    >
+                      {customization.qty > 1 ? customization.qty + 'x ' : ''}
+                      {customization.name}
+                    </span>
+                  ))}
+                </div>
+              )}
               {item.observation && (
                 <div className="mb-1 text-xs italic text-ink-tertiary">
                   Obs: {item.observation}

@@ -54,6 +54,8 @@ const CONFIG: BusinessConfig = {
   ticketLimit: 99,
   ticketAutoReset: true,
   statusControlEnabled: false,
+  businessTypeId: 'tab',
+  extra: {},
 };
 
 function renderPage() {
@@ -149,7 +151,56 @@ describe('SettingsPage', () => {
       ticketLimit: 99,
       ticketAutoReset: true,
       statusControlEnabled: false,
+      businessTypeId: 'tab',
+      extra: {},
     });
+  });
+
+  it('selects a business type, edits its business field and saves', async () => {
+    saveConfig.mockResolvedValue(right(CONFIG));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Negócio')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Negócio'),
+      'scout',
+    );
+    const group = await screen.findByLabelText('Grupo escoteiro');
+    await userEvent.type(group, 'Alcatéia 1');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[1]);
+    await waitFor(() =>
+      expect(saveConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          businessTypeId: 'scout',
+          extra: { group: 'Alcatéia 1' },
+        }),
+      ),
+    );
+  });
+
+  it('preserves extra values from a previous type when switching type', async () => {
+    readConfig.mockResolvedValue(
+      right({ ...CONFIG, businessTypeId: 'scout', extra: { group: 'Antigo' } }),
+    );
+    saveConfig.mockResolvedValue(right(CONFIG));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Negócio')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Negócio'),
+      'quick_sale',
+    );
+    await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[1]);
+    await waitFor(() =>
+      expect(saveConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          businessTypeId: 'quick_sale',
+          extra: { group: 'Antigo' },
+        }),
+      ),
+    );
   });
 
   it('toasts when saving fails', async () => {
@@ -192,6 +243,8 @@ describe('SettingsPage', () => {
         ticketLimit: 999,
         ticketAutoReset: false,
         statusControlEnabled: false,
+        businessTypeId: 'tab',
+        extra: {},
       }),
     );
   });

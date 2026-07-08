@@ -6,15 +6,17 @@ import { PdvPage } from './PdvPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { EmptyCartError } from '../../domain/errors';
-import type { FinalizeOrderInput } from '../../application/order/finalize-order.usecase';
+import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
+import type { RegisterOrderInput } from '../../application/order/register-order.usecase';
 
 const navigate = vi.fn();
-const finalizeOrder = vi.fn();
+const registerOrder = vi.fn();
 const getActiveSession = vi.fn();
 const listActiveProducts = vi.fn();
 const peekTicketSuggestion = vi.fn();
 const searchCustomersByPhone = vi.fn();
 const loadProductCustomizations = vi.fn();
+const readConfig = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -23,13 +25,18 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('../../app/container', () => ({
   container: {
-    finalizeOrder: (input: FinalizeOrderInput) => finalizeOrder(input),
+    registerOrder: (
+      businessTypeId: string,
+      definition: BusinessTypeDefinition,
+      input: RegisterOrderInput,
+    ) => registerOrder(businessTypeId, definition, input),
     getActiveSession: () => getActiveSession(),
     listActiveProducts: () => listActiveProducts(),
     peekTicketSuggestion: () => peekTicketSuggestion(),
     searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
     loadProductCustomizations: (ids: number[]) =>
       loadProductCustomizations(ids),
+    readConfig: () => readConfig(),
   },
 }));
 
@@ -45,6 +52,7 @@ function renderPage() {
 
 const simpleProduct = {
   id: 1,
+  uid: 'product-1',
   name: 'Coca',
   category: 'Bebidas',
   costPrice: 2,
@@ -59,6 +67,7 @@ const simpleProduct = {
 const customProduct = {
   ...simpleProduct,
   id: 2,
+  uid: 'product-2',
   name: 'X-Burger',
   category: 'Lanches',
   customizationGroupIds: [10],
@@ -67,16 +76,31 @@ const customProduct = {
 describe('PdvPage', () => {
   beforeEach(() => {
     navigate.mockReset();
-    finalizeOrder.mockReset();
+    registerOrder.mockReset();
     getActiveSession.mockReset();
     listActiveProducts.mockReset();
     peekTicketSuggestion.mockReset();
     searchCustomersByPhone.mockReset();
     loadProductCustomizations.mockReset();
+    readConfig.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
     searchCustomersByPhone.mockResolvedValue(right([]));
     loadProductCustomizations.mockResolvedValue(right([]));
     listActiveProducts.mockResolvedValue(right([simpleProduct, customProduct]));
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'tab',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
   });
   afterEach(cleanup);
 
@@ -91,8 +115,10 @@ describe('PdvPage', () => {
   });
 
   it('adds a simple product directly and finalizes a sale', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
-    finalizeOrder.mockResolvedValue(right({ id: 1 }));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
 
@@ -111,13 +137,17 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument(),
     );
-    expect(finalizeOrder).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: 3, status: 'open' }),
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      expect.objectContaining({ id: 'tab' }),
+      expect.objectContaining({ sessionUid: 'session-3', status: 'open' }),
     );
   });
 
   it('keeps the payment panel open when finalize fails and closes it on dismiss', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await userEvent.click(screen.getByText('Coca'));
@@ -129,12 +159,14 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument(),
     );
-    expect(finalizeOrder).not.toHaveBeenCalled();
+    expect(registerOrder).not.toHaveBeenCalled();
   });
 
   it('keeps the payment panel open when the use case returns a Left', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
-    finalizeOrder.mockResolvedValue(left(new EmptyCartError()));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    registerOrder.mockResolvedValue(left(new EmptyCartError()));
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await userEvent.click(screen.getByText('Coca'));
@@ -144,16 +176,19 @@ describe('PdvPage', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Abrir comanda' }),
     );
-    expect(finalizeOrder).toHaveBeenCalled();
+    expect(registerOrder).toHaveBeenCalled();
     expect(screen.getByText('Como deseja pagar?')).toBeInTheDocument();
   });
 
   it('opens the customization modal for products with groups and adds the item', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
     loadProductCustomizations.mockResolvedValue(
       right([
         {
           id: 10,
+          uid: 'group-10',
           name: 'Adicionais',
           required: false,
           minQty: 0,
@@ -162,7 +197,8 @@ describe('PdvPage', () => {
           items: [
             {
               id: 100,
-              groupId: 10,
+              uid: 'item-100',
+              groupUid: 'group-10',
               name: 'Bacon',
               price: 3,
               maxQty: 2,
@@ -190,7 +226,9 @@ describe('PdvPage', () => {
   });
 
   it('adds directly when a customizable product has no loadable groups', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
     loadProductCustomizations.mockResolvedValue(right([]));
     renderPage();
     await waitFor(() =>
@@ -205,12 +243,63 @@ describe('PdvPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('shows the ticket field when the active business type requires ordering', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'scout',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument(),
+    );
+  });
+
+  it('hides the ticket field when the active business type has no ordering', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'quick_sale',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
   it('closes the customization modal without adding', async () => {
-    getActiveSession.mockResolvedValue(right({ id: 3, closedAt: null }));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
     loadProductCustomizations.mockResolvedValue(
       right([
         {
           id: 10,
+          uid: 'group-10',
           name: 'Adicionais',
           required: false,
           minQty: 0,

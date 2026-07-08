@@ -8,16 +8,30 @@ import type {
 } from '../customization/customization.entity';
 import type {
   Order,
-  OrderCustomization,
+  OrderCustomizationItem,
   OrderItem,
   OrderStatus,
 } from '../order/order.entity';
-import { calculateCustomizationTotal } from '../order/order.rules';
+import {
+  calculateCustomizationTotal,
+  calculateOrderTotal,
+} from '../order/order.rules';
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
 const SESSION_COUNT = 5;
 const ORDER_COUNT = 52;
+const DEMO_BUSINESS_TYPE_ID = 'quick_sale';
+
+let uidCounter = 0;
+
+function nextUid(prefix: string): string {
+  return `${prefix}-${uidCounter++}`;
+}
+
+function resetUidCounter(): void {
+  uidCounter = 0;
+}
 
 function createRng(seed: number): () => number {
   let state = seed >>> 0;
@@ -38,7 +52,9 @@ function intBetween(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-const PRODUCT_SEED: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
+type ProductSeed = Omit<Product, 'id' | 'uid' | 'createdAt' | 'updatedAt'>;
+
+const PRODUCT_SEED: ProductSeed[] = [
   {
     name: 'X-Burguer',
     category: 'Lanches',
@@ -122,7 +138,7 @@ const PRODUCT_SEED: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[] = [
   },
 ];
 
-const GROUP_SEED: Omit<CustomizationGroup, 'id'>[] = [
+const GROUP_SEED: Omit<CustomizationGroup, 'id' | 'uid'>[] = [
   { name: 'Consumo', required: true, minQty: 1, maxQty: 1, chargeAfter: 0 },
   {
     name: 'Ponto da carne',
@@ -148,7 +164,7 @@ const ITEM_SEED: { groupId: number; name: string; price: number }[] = [
   { groupId: 3, name: 'Catupiry', price: 3.5 },
 ];
 
-const CUSTOMER_SEED: { name: string; phone: string }[] = [
+const CUSTOMER_SEED: { name: string; phone?: string }[] = [
   { name: 'Maria Souza', phone: '(11) 97777-0001' },
   { name: 'Joao Lima', phone: '(11) 97777-0002' },
   { name: 'Ana Pereira', phone: '(11) 97777-0003' },
@@ -156,7 +172,7 @@ const CUSTOMER_SEED: { name: string; phone: string }[] = [
   { name: 'Carla Dias', phone: '(11) 97777-0005' },
   { name: 'Bruno Costa', phone: '(11) 97777-0006' },
   { name: 'Luiza Rocha', phone: '(11) 97777-0007' },
-  { name: 'Rafael Gomes', phone: '(11) 97777-0008' },
+  { name: 'Rafael Gomes' },
 ];
 
 const PAYMENT_METHODS = ['dinheiro', 'pix', 'credito', 'debito'];
@@ -165,19 +181,25 @@ function buildProducts(now: number): Product[] {
   return PRODUCT_SEED.map((product, index) => ({
     ...product,
     id: index + 1,
+    uid: nextUid('product'),
     createdAt: now - 60 * DAY,
     updatedAt: now - 60 * DAY,
   }));
 }
 
 function buildGroups(): CustomizationGroup[] {
-  return GROUP_SEED.map((group, index) => ({ ...group, id: index + 1 }));
+  return GROUP_SEED.map((group, index) => ({
+    ...group,
+    id: index + 1,
+    uid: nextUid('group'),
+  }));
 }
 
-function buildItems(): CustomizationItem[] {
+function buildItems(groups: CustomizationGroup[]): CustomizationItem[] {
   return ITEM_SEED.map((item, index) => ({
     id: index + 1,
-    groupId: item.groupId,
+    uid: nextUid('item'),
+    groupUid: groups.find((g) => g.id === item.groupId)!.uid,
     name: item.name,
     price: item.price,
     maxQty: 1,
@@ -189,9 +211,11 @@ function buildItems(): CustomizationItem[] {
 function buildCustomers(now: number): Customer[] {
   return CUSTOMER_SEED.map((customer, index) => ({
     id: index + 1,
+    uid: nextUid('customer'),
     name: customer.name,
     phone: customer.phone,
     addresses: [],
+    extra: {},
     createdAt: now - 50 * DAY,
     updatedAt: now - 50 * DAY,
   }));
@@ -205,6 +229,7 @@ function buildSessions(now: number): Session[] {
     const isOpen = index === SESSION_COUNT - 1;
     sessions.push({
       id: index + 1,
+      uid: nextUid('session'),
       openedAt,
       closedAt: isOpen ? null : openedAt + 10 * HOUR,
       cashInitial: 200,
@@ -222,28 +247,28 @@ function buildItemCustomizations(
   product: Product,
   groups: CustomizationGroup[],
   items: CustomizationItem[],
-): { customizations: OrderCustomization[]; total: number } {
+): { customizations: OrderCustomizationItem[]; total: number } {
   if (product.customizationGroupIds.length === 0) {
     return { customizations: [], total: 0 };
   }
-  const customizations: OrderCustomization[] = [];
+  const customizations: OrderCustomizationItem[] = [];
   const selections = [];
   for (const groupId of product.customizationGroupIds) {
     const group = groups.find((g) => g.id === groupId)!;
-    const groupItems = items.filter((i) => i.groupId === groupId);
+    const groupItems = items.filter((i) => i.groupUid === group.uid);
     if (!group.required && rng() < 0.5) continue;
     const chosen = group.required
       ? [pick(rng, groupItems)]
       : groupItems.filter(() => rng() < 0.4);
     if (chosen.length === 0) continue;
-    customizations.push({
-      groupName: group.name,
-      items: chosen.map((item) => ({
+    for (const item of chosen) {
+      customizations.push({
+        groupName: group.name,
         name: item.name,
         qty: 1,
         price: item.price,
-      })),
-    });
+      });
+    }
     selections.push({
       required: group.required,
       minQty: group.minQty,
@@ -274,7 +299,7 @@ function buildOrderItems(
       ? buildItemCustomizations(rng, product, groups, items)
       : { customizations: [], total: 0 };
     orderItems.push({
-      productId: product.id as number,
+      productUid: product.uid,
       name: product.name,
       salePrice: product.salePrice,
       costPrice: product.costPrice,
@@ -284,14 +309,6 @@ function buildOrderItems(
     });
   }
   return orderItems;
-}
-
-function orderTotal(items: OrderItem[]): number {
-  return items.reduce(
-    (sum, item) =>
-      sum + (item.salePrice + (item.customizationTotal ?? 0)) * item.qty,
-    0,
-  );
 }
 
 function buildOrders(
@@ -323,13 +340,15 @@ function buildOrders(
     const createdAt = session.openedAt + intBetween(rng, 0, 9) * HOUR;
     orders.push({
       id: index + 1,
-      sessionId: session.id as number,
+      uid: nextUid('order'),
+      businessTypeId: DEMO_BUSINESS_TYPE_ID,
+      sessionUid: session.uid,
       items: orderItems,
-      total: orderTotal(orderItems),
+      total: calculateOrderTotal(orderItems),
       paymentMethod: status === 'paid' ? pick(rng, PAYMENT_METHODS) : null,
       customerName: customer.name,
-      customerId: customer.id,
-      customerPhone: customer.phone,
+      customerUid: customer.uid,
+      customerPhone: customer.phone ?? '',
       ticket: String(index + 1).padStart(4, '0'),
       stage: status === 'open' ? 'em_preparo' : 'finalizado',
       status,
@@ -350,7 +369,8 @@ function buildCashMovements(sessions: Session[]): CashMovement[] {
       const isSangria = rng() < 0.5;
       movements.push({
         id: id++,
-        sessionId: session.id as number,
+        uid: nextUid('cash-movement'),
+        sessionUid: session.uid,
         type: isSangria ? 'sangria' : 'suprimento',
         amount: intBetween(rng, 1, 4) * 50,
         reason: isSangria ? 'Deposito no cofre' : 'Troco extra',
@@ -362,9 +382,10 @@ function buildCashMovements(sessions: Session[]): CashMovement[] {
 }
 
 export function generateDemoSeed(now: number): BackupSnapshot {
+  resetUidCounter();
   const products = buildProducts(now);
   const groups = buildGroups();
-  const items = buildItems();
+  const items = buildItems(groups);
   const customers = buildCustomers(now);
   const sessions = buildSessions(now);
   const orders = buildOrders(products, groups, items, customers, sessions);
@@ -382,6 +403,8 @@ export function generateDemoSeed(now: number): BackupSnapshot {
         ticketLimit: 9999,
         ticketAutoReset: true,
         statusControlEnabled: true,
+        businessTypeId: DEMO_BUSINESS_TYPE_ID,
+        extra: {},
       },
     ],
     products,

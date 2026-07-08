@@ -45,6 +45,7 @@ const EMPTY_SUMMARY: CashSummary = {
 const ACTIVE_SUMMARY: CashSummary = {
   session: {
     id: 1,
+    uid: 'session-1',
     openedAt: 1700000000000,
     closedAt: null,
     cashInitial: 50,
@@ -54,7 +55,8 @@ const ACTIVE_SUMMARY: CashSummary = {
   movements: [
     {
       id: 10,
-      sessionId: 1,
+      uid: 'movement-10',
+      sessionUid: 'session-1',
       type: 'sangria',
       amount: 20,
       reason: 'troco',
@@ -62,7 +64,8 @@ const ACTIVE_SUMMARY: CashSummary = {
     },
     {
       id: 11,
-      sessionId: 1,
+      uid: 'movement-11',
+      sessionUid: 'session-1',
       type: 'suprimento',
       amount: 30,
       reason: '',
@@ -75,6 +78,7 @@ const ACTIVE_SUMMARY: CashSummary = {
   pastSessions: [
     {
       id: 2,
+      uid: 'session-2',
       openedAt: 1690000000000,
       closedAt: 1690003600000,
       cashInitial: 10,
@@ -83,6 +87,7 @@ const ACTIVE_SUMMARY: CashSummary = {
     },
     {
       id: 3,
+      uid: 'session-3',
       openedAt: 1680000000000,
       closedAt: 1680003600000,
       cashInitial: 5,
