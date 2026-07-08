@@ -16,6 +16,9 @@ describe('generateDemoSeed', () => {
   it('produces a coherent multi-entity snapshot', () => {
     const seed = generateDemoSeed(NOW);
     expect(seed.config).toHaveLength(1);
+    const config = (seed.config as Record<string, unknown>[])[0];
+    expect(config.businessTypeId).toBe('quick_sale');
+    expect(config.extra).toEqual({});
     expect((seed.products as Product[]).length).toBeGreaterThanOrEqual(8);
     expect((seed.sessions as Session[]).length).toBe(5);
     expect((seed.orders as Order[]).length).toBeGreaterThanOrEqual(50);

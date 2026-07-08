@@ -403,6 +403,8 @@ export function generateDemoSeed(now: number): BackupSnapshot {
         ticketLimit: 9999,
         ticketAutoReset: true,
         statusControlEnabled: true,
+        businessTypeId: DEMO_BUSINESS_TYPE_ID,
+        extra: {},
       },
     ],
     products,
