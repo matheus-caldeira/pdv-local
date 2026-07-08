@@ -11,11 +11,13 @@ import { CustomersPage } from './CustomersPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
+import { getBusinessType } from '../../domain/business-type/registry';
 import type { CustomerInput } from '../../domain/customer/customer.rules';
 
 const listCustomers = vi.fn();
 const saveCustomer = vi.fn();
 const removeCustomer = vi.fn();
+const resolveActiveType = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
@@ -23,6 +25,7 @@ vi.mock('../../app/container', () => ({
     saveCustomer: (input: CustomerInput, uid?: string) =>
       saveCustomer(input, uid),
     removeCustomer: (uid: string) => removeCustomer(uid),
+    resolveActiveType: () => resolveActiveType(),
   },
 }));
 
@@ -76,7 +79,9 @@ describe('CustomersPage', () => {
     listCustomers.mockReset();
     saveCustomer.mockReset();
     removeCustomer.mockReset();
+    resolveActiveType.mockReset();
     listCustomers.mockResolvedValue(right([bruno, ana]));
+    resolveActiveType.mockResolvedValue(right(getBusinessType('quick_sale')));
   });
   afterEach(() => {
     cleanup();
@@ -172,7 +177,7 @@ describe('CustomersPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     expect(saveCustomer).toHaveBeenCalledWith(
-      { name: 'Carla', phone: '551199', addresses: ['Rua Dois'] },
+      { name: 'Carla', phone: '551199', addresses: ['Rua Dois'], extra: {} },
       undefined,
     );
   });
@@ -198,7 +203,12 @@ describe('CustomersPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     expect(saveCustomer).toHaveBeenCalledWith(
-      { name: 'Ana', phone: '11912345678', addresses: ['Rua A', 'Rua Nova'] },
+      {
+        name: 'Ana',
+        phone: '11912345678',
+        addresses: ['Rua A', 'Rua Nova'],
+        extra: {},
+      },
       'customer-1',
     );
   });
@@ -262,5 +272,82 @@ describe('CustomersPage', () => {
       expect(screen.getByRole('status')).toHaveTextContent('falha excluir'),
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  describe('when the active business type is scout', () => {
+    beforeEach(() => {
+      resolveActiveType.mockResolvedValue(right(getBusinessType('scout')));
+    });
+
+    it('shows the scout extra fields in the modal', async () => {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Ana')).toBeInTheDocument());
+      await userEvent.click(
+        screen.getByRole('button', { name: /Novo Cliente/ }),
+      );
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByLabelText('Seção')).toBeInTheDocument();
+      expect(within(dialog).getByLabelText('Responsável')).toBeInTheDocument();
+    });
+
+    it('saves a customer with the section and guardian extra fields', async () => {
+      saveCustomer.mockResolvedValue(right({ id: 99 }));
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Ana')).toBeInTheDocument());
+      await userEvent.click(
+        screen.getByRole('button', { name: /Novo Cliente/ }),
+      );
+      const dialog = screen.getByRole('dialog');
+      await userEvent.type(within(dialog).getByLabelText('Nome'), 'Carla');
+      await userEvent.type(within(dialog).getByLabelText('Telefone'), '551199');
+      await userEvent.selectOptions(
+        within(dialog).getByLabelText('Seção'),
+        'lobinho',
+      );
+      await userEvent.type(
+        within(dialog).getByLabelText('Responsável'),
+        'Marta',
+      );
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: 'Salvar' }),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(saveCustomer).toHaveBeenCalledWith(
+        {
+          name: 'Carla',
+          phone: '551199',
+          addresses: [],
+          extra: { section: 'lobinho', guardian: 'Marta' },
+        },
+        undefined,
+      );
+    });
+
+    it('preserves orphan extra keys from another business type on save', async () => {
+      saveCustomer.mockResolvedValue(right({ id: 1 }));
+      const anaWithOrphanExtra = {
+        ...ana,
+        extra: { legacyKey: 'valor antigo' },
+      };
+      listCustomers.mockResolvedValue(right([bruno, anaWithOrphanExtra]));
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Ana')).toBeInTheDocument());
+      await userEvent.click(screen.getByText('Ana'));
+      const dialog = screen.getByRole('dialog');
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: 'Salvar' }),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(saveCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          extra: { legacyKey: 'valor antigo' },
+        }),
+        'customer-1',
+      );
+    });
   });
 });

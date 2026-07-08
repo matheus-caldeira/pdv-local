@@ -42,7 +42,7 @@ export function makeSaveCustomer(repository: CustomerRepository) {
       return left(new DuplicatePhoneError());
     }
 
-    const data = { ...built.right, extra: {} };
+    const data = built.right;
     return uid === undefined
       ? repository.create(data)
       : repository.update(uid, data);

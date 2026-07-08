@@ -81,6 +81,28 @@ describe('customer use cases', () => {
     expect(repo.update).toHaveBeenCalledWith('customer-5', expect.anything());
   });
 
+  it('persists the extra fields provided in the input', async () => {
+    const repo = fakeRepo();
+    const result = await makeSaveCustomer(repo)(
+      input({ extra: { section: 'lobinho', guardian: 'Ana' } }),
+    );
+    expect(isRight(result)).toBe(true);
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extra: { section: 'lobinho', guardian: 'Ana' },
+      }),
+    );
+  });
+
+  it('defaults extra to an empty object when omitted', async () => {
+    const repo = fakeRepo();
+    const result = await makeSaveCustomer(repo)(input());
+    expect(isRight(result)).toBe(true);
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ extra: {} }),
+    );
+  });
+
   it('rejects a phone already used by another customer', async () => {
     const repo = fakeRepo({
       findByPhone: vi.fn(async () => right(customer({ uid: 'customer-2' }))),

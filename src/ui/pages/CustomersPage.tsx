@@ -6,7 +6,9 @@ import { Modal } from '../molecules/Modal';
 import { SearchField } from '../molecules/SearchField';
 import { FormField } from '../molecules/FormField';
 import { TextField } from '../molecules/TextField';
+import { ExtraFields } from '../molecules/ExtraFields';
 import { useCustomers } from '../hooks/useCustomers';
+import { useActiveBusinessType } from '../hooks/useActiveBusinessType';
 import type { Customer } from '../../domain/customer/customer.entity';
 
 interface FormState {
@@ -14,16 +16,20 @@ interface FormState {
   name: string;
   phone: string;
   addresses: string[];
+  extra: Record<string, string>;
 }
 
 const EMPTY_CUSTOMER: FormState = {
   name: '',
   phone: '',
   addresses: [],
+  extra: {},
 };
 
 export function CustomersPage() {
   const { customers, saveCustomer, removeCustomer } = useCustomers();
+  const { definition } = useActiveBusinessType();
+  const activeBusinessTypeId = definition?.id ?? '';
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FormState>(EMPTY_CUSTOMER);
@@ -48,6 +54,7 @@ export function CustomersPage() {
       name: c.name,
       phone: c.phone ?? '',
       addresses: [...c.addresses],
+      extra: { ...c.extra },
     });
     setModalOpen(true);
   }
@@ -58,6 +65,7 @@ export function CustomersPage() {
         name: editing.name,
         phone: editing.phone,
         addresses: editing.addresses,
+        extra: editing.extra,
       },
       editing.uid,
     );
@@ -188,6 +196,12 @@ export function CustomersPage() {
               <Plus size={14} /> Adicionar endereço
             </Button>
           </div>
+          <ExtraFields
+            businessTypeId={activeBusinessTypeId}
+            scope="customer"
+            value={editing.extra}
+            onChange={(next) => setEditing((p) => ({ ...p, extra: next }))}
+          />
         </div>
 
         <div className="mt-4 flex justify-end gap-2">

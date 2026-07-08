@@ -5,12 +5,14 @@ export interface CustomerInput {
   name: string;
   phone: string;
   addresses: string[];
+  extra?: Record<string, string>;
 }
 
 export interface NormalizedCustomer {
   name: string;
   phone: string;
   addresses: string[];
+  extra: Record<string, string>;
 }
 
 const DEFAULT_NAME = 'Consumidor';
@@ -24,5 +26,6 @@ export function buildCustomer(
   }
   const name = input.name.trim() || DEFAULT_NAME;
   const addresses = input.addresses.map((a) => a.trim()).filter(Boolean);
-  return right({ name, phone, addresses });
+  const extra = input.extra ?? {};
+  return right({ name, phone, addresses, extra });
 }
