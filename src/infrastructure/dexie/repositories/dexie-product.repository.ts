@@ -7,7 +7,7 @@ import type {
   ProductRepository,
   StockDecrement,
 } from '../../../domain/product/product.repository';
-import type { InfrastructureError } from '../../errors';
+import { RecordNotFoundError, type InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
 import { toInfrastructureError } from '../dexie-errors';
 
@@ -44,8 +44,17 @@ export class DexieProductRepository implements ProductRepository {
     product: NewProduct,
   ): Promise<Either<InfrastructureError, Product>> {
     try {
-      await this.db.products.update(id, product);
-      return right({ ...product, id });
+      const existing = await this.db.products.get(id);
+      if (!existing) {
+        return left(new RecordNotFoundError('Produto não encontrado.'));
+      }
+      const patch = {
+        ...product,
+        uid: existing.uid,
+        createdAt: existing.createdAt,
+      };
+      await this.db.products.update(id, patch);
+      return right({ ...patch, id });
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
