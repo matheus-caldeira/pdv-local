@@ -94,7 +94,9 @@ describe('useReports', () => {
       expect(screen.getByText('selected:session-2')).toBeInTheDocument(),
     );
     expect(screen.getByText('count:2')).toBeInTheDocument();
-    expect(loadSessionReport).toHaveBeenCalledWith('session-2');
+    await waitFor(() =>
+      expect(loadSessionReport).toHaveBeenCalledWith('session-2'),
+    );
   });
 
   it('handles an empty session list with no selection', async () => {
