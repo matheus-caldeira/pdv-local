@@ -11,6 +11,7 @@ import type {
   NewOrder,
   Order,
   OrderItem,
+  OrderStatus,
 } from '../../domain/order/order.entity';
 import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
 import type { Repositories } from '../../domain/shared/repositories';
@@ -24,7 +25,9 @@ export interface RegisterOrderInput {
   customerUid?: string;
   customerName?: string;
   customerPhone?: string;
+  customerAddress?: string;
   paymentMethod?: string | null;
+  status?: OrderStatus;
   extra?: Record<string, string>;
 }
 
@@ -54,21 +57,28 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
 
   protected async execute(
     input: RegisterOrderInput,
+    repositories: Repositories,
   ): Promise<Either<AppError, void>> {
+    const ticketResult = await this.resolveTicket(input, repositories);
+    if (isLeft(ticketResult)) return ticketResult;
+
+    const customerResult = await this.resolveCustomer(input, repositories);
+    if (isLeft(customerResult)) return customerResult;
+
     const now = Date.now();
     const draft: NewOrder = {
       uid: createUid(),
       businessTypeId: this.definition.id,
       sessionUid: input.sessionUid,
-      customerUid: input.customerUid,
+      customerUid: customerResult.right,
       items: input.items,
       total: calculateOrderTotal(input.items),
       paymentMethod: input.paymentMethod ?? null,
       customerName: input.customerName?.trim() ?? '',
       customerPhone: input.customerPhone?.trim() ?? '',
-      ticket: input.ticket?.trim() ?? '',
+      ticket: ticketResult.right,
       stage: 'aceito',
-      status: 'open',
+      status: input.status ?? 'open',
       createdAt: now,
       updatedAt: now,
     };
@@ -81,6 +91,42 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
     repositories: Repositories,
   ): Promise<Either<AppError, Order>> {
     const draft = this.context.get<NewOrder>(DRAFT_KEY) as NewOrder;
+
+    const stockResult = await repositories.products.decrementStock(
+      draft.items
+        .filter((item) => item.productUid !== undefined)
+        .map((item) => ({
+          productUid: item.productUid as string,
+          qty: item.qty,
+        })),
+    );
+    if (isLeft(stockResult)) return stockResult;
+
     return repositories.orders.create(draft);
+  }
+
+  private async resolveTicket(
+    input: RegisterOrderInput,
+    repositories: Repositories,
+  ): Promise<Either<AppError, string>> {
+    const trimmed = input.ticket?.trim();
+    if (trimmed) return right(trimmed);
+    if (this.definition.rules.ordering !== 'none') {
+      return repositories.config.claimTicket();
+    }
+    return right('');
+  }
+
+  private async resolveCustomer(
+    input: RegisterOrderInput,
+    repositories: Repositories,
+  ): Promise<Either<AppError, string | undefined>> {
+    if (input.customerUid) return right(input.customerUid);
+    if (!input.customerName && !input.customerPhone) return right(undefined);
+    return repositories.customers.findOrCreate({
+      phone: input.customerPhone ?? '',
+      name: input.customerName ?? '',
+      address: input.customerAddress ?? '',
+    });
   }
 }

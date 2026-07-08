@@ -33,6 +33,15 @@ function makeUow(): UnitOfWork {
       create: async (order: NewOrder): Promise<Either<AppError, Order>> =>
         right({ ...order, id: 1 }),
     },
+    products: {
+      decrementStock: async () => right(undefined),
+    },
+    config: {
+      claimTicket: async () => right('0001'),
+    },
+    customers: {
+      findOrCreate: async () => right(undefined),
+    },
   } as unknown as Repositories;
   return { run: async (work) => work(repositories) };
 }
