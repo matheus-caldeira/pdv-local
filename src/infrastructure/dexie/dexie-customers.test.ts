@@ -64,7 +64,7 @@ describe('DexieCustomerRepository CRUD', () => {
     const repo = new DexieCustomerRepository(db);
     const withoutExtra = { name: 'Sem Extra', phone: '3', addresses: [] };
     const created = await repo.create(
-      withoutExtra as Parameters<typeof repo.create>[0],
+      withoutExtra as unknown as Parameters<typeof repo.create>[0],
     );
     expect(isRight(created) && created.right.extra).toEqual({});
   });
@@ -77,7 +77,7 @@ describe('DexieCustomerRepository CRUD', () => {
     const withoutExtra = { name: 'Sem Extra', phone: '4', addresses: [] };
     const updated = await repo.update(
       created.right.uid,
-      withoutExtra as Parameters<typeof repo.update>[1],
+      withoutExtra as unknown as Parameters<typeof repo.update>[1],
     );
     expect(isRight(updated) && updated.right.extra).toEqual({});
   });
