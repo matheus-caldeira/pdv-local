@@ -60,6 +60,28 @@ describe('DexieCustomerRepository CRUD', () => {
     }
   });
 
+  it('defaults extra to an empty object when creating without one', async () => {
+    const repo = new DexieCustomerRepository(db);
+    const withoutExtra = { name: 'Sem Extra', phone: '3', addresses: [] };
+    const created = await repo.create(
+      withoutExtra as Parameters<typeof repo.create>[0],
+    );
+    expect(isRight(created) && created.right.extra).toEqual({});
+  });
+
+  it('defaults extra to an empty object when updating without one', async () => {
+    const repo = new DexieCustomerRepository(db);
+    const created = await repo.create(data({ phone: '4' }));
+    expect(isRight(created)).toBe(true);
+    if (!isRight(created)) return;
+    const withoutExtra = { name: 'Sem Extra', phone: '4', addresses: [] };
+    const updated = await repo.update(
+      created.right.uid,
+      withoutExtra as Parameters<typeof repo.update>[1],
+    );
+    expect(isRight(updated) && updated.right.extra).toEqual({});
+  });
+
   it('returns Left when updating a record that does not exist', async () => {
     const repo = new DexieCustomerRepository(db);
     const updated = await repo.update('nonexistent-uid', data());

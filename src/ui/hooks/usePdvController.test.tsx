@@ -166,6 +166,59 @@ describe('usePdvController', () => {
     expect(result.current.address).toBe('Rua X');
   });
 
+  it('defaults phone to an empty string when the customer has none', async () => {
+    const { result } = await setup();
+    act(() =>
+      result.current.selectCustomer({
+        id: 3,
+        uid: 'customer-3',
+        name: 'Sem Telefone',
+        addresses: [],
+        extra: {},
+        createdAt: 0,
+        updatedAt: 0,
+      }),
+    );
+    expect(result.current.phone).toBe('');
+  });
+
+  it('falls back to empty businessTypeId when reading the config fails', async () => {
+    readConfig.mockResolvedValueOnce(left(new EmptyCartError()));
+    const { result } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    await waitFor(() => expect(readConfig).toHaveBeenCalled());
+    expect(result.current.ordering).toBe('optional');
+  });
+
+  it('ignores the config read when unmounted before it resolves', async () => {
+    let resolveConfig: (value: Awaited<ReturnType<typeof readConfig>>) => void;
+    readConfig.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveConfig = resolve;
+      }),
+    );
+    const { unmount } = renderHook(() => usePdvController('session-7'), {
+      wrapper,
+    });
+    unmount();
+    resolveConfig!(
+      right({
+        businessTypeId: 'tab',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    await Promise.resolve();
+  });
+
   it('finalizes a paid sale claiming the suggested ticket and resets', async () => {
     finalizeOrder.mockResolvedValue(right({ id: 1 }));
     peekTicketSuggestion

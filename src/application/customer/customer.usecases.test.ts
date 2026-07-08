@@ -114,6 +114,20 @@ describe('customer use cases', () => {
     expect(isRight(result) && result.right).toHaveLength(6);
   });
 
+  it('skips customers without a phone when matching', async () => {
+    const withoutPhone = customer({
+      id: 2,
+      uid: 'customer-2',
+      phone: undefined,
+    });
+    const withPhone = customer({ id: 1, uid: 'customer-1', phone: '4199' });
+    const repo = fakeRepo({
+      list: vi.fn(async () => right([withoutPhone, withPhone])),
+    });
+    const result = await makeSearchCustomersByPhone(repo)('4199');
+    expect(isRight(result) && result.right).toEqual([withPhone]);
+  });
+
   it('propagates a failure when listing for search', async () => {
     const repo = fakeRepo({
       list: vi.fn(async () => left(new ConnectorError('x'))),

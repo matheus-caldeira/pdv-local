@@ -258,6 +258,53 @@ describe('CustomizationModal', () => {
     );
   });
 
+  it('skips items decremented back to zero when confirming', async () => {
+    const { onConfirm } = renderModal([
+      group({
+        id: 1,
+        name: 'Adicionais',
+        maxQty: 5,
+        items: [
+          {
+            id: 11,
+            uid: 'item-11',
+            groupUid: 'group-1',
+            name: 'Bacon',
+            price: 3,
+            maxQty: 0,
+            chargeAfter: 0,
+            active: true,
+          },
+          {
+            id: 12,
+            uid: 'item-12',
+            groupUid: 'group-1',
+            name: 'Cheddar',
+            price: 2,
+            maxQty: 0,
+            chargeAfter: 0,
+            active: true,
+          },
+        ],
+      }),
+    ]);
+    const [addBacon, addCheddar] = screen.getAllByRole('button', {
+      name: 'Aumentar',
+    });
+    await userEvent.click(addBacon);
+    await userEvent.click(addCheddar);
+    const [decBacon] = screen.getAllByRole('button', { name: 'Diminuir' });
+    await userEvent.click(decBacon);
+    await userEvent.click(screen.getByRole('button', { name: /^Adicionar ·/ }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customizations: [
+          { groupName: 'Adicionais', name: 'Cheddar', qty: 1, price: 2 },
+        ],
+      }),
+    );
+  });
+
   it('closes via the backdrop', async () => {
     const { onClose } = renderModal([
       group({ id: 1, name: 'Extras', items: [] }),

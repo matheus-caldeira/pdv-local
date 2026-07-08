@@ -164,7 +164,7 @@ const ITEM_SEED: { groupId: number; name: string; price: number }[] = [
   { groupId: 3, name: 'Catupiry', price: 3.5 },
 ];
 
-const CUSTOMER_SEED: { name: string; phone: string }[] = [
+const CUSTOMER_SEED: { name: string; phone?: string }[] = [
   { name: 'Maria Souza', phone: '(11) 97777-0001' },
   { name: 'Joao Lima', phone: '(11) 97777-0002' },
   { name: 'Ana Pereira', phone: '(11) 97777-0003' },
@@ -172,7 +172,7 @@ const CUSTOMER_SEED: { name: string; phone: string }[] = [
   { name: 'Carla Dias', phone: '(11) 97777-0005' },
   { name: 'Bruno Costa', phone: '(11) 97777-0006' },
   { name: 'Luiza Rocha', phone: '(11) 97777-0007' },
-  { name: 'Rafael Gomes', phone: '(11) 97777-0008' },
+  { name: 'Rafael Gomes' },
 ];
 
 const PAYMENT_METHODS = ['dinheiro', 'pix', 'credito', 'debito'];

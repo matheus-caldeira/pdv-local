@@ -159,6 +159,28 @@ describe('DexieCustomizationRepository CRUD', () => {
     expect(await db.customizationItems.count()).toBe(0);
   });
 
+  it('generates a uid for a group created without one', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const groupWithoutUid = {
+      name: group.name,
+      required: group.required,
+      minQty: group.minQty,
+      maxQty: group.maxQty,
+      chargeAfter: group.chargeAfter,
+    };
+    const created = await repo.createGroup(groupWithoutUid as typeof group);
+    expect(isRight(created)).toBe(true);
+    if (isRight(created)) {
+      expect(created.right.uid).toBeTruthy();
+    }
+  });
+
+  it('removes a group with no items left to cascade', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const result = await repo.removeGroup(999);
+    expect(isRight(result)).toBe(true);
+  });
+
   it('preserves the uid of a group across updates', async () => {
     const repo = new DexieCustomizationRepository(db);
     const created = await repo.createGroup(group);
@@ -188,6 +210,23 @@ describe('DexieCustomizationRepository CRUD', () => {
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {
       expect(result.left.code).toBe('RECORD_NOT_FOUND');
+    }
+  });
+
+  it('generates a uid for an item created without one', async () => {
+    const repo = new DexieCustomizationRepository(db);
+    const itemWithoutUid = {
+      groupUid: item.groupUid,
+      name: item.name,
+      price: item.price,
+      maxQty: item.maxQty,
+      chargeAfter: item.chargeAfter,
+      active: item.active,
+    };
+    const created = await repo.createItem(itemWithoutUid as typeof item);
+    expect(isRight(created)).toBe(true);
+    if (isRight(created)) {
+      expect(created.right.uid).toBeTruthy();
     }
   });
 

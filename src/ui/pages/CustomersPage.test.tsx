@@ -53,6 +53,16 @@ const bruno = {
   updatedAt: 0,
 };
 
+const carla = {
+  id: 3,
+  uid: 'customer-3',
+  name: 'Carla',
+  addresses: [],
+  extra: {},
+  createdAt: 0,
+  updatedAt: 0,
+};
+
 function renderPage() {
   return render(
     <ToastProvider>
@@ -101,6 +111,25 @@ describe('CustomersPage', () => {
     await userEvent.type(search, '1191234');
     expect(screen.getByText('Ana')).toBeInTheDocument();
     expect(screen.queryByText('Bruno')).not.toBeInTheDocument();
+  });
+
+  it('filters out customers without a phone when searching by phone', async () => {
+    listCustomers.mockResolvedValue(right([bruno, ana, carla]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Carla')).toBeInTheDocument());
+    const search = screen.getByRole('textbox', { name: 'Buscar clientes' });
+    await userEvent.type(search, '1191234');
+    expect(screen.getByText('Ana')).toBeInTheDocument();
+    expect(screen.queryByText('Carla')).not.toBeInTheDocument();
+  });
+
+  it('opens the edit modal with an empty phone for a customer without one', async () => {
+    listCustomers.mockResolvedValue(right([bruno, ana, carla]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Carla')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('Carla'));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Telefone')).toHaveValue('');
   });
 
   it('opens the new customer modal', async () => {

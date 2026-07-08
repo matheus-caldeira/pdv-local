@@ -30,7 +30,6 @@ interface GroupForm {
 
 interface ItemForm {
   id?: number;
-  groupId: number;
   groupUid: string;
   name: string;
   price: number;
@@ -47,7 +46,7 @@ const EMPTY_GROUP: GroupForm = {
   chargeAfter: 0,
 };
 
-const EMPTY_ITEM: Omit<ItemForm, 'groupId' | 'groupUid'> = {
+const EMPTY_ITEM: Omit<ItemForm, 'groupUid'> = {
   name: '',
   price: 0,
   maxQty: 0,
@@ -66,7 +65,6 @@ export function CustomizationsPage() {
   const [itemModal, setItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemForm>({
     ...EMPTY_ITEM,
-    groupId: 0,
     groupUid: '',
   });
 
@@ -104,15 +102,14 @@ export function CustomizationsPage() {
     removeGroup(id);
   }
 
-  function openNewItem(groupId: number, groupUid: string) {
-    setEditingItem({ ...EMPTY_ITEM, groupId, groupUid });
+  function openNewItem(groupUid: string) {
+    setEditingItem({ ...EMPTY_ITEM, groupUid });
     setItemModal(true);
   }
 
   function openEditItem(item: CustomizationItem) {
     setEditingItem({
       id: item.id,
-      groupId: groups.find((g) => g.uid === item.groupUid)?.id ?? 0,
       groupUid: item.groupUid,
       name: item.name,
       price: item.price,
@@ -287,7 +284,7 @@ export function CustomizationsPage() {
                       size="sm"
                       fullWidth
                       className="mt-3"
-                      onClick={() => openNewItem(g.id!, g.uid)}
+                      onClick={() => openNewItem(g.uid)}
                     >
                       <Plus size={14} /> Adicionar Item
                     </Button>

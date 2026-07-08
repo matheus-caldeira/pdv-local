@@ -3,10 +3,14 @@ import { makeResolveActiveType } from './resolve-active-type.usecase';
 import {
   isLeft,
   isRight,
+  left,
   right,
   type Either,
 } from '../../domain/shared/either';
-import type { InfrastructureError } from '../../infrastructure/errors';
+import {
+  ConnectorError,
+  type InfrastructureError,
+} from '../../infrastructure/errors';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
 function configRepoWith(businessTypeId: string) {
@@ -51,5 +55,16 @@ describe('makeResolveActiveType', () => {
     const result = await resolve();
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('UNKNOWN_BUSINESS_TYPE');
+  });
+  it('propaga a falha ao ler a config', async () => {
+    const resolve = makeResolveActiveType({
+      configRepo: {
+        read: async (): Promise<Either<InfrastructureError, BusinessConfig>> =>
+          left(new ConnectorError('falha ao ler config')),
+      },
+    });
+    const result = await resolve();
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('DB_CONNECTOR');
   });
 });

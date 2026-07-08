@@ -70,6 +70,22 @@ describe('generateDemoSeed', () => {
     }
   });
 
+  it('defaults customerPhone to an empty string for customers without a phone', () => {
+    const seed = generateDemoSeed(NOW);
+    const customers = seed.customers as { uid: string; phone?: string }[];
+    const phoneless = customers.filter((c) => !c.phone);
+    expect(phoneless.length).toBeGreaterThan(0);
+    const phonelessUids = new Set(phoneless.map((c) => c.uid));
+    const orders = seed.orders as Order[];
+    const ordersForPhoneless = orders.filter((o) =>
+      phonelessUids.has(o.customerUid as string),
+    );
+    expect(ordersForPhoneless.length).toBeGreaterThan(0);
+    for (const order of ordersForPhoneless) {
+      expect(order.customerPhone).toBe('');
+    }
+  });
+
   it('flattens customizations without an OrderCustomization wrapper', () => {
     const orders = generateDemoSeed(NOW).orders as Order[];
     const customizedItems = orders
