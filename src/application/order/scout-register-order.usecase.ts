@@ -15,7 +15,8 @@ export class ScoutRegisterOrderUseCase extends RegisterOrderUseCase {
     if (isLeft(base)) return base;
     const section = input.extra?.section;
     const guardian = input.extra?.guardian;
-    if (!section || !guardian) {
+    const started = Boolean(section) || Boolean(guardian);
+    if (started && (!section || !guardian)) {
       return left(
         new InvalidCustomerError('Informe a seção e o responsável do aluno.'),
       );

@@ -58,7 +58,7 @@ describe('ScoutRegisterOrderUseCase', () => {
     if (isLeft(result)) expect(result.left.code).toBe('MISSING_TICKET');
   });
 
-  it('exige section e guardian no extra', async () => {
+  it('exige o par completo quando um dos campos do aluno é informado', async () => {
     const input: RegisterOrderInput = {
       sessionUid: 's1',
       items,
@@ -70,6 +70,19 @@ describe('ScoutRegisterOrderUseCase', () => {
     );
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('INVALID_CUSTOMER');
+  });
+
+  it('cria a order sem os campos do aluno (validação relaxada)', async () => {
+    const input: RegisterOrderInput = {
+      sessionUid: 's1',
+      items,
+      ticket: '10',
+    };
+    const result = await new ScoutRegisterOrderUseCase(makeUow(), scoutDef).run(
+      input,
+    );
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right.businessTypeId).toBe('scout');
   });
 
   it('cria a order via super.post quando extra está completo', async () => {
