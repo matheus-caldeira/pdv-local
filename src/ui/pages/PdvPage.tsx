@@ -69,6 +69,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         onAddressChange={controller.setAddress}
         ticket={controller.ticket}
         onTicketChange={controller.setTicket}
+        ordering={controller.ordering}
         matchedCustomer={controller.matchedCustomer}
         customerSuggestions={controller.customerSuggestions}
         onSelectCustomer={controller.selectCustomer}

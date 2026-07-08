@@ -236,6 +236,54 @@ describe('PdvPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('shows the ticket field when the active business type requires ordering', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'scout',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument(),
+    );
+  });
+
+  it('hides the ticket field when the active business type has no ordering', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    readConfig.mockResolvedValue(
+      right({
+        businessTypeId: 'quick_sale',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
   it('closes the customization modal without adding', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),

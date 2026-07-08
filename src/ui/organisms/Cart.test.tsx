@@ -30,6 +30,7 @@ function baseProps() {
     onAddressChange: vi.fn(),
     ticket: '0001',
     onTicketChange: vi.fn(),
+    ordering: 'required' as const,
     matchedCustomer: null as Customer | null,
     customerSuggestions: [] as Customer[],
     onSelectCustomer: vi.fn(),
@@ -176,5 +177,26 @@ describe('Cart', () => {
     expect(props.onCustomerNameChange).toHaveBeenCalled();
     expect(props.onTicketChange).toHaveBeenCalled();
     expect(props.onAddressChange).toHaveBeenCalled();
+  });
+
+  it('shows the ticket field when ordering is required', () => {
+    render(<Cart {...baseProps()} ordering="required" />);
+    expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument();
+  });
+
+  it('hides the ticket field when ordering is optional', () => {
+    render(<Cart {...baseProps()} ordering="optional" />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
+  it('hides the ticket field when ordering is none', () => {
+    render(<Cart {...baseProps()} ordering="none" />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
+  it('hides the ticket field by default when ordering is not provided', () => {
+    const props = baseProps();
+    render(<Cart {...props} ordering={undefined} />);
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
   });
 });

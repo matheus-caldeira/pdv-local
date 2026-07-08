@@ -3,6 +3,7 @@ import { container } from '../../app/container';
 import { fold } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
 import { calculateOrderTotal } from '../../domain/order/order.rules';
+import { getBusinessType } from '../../domain/business-type/registry';
 import type { OrderItem, OrderStatus } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 import type { Customer } from '../../domain/customer/customer.entity';
@@ -59,6 +60,11 @@ export function usePdvController(sessionUid: string) {
       cancelled = true;
     };
   }, []);
+
+  const ordering = useMemo(
+    () => getBusinessType(businessTypeId)?.rules.ordering ?? 'optional',
+    [businessTypeId],
+  );
 
   const total = useMemo(() => calculateOrderTotal(cart), [cart]);
   const totalQty = useMemo(
@@ -217,6 +223,7 @@ export function usePdvController(sessionUid: string) {
     cart,
     total,
     totalQty,
+    ordering,
     customerName,
     setCustomerName,
     phone,
