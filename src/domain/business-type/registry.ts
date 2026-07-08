@@ -36,6 +36,8 @@ const registry: Record<string, BusinessTypeDefinition> = {
   [tab.id]: tab,
 };
 
+export const businessTypeIds: string[] = Object.keys(registry);
+
 export function getBusinessType(
   id: string,
 ): BusinessTypeDefinition | undefined {

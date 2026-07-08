@@ -151,7 +151,32 @@ describe('SettingsPage', () => {
       ticketLimit: 99,
       ticketAutoReset: true,
       statusControlEnabled: false,
+      businessTypeId: 'tab',
+      extra: {},
     });
+  });
+
+  it('selects a business type, edits its business field and saves', async () => {
+    saveConfig.mockResolvedValue(right(CONFIG));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Negócio')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Negócio'),
+      'scout',
+    );
+    const group = await screen.findByLabelText('Grupo escoteiro');
+    await userEvent.type(group, 'Alcatéia 1');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[1]);
+    await waitFor(() =>
+      expect(saveConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          businessTypeId: 'scout',
+          extra: { group: 'Alcatéia 1' },
+        }),
+      ),
+    );
   });
 
   it('toasts when saving fails', async () => {
@@ -194,6 +219,8 @@ describe('SettingsPage', () => {
         ticketLimit: 999,
         ticketAutoReset: false,
         statusControlEnabled: false,
+        businessTypeId: 'tab',
+        extra: {},
       }),
     );
   });

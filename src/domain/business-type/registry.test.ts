@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getBusinessType } from './registry';
+import { businessTypeIds, getBusinessType } from './registry';
 
 describe('registry', () => {
+  it('exposes the ids of all registered business types', () => {
+    expect(businessTypeIds).toEqual(['scout', 'quick_sale', 'tab']);
+  });
+
   it('resolve scout com rules e fields', () => {
     const def = getBusinessType('scout');
     expect(def?.rules).toEqual({ ordering: 'required', payment: 'deferred' });

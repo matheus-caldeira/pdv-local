@@ -13,9 +13,12 @@ import { Modal } from '../molecules/Modal';
 import { FormField } from '../molecules/FormField';
 import { TextField } from '../molecules/TextField';
 import { Select } from '../molecules/Select';
+import { ExtraFields } from '../molecules/ExtraFields';
 import { useToast } from '../molecules/toast-context';
 import { useSettings } from '../hooks/useSettings';
 import { formatTicket } from '../../domain/config/config.rules';
+import { businessTypeIds } from '../../domain/business-type/registry';
+import { t } from '../i18n/t';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { BackupEntity } from '../../domain/backup/backup.repository';
 
@@ -28,6 +31,8 @@ interface FormState {
   ticketLimit: string;
   ticketAutoReset: boolean;
   statusControlEnabled: boolean;
+  businessTypeId: string;
+  extra: Record<string, string>;
 }
 
 const ENTITIES: { key: BackupEntity; label: string }[] = [
@@ -47,6 +52,8 @@ function toFormState(config: BusinessConfig): FormState {
     ticketLimit: String(config.ticketLimit),
     ticketAutoReset: config.ticketAutoReset,
     statusControlEnabled: config.statusControlEnabled,
+    businessTypeId: config.businessTypeId,
+    extra: config.extra,
   };
 }
 
@@ -128,6 +135,8 @@ export function SettingsPage() {
       ticketLimit: Number(state.ticketLimit),
       ticketAutoReset: state.ticketAutoReset,
       statusControlEnabled: state.statusControlEnabled,
+      businessTypeId: state.businessTypeId,
+      extra: state.extra,
     };
   }
 
@@ -222,6 +231,40 @@ export function SettingsPage() {
             />
           </FormField>
         </div>
+        <Button className="self-start" onClick={handleSave}>
+          Salvar
+        </Button>
+      </Section>
+
+      <Section icon={<ClipboardList size={20} />} title="Tipo de Negócio">
+        <FormField label="Tipo de Negócio">
+          <Select
+            value={form.businessTypeId}
+            onChange={(e) =>
+              setForm(
+                (p) =>
+                  p && {
+                    ...p,
+                    businessTypeId: e.target.value,
+                    extra: {},
+                  },
+              )
+            }
+          >
+            <option value="" />
+            {businessTypeIds.map((id) => (
+              <option key={id} value={id}>
+                {t(`businessType.${id}`)}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        <ExtraFields
+          businessTypeId={form.businessTypeId}
+          scope="business"
+          value={form.extra}
+          onChange={(next) => setForm((p) => p && { ...p, extra: next })}
+        />
         <Button className="self-start" onClick={handleSave}>
           Salvar
         </Button>

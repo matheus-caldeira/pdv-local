@@ -59,6 +59,8 @@ const input = (over: Partial<ConfigInput> = {}): ConfigInput => ({
   ticketLimit: 50.5,
   ticketAutoReset: false,
   statusControlEnabled: true,
+  businessTypeId: 'scout',
+  extra: { group: 'Alcatéia' },
   ...over,
 });
 
@@ -82,6 +84,8 @@ describe('makeSaveConfig', () => {
       ticketLimit: 50,
       ticketAutoReset: false,
       statusControlEnabled: true,
+      businessTypeId: 'scout',
+      extra: { group: 'Alcatéia' },
     });
   });
 });
