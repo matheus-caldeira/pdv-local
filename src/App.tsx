@@ -46,6 +46,46 @@ const PanelPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('./ui/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 );
+const FinanceShell = lazy(() =>
+  import('./ui/templates/FinanceShell').then((m) => ({
+    default: m.FinanceShell,
+  })),
+);
+const FinanceDashboardPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceDashboardPage,
+  })),
+);
+const FinanceEntriesPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceEntriesPage,
+  })),
+);
+const FinanceBudgetPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceBudgetPage,
+  })),
+);
+const FinanceAutomationsPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceAutomationsPage,
+  })),
+);
+const FinanceProjectionPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceProjectionPage,
+  })),
+);
+const FinanceClosingsPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceClosingsPage,
+  })),
+);
+const FinanceSettingsPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceSettingsPage,
+  })),
+);
 const DocsLayout = lazy(() =>
   import('./pages/docs/DocsLayout').then((m) => ({ default: m.DocsLayout })),
 );
@@ -144,6 +184,71 @@ export function App() {
                   </Suspense>
                 }
               />
+              <Route
+                path="/finance"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <FinanceShell />
+                  </Suspense>
+                }
+              >
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceDashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="entries"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceEntriesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="budget"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceBudgetPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="automations"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceAutomationsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="projection"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceProjectionPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="closings"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceClosingsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceSettingsPage />
+                    </Suspense>
+                  }
+                />
+              </Route>
               <Route
                 path="/reports"
                 element={
