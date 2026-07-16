@@ -1,7 +1,19 @@
 import type { Either } from '../shared/either';
 import type { InfrastructureError } from '../../infrastructure/errors';
 
-export type BackupEntity = 'products' | 'orders' | 'sessions' | 'cashMovements';
+export type BackupEntity =
+  | 'products'
+  | 'orders'
+  | 'sessions'
+  | 'cashMovements'
+  | 'financeMembers'
+  | 'financeCategories'
+  | 'financeEntries'
+  | 'financeBudgetItems'
+  | 'financeFormulas'
+  | 'financeRecurrences'
+  | 'financeInstallmentPlans'
+  | 'financeClosings';
 
 export type BackupFormat = 'json' | 'csv';
 

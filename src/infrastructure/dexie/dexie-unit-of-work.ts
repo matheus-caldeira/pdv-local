@@ -9,6 +9,9 @@ import { DexieProductRepository } from './repositories/dexie-product.repository'
 import { DexieConfigRepository } from './repositories/dexie-config.repository';
 import { DexieCustomizationRepository } from './repositories/dexie-customization.repository';
 import { DexieCashRepository } from './repositories/dexie-cash.repository';
+import { DexieFinanceEntryRepository } from './repositories/dexie-finance-entry.repository';
+import { DexieFinanceAutomationRepository } from './repositories/dexie-finance-automation.repository';
+import { DexieFinanceClosingRepository } from './repositories/dexie-finance-closing.repository';
 import type { PDVDatabase } from './dexie-database';
 
 class Rollback {
@@ -32,6 +35,9 @@ export class DexieUnitOfWork implements UnitOfWork {
       config: new DexieConfigRepository(db),
       customizations: new DexieCustomizationRepository(db),
       cash: new DexieCashRepository(db),
+      financeEntries: new DexieFinanceEntryRepository(db),
+      financeAutomations: new DexieFinanceAutomationRepository(db),
+      financeClosings: new DexieFinanceClosingRepository(db),
     };
   }
 
@@ -50,6 +56,9 @@ export class DexieUnitOfWork implements UnitOfWork {
           this.db.customizationItems,
           this.db.sessions,
           this.db.cashMovements,
+          this.db.financeInstallmentPlans,
+          this.db.financeEntries,
+          this.db.financeClosings,
         ],
         async () => {
           const result = await work(this.repositories);

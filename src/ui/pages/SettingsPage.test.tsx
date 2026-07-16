@@ -556,6 +556,22 @@ describe('SettingsPage', () => {
     expect(reloadSpy).not.toHaveBeenCalled();
   });
 
+  it('warns that the wipe also erases finance data', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Apagar Todos os Dados' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Apagar Todos os Dados' }),
+    );
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining('incluindo os dados financeiros'),
+    );
+  });
+
   it('aborts the wipe when the first confirmation is cancelled', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderPage();
@@ -643,6 +659,35 @@ describe('SettingsPage', () => {
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     await waitFor(() => expect(reloadSpy).toHaveBeenCalled());
+  });
+
+  it('states in both demo confirmations that finance data is preserved', async () => {
+    hasData.mockResolvedValue(right(true));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
+    );
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    expect(
+      within(screen.getByRole('dialog')).getByText(
+        /dados financeiros são preservados/,
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Continuar',
+      }),
+    );
+    expect(
+      within(screen.getByRole('dialog')).getByText(
+        /dados\s+financeiros são preservados/,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('aborts the demo when the first confirmation is cancelled', async () => {

@@ -166,7 +166,12 @@ export function SettingsPage() {
   }
 
   async function handleWipe() {
-    if (!window.confirm('Tem certeza? Todos os dados serão perdidos!')) return;
+    if (
+      !window.confirm(
+        'Tem certeza? Todos os dados serão perdidos, incluindo os dados financeiros!',
+      )
+    )
+      return;
     if (!window.confirm('Esta ação NÃO pode ser desfeita. Continuar?')) return;
     const ok = await wipe();
     if (ok) window.location.reload();
@@ -419,7 +424,8 @@ export function SettingsPage() {
       <Section icon={<Database size={20} />} title="Demonstração">
         <p className="text-sm text-ink-tertiary">
           Carregue um conjunto de dados de exemplo (produtos, vendas e caixa)
-          para experimentar o sistema. Isto substitui todos os dados atuais.
+          para experimentar o sistema. Isto substitui os dados atuais do PDV; os
+          dados financeiros não são alterados.
         </p>
         <Button
           variant="ghost"
@@ -476,7 +482,8 @@ export function SettingsPage() {
 
       <Section title="Zona de Perigo" danger>
         <p className="text-sm text-ink-tertiary">
-          Apagar todos os dados do sistema. Esta ação não pode ser desfeita.
+          Apagar todos os dados do sistema, incluindo os dados financeiros. Esta
+          ação não pode ser desfeita.
         </p>
         <Button variant="danger" className="self-start" onClick={handleWipe}>
           Apagar Todos os Dados
@@ -509,8 +516,9 @@ export function SettingsPage() {
         title="Carregar dados de demonstração"
       >
         <p className="text-sm text-ink-secondary">
-          Isto vai <strong className="text-ink-primary">apagar</strong> todos os
-          dados atuais e substitui-los pelos dados de demonstração.
+          Isto vai <strong className="text-ink-primary">apagar</strong> os dados
+          atuais do PDV e substituí-los pelos dados de demonstração. Os dados
+          financeiros são preservados.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>
@@ -528,8 +536,9 @@ export function SettingsPage() {
         title="Esta ação não pode ser desfeita"
       >
         <p className="text-sm text-ink-secondary">
-          Os dados atuais serão perdidos permanentemente. Tem certeza que deseja
-          carregar a demonstração?
+          Os dados atuais do PDV serão perdidos permanentemente; os dados
+          financeiros são preservados. Tem certeza que deseja carregar a
+          demonstração?
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>

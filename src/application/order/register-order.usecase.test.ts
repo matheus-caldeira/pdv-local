@@ -20,6 +20,11 @@ import type {
 import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
 import type { Repositories } from '../../domain/shared/repositories';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
+import {
+  FakeFinanceAutomationRepository,
+  FakeFinanceClosingRepository,
+  FakeFinanceEntryRepository,
+} from '../finance/fakes';
 
 function definitionWith(
   ordering: 'required' | 'optional' | 'none',
@@ -144,6 +149,10 @@ class FakeRepositories implements Repositories {
     updateItem: async () => right(null as never),
     removeItem: async () => right(undefined),
   };
+
+  financeEntries = new FakeFinanceEntryRepository();
+  financeAutomations = new FakeFinanceAutomationRepository();
+  financeClosings = new FakeFinanceClosingRepository();
 }
 
 class FakeUnitOfWork implements UnitOfWork {
