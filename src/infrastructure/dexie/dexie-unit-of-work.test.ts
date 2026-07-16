@@ -44,7 +44,9 @@ const newEntry = (over: Partial<NewFinanceEntry> = {}): NewFinanceEntry => ({
   ...over,
 });
 
-const newPlan = (over: Partial<NewInstallmentPlan> = {}): NewInstallmentPlan => ({
+const newPlan = (
+  over: Partial<NewInstallmentPlan> = {},
+): NewInstallmentPlan => ({
   uid: createUid(),
   description: 'Notebook',
   totalAmount: 1200,
