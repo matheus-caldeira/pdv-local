@@ -28,6 +28,13 @@ Passo a passo completo em [Produtos](produtos).
 > primeiro os grupos de adicionais e depois vincule ao produto. Veja
 > [Adicionais e extras](adicionais).
 
+## Primeiro acesso
+
+Na primeira vez que abrir o app, ele pergunta o que você quer usar: **Ponto de
+Venda**, **Financeiro** ou **os dois**. Se escolher o Ponto de Venda, ele também
+pergunta o seu tipo de negócio — isso ajusta o fluxo de venda para o seu dia a
+dia. Tudo pode ser mudado depois em **Configurações → Módulos**.
+
 ## 4. Abra o caixa
 
 Vá em **Caixa** e toque em **Abrir Caixa**. Informe quanto há de dinheiro no
