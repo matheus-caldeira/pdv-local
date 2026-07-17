@@ -124,6 +124,11 @@ import {
   makeSaveRecurrence,
 } from '../application/finance/automations.usecases';
 import { makeResolveActiveType } from '../application/business-type/resolve-active-type.usecase';
+import {
+  makeCompleteFirstRun,
+  makeResolveModulesState,
+  makeSaveEnabledModules,
+} from '../application/modules/modules.usecases';
 import { resolveRegisterOrder } from '../application/use-case-registry';
 import type { BusinessTypeDefinition } from '../domain/business-type/registry';
 import type { RegisterOrderInput } from '../application/order/register-order.usecase';
@@ -295,6 +300,13 @@ export function createContainer() {
     deleteFinanceInstallmentPlan: makeDeleteInstallmentPlan(uow),
     previewFinanceInstallments: makePreviewInstallments(),
     resolveActiveType: makeResolveActiveType({ configRepo: config }),
+    resolveModulesState: makeResolveModulesState({
+      configRepo: config,
+      orderRepo: orders,
+      cashRepo: cash,
+    }),
+    saveEnabledModules: makeSaveEnabledModules(config),
+    completeFirstRun: makeCompleteFirstRun(config),
     registerOrder: (
       businessTypeId: string,
       definition: BusinessTypeDefinition,
