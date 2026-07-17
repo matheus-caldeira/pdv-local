@@ -7,6 +7,12 @@ import { DexieCashRepository } from '../infrastructure/dexie/repositories/dexie-
 import { DexieOrderRepository } from '../infrastructure/dexie/repositories/dexie-order.repository';
 import { DexieConfigRepository } from '../infrastructure/dexie/repositories/dexie-config.repository';
 import { DexieBackupRepository } from '../infrastructure/dexie/repositories/dexie-backup.repository';
+import { DexieFinanceMemberRepository } from '../infrastructure/dexie/repositories/dexie-finance-member.repository';
+import { DexieFinanceCategoryRepository } from '../infrastructure/dexie/repositories/dexie-finance-category.repository';
+import { DexieFinanceEntryRepository } from '../infrastructure/dexie/repositories/dexie-finance-entry.repository';
+import { DexieFinanceBudgetRepository } from '../infrastructure/dexie/repositories/dexie-finance-budget.repository';
+import { DexieFinanceAutomationRepository } from '../infrastructure/dexie/repositories/dexie-finance-automation.repository';
+import { DexieFinanceClosingRepository } from '../infrastructure/dexie/repositories/dexie-finance-closing.repository';
 import { browserFileSaver } from '../infrastructure/dexie/browser-file-saver';
 import {
   makeCreateProduct,
@@ -66,6 +72,57 @@ import {
   makeLoadDemo,
   makeWipeData,
 } from '../application/backup/backup.usecases';
+import {
+  makeCreateMember,
+  makeDeleteMember,
+  makeEnsureFinanceDefaults,
+  makeListMembers,
+  makeUpdateMember,
+} from '../application/finance/members.usecases';
+import {
+  makeCreateCategory,
+  makeDeleteCategory,
+  makeListCategories,
+  makeUpdateCategory,
+} from '../application/finance/categories.usecases';
+import {
+  makeCreateEntry,
+  makeDeleteEntry,
+  makeListEntries,
+  makeListOverdueEntries,
+  makeSetEntryStatus,
+  makeUpdateEntry,
+} from '../application/finance/entries.usecases';
+import {
+  makeLoadBudget,
+  makeRemoveBudgetItem,
+  makeSaveMonthOverride,
+  makeSaveTemplateItem,
+} from '../application/finance/budget.usecases';
+import {
+  makeCloseMonth,
+  makeListClosings,
+  makeLoadClosingPreview,
+  makeReopenMonth,
+} from '../application/finance/closing.usecases';
+import { makeLoadProjection } from '../application/finance/projection.usecases';
+import { makeLoadFinanceDashboard } from '../application/finance/dashboard.usecases';
+import {
+  makeCreateInstallmentPlan,
+  makeDeleteFormula,
+  makeDeleteInstallmentPlan,
+  makeDeleteRecurrence,
+  makeGenerateFormulaEntry,
+  makeLaunchAllRecurrences,
+  makeLaunchRecurrence,
+  makeListFormulas,
+  makeListPlans,
+  makeListRecurrences,
+  makePreviewFormula,
+  makePreviewInstallments,
+  makeSaveFormula,
+  makeSaveRecurrence,
+} from '../application/finance/automations.usecases';
 import { makeResolveActiveType } from '../application/business-type/resolve-active-type.usecase';
 import { resolveRegisterOrder } from '../application/use-case-registry';
 import type { BusinessTypeDefinition } from '../domain/business-type/registry';
@@ -81,6 +138,12 @@ export function createContainer() {
   const orders = new DexieOrderRepository(db);
   const config = new DexieConfigRepository(db);
   const backup = new DexieBackupRepository(db, browserFileSaver);
+  const financeMembers = new DexieFinanceMemberRepository(db);
+  const financeCategories = new DexieFinanceCategoryRepository(db);
+  const financeEntries = new DexieFinanceEntryRepository(db);
+  const financeBudget = new DexieFinanceBudgetRepository(db);
+  const financeAutomations = new DexieFinanceAutomationRepository(db);
+  const financeClosings = new DexieFinanceClosingRepository(db);
 
   return {
     listProducts: makeListProducts(products),
@@ -125,6 +188,112 @@ export function createContainer() {
     hasData: makeHasData(backup),
     loadDemo: makeLoadDemo(backup),
     wipeData: makeWipeData(backup),
+    listFinanceMembers: makeListMembers(financeMembers),
+    createFinanceMember: makeCreateMember(financeMembers),
+    updateFinanceMember: makeUpdateMember(financeMembers),
+    deleteFinanceMember: makeDeleteMember(
+      financeMembers,
+      financeEntries,
+      financeAutomations,
+    ),
+    ensureFinanceDefaults: makeEnsureFinanceDefaults(
+      financeMembers,
+      financeCategories,
+    ),
+    listFinanceCategories: makeListCategories(financeCategories),
+    createFinanceCategory: makeCreateCategory(financeCategories),
+    updateFinanceCategory: makeUpdateCategory(financeCategories),
+    deleteFinanceCategory: makeDeleteCategory(
+      financeCategories,
+      financeEntries,
+      financeBudget,
+      financeAutomations,
+    ),
+    listFinanceEntries: makeListEntries(financeEntries),
+    listOverdueFinanceEntries: makeListOverdueEntries(financeEntries),
+    createFinanceEntry: makeCreateEntry(
+      financeEntries,
+      financeCategories,
+      financeClosings,
+    ),
+    updateFinanceEntry: makeUpdateEntry(
+      financeEntries,
+      financeCategories,
+      financeClosings,
+    ),
+    deleteFinanceEntry: makeDeleteEntry(financeEntries, financeClosings),
+    setFinanceEntryStatus: makeSetEntryStatus(financeEntries),
+    loadFinanceBudget: makeLoadBudget(
+      financeBudget,
+      financeCategories,
+      financeEntries,
+    ),
+    saveFinanceBudgetTemplateItem: makeSaveTemplateItem(financeBudget),
+    saveFinanceBudgetOverride: makeSaveMonthOverride(
+      financeBudget,
+      financeClosings,
+    ),
+    removeFinanceBudgetItem: makeRemoveBudgetItem(
+      financeBudget,
+      financeClosings,
+    ),
+    loadFinanceClosingPreview: makeLoadClosingPreview(
+      financeEntries,
+      financeBudget,
+      financeCategories,
+      financeClosings,
+    ),
+    closeFinanceMonth: makeCloseMonth(
+      financeEntries,
+      financeBudget,
+      financeCategories,
+      financeClosings,
+    ),
+    reopenFinanceMonth: makeReopenMonth(financeClosings),
+    listFinanceClosings: makeListClosings(financeClosings),
+    loadFinanceProjection: makeLoadProjection(
+      financeEntries,
+      financeBudget,
+      financeCategories,
+      financeAutomations,
+      financeClosings,
+    ),
+    loadFinanceDashboard: makeLoadFinanceDashboard(
+      financeEntries,
+      financeBudget,
+      financeCategories,
+      financeMembers,
+    ),
+    listFinanceFormulas: makeListFormulas(financeAutomations),
+    saveFinanceFormula: makeSaveFormula(financeAutomations),
+    deleteFinanceFormula: makeDeleteFormula(financeAutomations),
+    previewFinanceFormula: makePreviewFormula(
+      financeEntries,
+      financeAutomations,
+      financeClosings,
+    ),
+    generateFinanceFormulaEntry: makeGenerateFormulaEntry(
+      financeEntries,
+      financeAutomations,
+      financeClosings,
+    ),
+    listFinanceRecurrences: makeListRecurrences(financeAutomations),
+    saveFinanceRecurrence: makeSaveRecurrence(financeAutomations),
+    deleteFinanceRecurrence: makeDeleteRecurrence(financeAutomations),
+    launchFinanceRecurrence: makeLaunchRecurrence(
+      financeEntries,
+      financeAutomations,
+      financeClosings,
+    ),
+    launchAllFinanceRecurrences: makeLaunchAllRecurrences(
+      financeEntries,
+      financeAutomations,
+      financeClosings,
+    ),
+    listFinanceInstallmentPlans: makeListPlans(financeAutomations),
+    createFinanceInstallmentPlan: makeCreateInstallmentPlan(uow),
+    deleteFinanceInstallmentPlan: makeDeleteInstallmentPlan(uow),
+    previewFinanceInstallments: makePreviewInstallments(),
     resolveActiveType: makeResolveActiveType({ configRepo: config }),
     registerOrder: (
       businessTypeId: string,

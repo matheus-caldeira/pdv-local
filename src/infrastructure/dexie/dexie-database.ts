@@ -8,6 +8,16 @@ import type {
   CustomizationItem,
 } from '../../domain/customization/customization.entity';
 import type { Session, CashMovement } from '../../domain/cash/cash.entity';
+import type {
+  BudgetItem,
+  FamilyMember,
+  FinanceCategory,
+  FinanceEntry,
+  FinanceFormula,
+  InstallmentPlan,
+  MonthClosing,
+  Recurrence,
+} from '../../domain/finance/finance.entity';
 
 export type {
   CustomizationGroup,
@@ -37,6 +47,14 @@ export class PDVDatabase extends Dexie {
   customizationGroups!: Table<CustomizationGroup>;
   customizationItems!: Table<CustomizationItem>;
   customers!: Table<Customer>;
+  financeMembers!: Table<FamilyMember>;
+  financeCategories!: Table<FinanceCategory>;
+  financeEntries!: Table<FinanceEntry>;
+  financeBudgetItems!: Table<BudgetItem>;
+  financeFormulas!: Table<FinanceFormula>;
+  financeRecurrences!: Table<Recurrence>;
+  financeInstallmentPlans!: Table<InstallmentPlan>;
+  financeClosings!: Table<MonthClosing>;
 
   constructor() {
     super('pdv_v2');
@@ -219,5 +237,23 @@ export class PDVDatabase extends Dexie {
             if (config.extra == null) config.extra = {};
           });
       });
+    this.version(6).stores({
+      products: '++id, &uid, name, category, active',
+      orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+      sessions: '++id, &uid, openedAt, closedAt',
+      cashMovements: '++id, &uid, sessionUid, type',
+      config: '++id',
+      customizationGroups: '++id, &uid, name',
+      customizationItems: '++id, &uid, groupUid, active',
+      customers: '++id, &uid, phone, name',
+      financeMembers: '++id, &uid',
+      financeCategories: '++id, &uid, kind',
+      financeEntries: '++id, &uid, month, categoryUid, sourceUid, status',
+      financeBudgetItems: '++id, &uid, categoryUid',
+      financeFormulas: '++id, &uid',
+      financeRecurrences: '++id, &uid',
+      financeInstallmentPlans: '++id, &uid',
+      financeClosings: '++id, &uid, &month',
+    });
   }
 }

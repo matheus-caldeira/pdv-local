@@ -384,6 +384,71 @@ describe('SettingsPage', () => {
     expect(exportEntity).toHaveBeenCalledWith('products', 'json');
   });
 
+  it('offers the eight finance entities for export and import', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Dado')).toBeInTheDocument(),
+    );
+    const select = screen.getByLabelText('Tipo de Dado');
+    const financeLabels = [
+      'Membros da família',
+      'Categorias financeiras',
+      'Lançamentos',
+      'Itens de orçamento',
+      'Fórmulas',
+      'Recorrências',
+      'Parcelamentos',
+      'Fechamentos',
+    ];
+    for (const label of financeLabels) {
+      expect(
+        within(select).getByRole('option', { name: label }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it('exports a finance entity individually', async () => {
+    exportEntity.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Membros da família' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Membros da família' }),
+    );
+    expect(exportEntity).toHaveBeenCalledWith('financeMembers', 'json');
+    await userEvent.click(screen.getByRole('button', { name: 'Fechamentos' }));
+    expect(exportEntity).toHaveBeenCalledWith('financeClosings', 'json');
+  });
+
+  it('imports a finance entity selected as target', async () => {
+    importBackup.mockResolvedValue(right(2));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Dado')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Dado'),
+      'financeBudgetItems',
+    );
+    await userEvent.upload(
+      screen.getByLabelText('Arquivo (JSON ou CSV)'),
+      new File(['[]'], 'pdv-financeBudgetItems.json', {
+        type: 'application/json',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Importar' }));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '2 registros importados',
+      ),
+    );
+    expect(importBackup.mock.calls[0][0]).toBe('financeBudgetItems');
+  });
+
   it('warns when importing without a file', async () => {
     renderPage();
     await waitFor(() =>
@@ -556,6 +621,22 @@ describe('SettingsPage', () => {
     expect(reloadSpy).not.toHaveBeenCalled();
   });
 
+  it('warns that the wipe also erases finance data', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Apagar Todos os Dados' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Apagar Todos os Dados' }),
+    );
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining('incluindo os dados financeiros'),
+    );
+  });
+
   it('aborts the wipe when the first confirmation is cancelled', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderPage();
@@ -643,6 +724,35 @@ describe('SettingsPage', () => {
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     await waitFor(() => expect(reloadSpy).toHaveBeenCalled());
+  });
+
+  it('states in both demo confirmations that finance data is preserved', async () => {
+    hasData.mockResolvedValue(right(true));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar dados de demonstração' }),
+    );
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    expect(
+      within(screen.getByRole('dialog')).getByText(
+        /dados financeiros são preservados/,
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Continuar',
+      }),
+    );
+    expect(
+      within(screen.getByRole('dialog')).getByText(
+        /dados\s+financeiros são preservados/,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('aborts the demo when the first confirmation is cancelled', async () => {

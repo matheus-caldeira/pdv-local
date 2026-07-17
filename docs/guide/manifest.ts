@@ -17,6 +17,7 @@ export const DOCS_PAGES: DocPage[] = [
   { slug: 'adicionais', title: 'Adicionais e extras', section: 'Cadastros' },
   { slug: 'clientes', title: 'Clientes', section: 'Cadastros' },
   { slug: 'relatorios', title: 'Relatórios', section: 'Gestão' },
+  { slug: 'financeiro', title: 'Financeiro', section: 'Gestão' },
   { slug: 'configuracoes', title: 'Configurações', section: 'Gestão' },
   { slug: 'backup', title: 'Backup dos dados', section: 'Gestão' },
 ]

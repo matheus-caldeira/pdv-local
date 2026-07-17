@@ -9,6 +9,7 @@ import {
   MonitorPlay,
   Tv,
   Wallet,
+  PiggyBank,
   BarChart3,
   Settings,
   SlidersHorizontal,
@@ -39,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/customers', icon: Users, label: 'Clientes' },
   { to: '/customizations', icon: SlidersHorizontal, label: 'Extras' },
   { to: '/cash', icon: Wallet, label: 'Caixa' },
+  { to: '/finance', icon: PiggyBank, label: 'Financeiro' },
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/settings', icon: Settings, label: 'Config' },
 ];

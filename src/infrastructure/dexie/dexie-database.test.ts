@@ -176,3 +176,109 @@ describe('migração v5', () => {
     await db.delete();
   });
 });
+
+describe('migração v6', () => {
+  it('abre banco v5 populado, preserva os dados e cria as tabelas finance vazias', async () => {
+    globalThis.indexedDB = new IDBFactory();
+
+    const legacy = new Dexie('pdv_v2');
+    legacy.version(5).stores({
+      products: '++id, &uid, name, category, active',
+      orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+      sessions: '++id, &uid, openedAt, closedAt',
+      cashMovements: '++id, &uid, sessionUid, type',
+      config: '++id',
+      customizationGroups: '++id, &uid, name',
+      customizationItems: '++id, &uid, groupUid, active',
+      customers: '++id, &uid, phone, name',
+    });
+    await legacy.open();
+
+    await legacy.table('products').add({
+      uid: 'product-uid',
+      name: 'Combo',
+      category: 'geral',
+      costPrice: 10,
+      salePrice: 20,
+      stock: 5,
+      active: true,
+      customizationGroupIds: [],
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await legacy.table('sessions').add({
+      uid: 'session-uid',
+      openedAt: 1,
+      closedAt: null,
+      cashInitial: 0,
+      cashFinal: null,
+      notes: '',
+    });
+    await legacy.table('customers').add({
+      uid: 'customer-uid',
+      phone: '41999999999',
+      name: 'Maria',
+      addresses: [],
+      extra: {},
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await legacy.table('config').add({
+      id: 1,
+      name: 'Loja da Maria',
+      document: '',
+      phone: '',
+      address: '',
+      ticketCounter: 1,
+      ticketLimit: 9999,
+      ticketAutoReset: true,
+      statusControlEnabled: false,
+      businessTypeId: '',
+      extra: {},
+    });
+    legacy.close();
+
+    const db = new PDVDatabase();
+    await db.open();
+
+    expect(db.verno).toBe(6);
+
+    const products = await db.products.toArray();
+    expect(products).toHaveLength(1);
+    expect(products[0].uid).toBe('product-uid');
+
+    const sessions = await db.sessions.toArray();
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].uid).toBe('session-uid');
+
+    const customers = await db.customers.toArray();
+    expect(customers).toHaveLength(1);
+    expect(customers[0].uid).toBe('customer-uid');
+
+    const config = await db.config.toArray();
+    expect(config).toHaveLength(1);
+    expect(config[0].name).toBe('Loja da Maria');
+
+    expect(await db.financeMembers.count()).toBe(0);
+    expect(await db.financeCategories.count()).toBe(0);
+    expect(await db.financeEntries.count()).toBe(0);
+    expect(await db.financeBudgetItems.count()).toBe(0);
+    expect(await db.financeFormulas.count()).toBe(0);
+    expect(await db.financeRecurrences.count()).toBe(0);
+    expect(await db.financeInstallmentPlans.count()).toBe(0);
+    expect(await db.financeClosings.count()).toBe(0);
+
+    await db.financeMembers.add({
+      uid: 'member-uid',
+      name: 'Eu',
+      archived: false,
+      createdAt: 1,
+    });
+    const members = await db.financeMembers.toArray();
+    expect(members).toHaveLength(1);
+    expect(members[0].uid).toBe('member-uid');
+
+    db.close();
+    await db.delete();
+  });
+});

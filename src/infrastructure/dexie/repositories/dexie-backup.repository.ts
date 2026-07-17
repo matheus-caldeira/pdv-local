@@ -16,17 +16,28 @@ const CSV_ENTITIES: BackupEntity[] = [
   'orders',
   'sessions',
   'cashMovements',
+  'financeMembers',
+  'financeCategories',
+  'financeEntries',
+  'financeBudgetItems',
+  'financeFormulas',
+  'financeRecurrences',
+  'financeInstallmentPlans',
+  'financeClosings',
 ];
 
-const DATA_TABLES = [
-  'products',
-  'orders',
-  'sessions',
-  'cashMovements',
-  'customers',
-  'customizationGroups',
-  'customizationItems',
-] as const;
+const NO_NULLABLE_COLUMNS: ReadonlySet<string> = new Set();
+
+const NULLABLE_COLUMNS: Partial<Record<BackupEntity, ReadonlySet<string>>> = {
+  sessions: new Set(['closedAt', 'cashFinal']),
+  financeEntries: new Set([
+    'sourceUid',
+    'installmentNumber',
+    'formulaBaseMonth',
+  ]),
+  financeBudgetItems: new Set(['month']),
+  financeRecurrences: new Set(['endMonth']),
+};
 
 const SNAPSHOT_TABLES: (keyof BackupSnapshot)[] = [
   'products',
@@ -62,6 +73,15 @@ export class DexieBackupRepository implements BackupRepository {
         sessions: await this.db.sessions.toArray(),
         cashMovements: await this.db.cashMovements.toArray(),
         config: await this.db.config.toArray(),
+        financeMembers: await this.db.financeMembers.toArray(),
+        financeCategories: await this.db.financeCategories.toArray(),
+        financeEntries: await this.db.financeEntries.toArray(),
+        financeBudgetItems: await this.db.financeBudgetItems.toArray(),
+        financeFormulas: await this.db.financeFormulas.toArray(),
+        financeRecurrences: await this.db.financeRecurrences.toArray(),
+        financeInstallmentPlans:
+          await this.db.financeInstallmentPlans.toArray(),
+        financeClosings: await this.db.financeClosings.toArray(),
         exportedAt: Date.now(),
         version: 1,
       };
@@ -113,7 +133,7 @@ export class DexieBackupRepository implements BackupRepository {
     try {
       const text = await file.text();
       const items = file.name.endsWith('.csv')
-        ? parseCsv(text)
+        ? parseCsv(text, entity)
         : extractItems(JSON.parse(text), entity);
       const cleaned = items.map((item) => {
         const copy = { ...item };
@@ -130,7 +150,9 @@ export class DexieBackupRepository implements BackupRepository {
   async hasData(): Promise<Either<InfrastructureError, boolean>> {
     try {
       const counts = await Promise.all(
-        DATA_TABLES.map((table) => this.db.table(table).count()),
+        this.db.tables
+          .filter((table) => table.name !== 'config')
+          .map((table) => table.count()),
       );
       return right(counts.some((count) => count > 0));
     } catch (cause) {
@@ -142,8 +164,9 @@ export class DexieBackupRepository implements BackupRepository {
     data: BackupSnapshot,
   ): Promise<Either<InfrastructureError, void>> {
     try {
-      await this.db.transaction('rw', this.db.tables, async () => {
-        await Promise.all(this.db.tables.map((table) => table.clear()));
+      const snapshotTables = SNAPSHOT_TABLES.map((name) => this.db.table(name));
+      await this.db.transaction('rw', snapshotTables, async () => {
+        await Promise.all(snapshotTables.map((table) => table.clear()));
         for (const name of SNAPSHOT_TABLES) {
           const items = data[name];
           if (items && items.length > 0) {
@@ -262,7 +285,8 @@ function tokenizeCsv(text: string): CsvField[][] {
   return records;
 }
 
-function parseCsv(text: string): Row[] {
+function parseCsv(text: string, entity: BackupEntity): Row[] {
+  const nullableColumns = NULLABLE_COLUMNS[entity] ?? NO_NULLABLE_COLUMNS;
   const records = tokenizeCsv(text.replace(/\r\n/g, '\n').replace(/\n+$/, ''));
   if (records.length < 2) return [];
   const headers = records[0].map((field) => field.value.trim());
@@ -270,7 +294,11 @@ function parseCsv(text: string): Row[] {
     const row: Row = {};
     headers.forEach((header, index) => {
       const field = record[index];
-      row[header] = field ? decodeCell(field) : '';
+      const value = field ? decodeCell(field) : '';
+      row[header] =
+        value === '' && !field?.quoted && nullableColumns.has(header)
+          ? null
+          : value;
     });
     return row;
   });
@@ -285,6 +313,8 @@ function decodeCell(field: CsvField): unknown {
     }
   }
   const value = field.value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
   if (value !== '' && !Number.isNaN(Number(value))) return Number(value);
   return value;
 }

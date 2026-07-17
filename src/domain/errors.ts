@@ -115,3 +115,197 @@ export class UnknownBusinessTypeError extends DomainError {
     this.businessTypeId = businessTypeId;
   }
 }
+
+export class InvalidFinanceAmountError extends DomainError {
+  readonly code = 'finance/invalid-amount';
+
+  constructor() {
+    super('Informe um valor válido maior que zero.');
+  }
+}
+
+export class InvalidMonthError extends DomainError {
+  readonly code = 'finance/invalid-month';
+  readonly month: string;
+
+  constructor(month: string) {
+    super(`Mês inválido: "${month}".`);
+    this.month = month;
+  }
+}
+
+export class InvalidInstallmentCountError extends DomainError {
+  readonly code = 'finance/invalid-installment-count';
+
+  constructor() {
+    super('Número de parcelas inválido para esse valor.');
+  }
+}
+
+export class InvalidRecurrenceRangeError extends DomainError {
+  readonly code = 'finance/invalid-recurrence-range';
+
+  constructor() {
+    super('O intervalo de meses da recorrência é inválido.');
+  }
+}
+
+export class InvalidPercentError extends DomainError {
+  readonly code = 'finance/invalid-percent';
+
+  constructor() {
+    super('Informe um percentual maior que zero.');
+  }
+}
+
+export class EmptyMemberSelectionError extends DomainError {
+  readonly code = 'finance/empty-member-selection';
+
+  constructor() {
+    super('Selecione pelo menos um membro.');
+  }
+}
+
+export class FinanceCategoryInUseError extends DomainError {
+  readonly code = 'finance/category-in-use';
+
+  constructor() {
+    super('A categoria está em uso e não pode ser excluída. Arquive-a.');
+  }
+}
+
+export class FamilyMemberInUseError extends DomainError {
+  readonly code = 'finance/member-in-use';
+
+  constructor() {
+    super('O membro está em uso e não pode ser excluído. Arquive-o.');
+  }
+}
+
+export class DuplicateBudgetItemError extends DomainError {
+  readonly code = 'finance/duplicate-budget-item';
+
+  constructor() {
+    super('Já existe um item de orçamento para essa categoria nesse mês.');
+  }
+}
+
+export class MonthClosedError extends DomainError {
+  readonly code = 'finance/month-closed';
+  readonly month: string;
+
+  constructor(month: string) {
+    super(`O mês ${month} está fechado e não pode ser alterado.`);
+    this.month = month;
+  }
+}
+
+export class MonthAlreadyClosedError extends DomainError {
+  readonly code = 'finance/month-already-closed';
+  readonly month: string;
+
+  constructor(month: string) {
+    super(`O mês ${month} já está fechado.`);
+    this.month = month;
+  }
+}
+
+export class MonthNotClosedError extends DomainError {
+  readonly code = 'finance/month-not-closed';
+  readonly month: string;
+
+  constructor(month: string) {
+    super(`O mês ${month} não está fechado.`);
+    this.month = month;
+  }
+}
+
+export class RecurrenceOutOfRangeError extends DomainError {
+  readonly code = 'finance/recurrence-out-of-range';
+
+  constructor() {
+    super('A recorrência não vale para esse mês.');
+  }
+}
+
+export class RecurrenceAlreadyLaunchedError extends DomainError {
+  readonly code = 'finance/recurrence-already-launched';
+
+  constructor() {
+    super('A recorrência já foi lançada nesse mês.');
+  }
+}
+
+export class FormulaHasNoMatchesError extends DomainError {
+  readonly code = 'finance/formula-has-no-matches';
+
+  constructor() {
+    super('Nenhum lançamento corresponde ao filtro da fórmula.');
+  }
+}
+
+export class DerivedEntryDateLockedError extends DomainError {
+  readonly code = 'finance/derived-entry-date-locked';
+
+  constructor() {
+    super(
+      'A data de um lançamento gerado automaticamente não pode ser alterada.',
+    );
+  }
+}
+
+export class FinanceEntryNotFoundError extends DomainError {
+  readonly code = 'finance/entry-not-found';
+
+  constructor() {
+    super('Lançamento não encontrado.');
+  }
+}
+
+export class FamilyMemberNotFoundError extends DomainError {
+  readonly code = 'finance/member-not-found';
+
+  constructor() {
+    super('Membro não encontrado.');
+  }
+}
+
+export class FinanceCategoryNotFoundError extends DomainError {
+  readonly code = 'finance/category-not-found';
+
+  constructor() {
+    super('Categoria não encontrada.');
+  }
+}
+
+export class BudgetItemNotFoundError extends DomainError {
+  readonly code = 'finance/budget-item-not-found';
+
+  constructor() {
+    super('Item de orçamento não encontrado.');
+  }
+}
+
+export class FinanceFormulaNotFoundError extends DomainError {
+  readonly code = 'finance/formula-not-found';
+
+  constructor() {
+    super('Fórmula não encontrada.');
+  }
+}
+
+export class RecurrenceNotFoundError extends DomainError {
+  readonly code = 'finance/recurrence-not-found';
+
+  constructor() {
+    super('Recorrência não encontrada.');
+  }
+}
+
+export class InstallmentPlanNotFoundError extends DomainError {
+  readonly code = 'finance/installment-plan-not-found';
+
+  constructor() {
+    super('Plano de parcelamento não encontrado.');
+  }
+}

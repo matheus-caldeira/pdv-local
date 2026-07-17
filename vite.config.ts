@@ -135,6 +135,7 @@ export default defineConfig({
             'src/domain/**/*.test.ts',
             'src/application/**/*.test.ts',
             'src/infrastructure/**/*.test.ts',
+            'src/app/**/*.test.ts',
           ],
         },
       },
