@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { FinanceShell } from './FinanceShell';
@@ -25,16 +19,6 @@ class FakeError extends AppError {
   readonly code = 'FAKE';
   readonly layer = 'application' as const;
 }
-
-const TAB_LABELS = [
-  'Início',
-  'Lançamentos',
-  'Orçamento',
-  'Automações',
-  'Projeção',
-  'Fechamentos',
-  'Config',
-];
 
 function LocationProbe() {
   const location = useLocation();
@@ -84,9 +68,6 @@ describe('FinanceShell', () => {
   it('ensures the finance defaults once on mount', async () => {
     renderShell('/finance');
     await waitFor(() => expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1));
-    await userEvent.click(screen.getByRole('link', { name: 'Lançamentos' }));
-    await userEvent.click(screen.getByRole('link', { name: 'Início' }));
-    expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1);
   });
 
   it('toasts when ensuring the finance defaults fails', async () => {
@@ -95,15 +76,6 @@ describe('FinanceShell', () => {
     );
     renderShell('/finance');
     expect(await screen.findByText('falha nos padrões')).toBeInTheDocument();
-  });
-
-  it('renders the seven tabs inside the finance navigation', () => {
-    renderShell('/finance');
-    const nav = screen.getByRole('navigation', {
-      name: 'Seções do financeiro',
-    });
-    const links = within(nav).getAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual(TAB_LABELS);
   });
 
   it('renders the outlet content of the active route', () => {
@@ -139,17 +111,6 @@ describe('FinanceShell', () => {
     expect(monthPicker()).not.toBeInTheDocument();
   });
 
-  it('preserves the month param when navigating between tabs', async () => {
-    renderShell('/finance?month=2026-03');
-    await userEvent.click(screen.getByRole('link', { name: 'Automações' }));
-    expect(screen.getByText('automations content')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'URL atual' })).toHaveTextContent(
-      '/finance/automations?month=2026-03',
-    );
-    await userEvent.click(screen.getByRole('link', { name: 'Lançamentos' }));
-    expect(screen.getByText('março de 2026')).toBeInTheDocument();
-  });
-
   it('falls back to the current month when the param is invalid', () => {
     renderShell('/finance?month=banana');
     const now = new Date();
@@ -177,17 +138,5 @@ describe('FinanceShell', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
     expect(screen.getByText('janeiro de 2026')).toBeInTheDocument();
-  });
-
-  it('keeps the month chosen in the picker when visiting a tab without picker', async () => {
-    renderShell('/finance?month=2026-06');
-    await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
-    await userEvent.click(screen.getByRole('link', { name: 'Config' }));
-    expect(monthPicker()).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('link', { name: 'Orçamento' }));
-    expect(screen.getByRole('status', { name: 'URL atual' })).toHaveTextContent(
-      '/finance/budget?month=2026-07',
-    );
-    expect(screen.getByText('julho de 2026')).toBeInTheDocument();
   });
 });

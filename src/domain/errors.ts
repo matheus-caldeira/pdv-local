@@ -309,3 +309,21 @@ export class InstallmentPlanNotFoundError extends DomainError {
     super('Plano de parcelamento não encontrado.');
   }
 }
+
+export class LastModuleDisabledError extends DomainError {
+  readonly code = 'modules/last-module-disabled';
+
+  constructor() {
+    super('Pelo menos um módulo precisa ficar ativo.');
+  }
+}
+
+export class UnknownModuleError extends DomainError {
+  readonly code = 'modules/unknown-module';
+  readonly moduleId: string;
+
+  constructor(moduleId: string) {
+    super(`Módulo desconhecido: "${moduleId}".`);
+    this.moduleId = moduleId;
+  }
+}

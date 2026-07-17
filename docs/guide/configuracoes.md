@@ -22,6 +22,12 @@ A comanda é o número sequencial gerado a cada venda, com zeros à esquerda.
 - **Reiniciar Sequência** — informe um número e a próxima comanda passa a ser
   esse valor. Pedidos já registrados não são afetados.
 
+## Módulos
+
+Em **Configurações → Módulos** você escolhe o que aparece no menu: Ponto de
+Venda, Financeiro ou os dois. Desativar um módulo só esconde as telas dele —
+**nenhum dado é apagado** — e você pode reativar quando quiser.
+
 ## Pedidos (Controle de Status)
 
 O **Controle de Status** liga o acompanhamento de cada pedido por etapas

@@ -12,6 +12,7 @@ import { SettingsPage } from './SettingsPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
+import { LastModuleDisabledError } from '../../domain/errors';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
 const readConfig = vi.fn();
@@ -23,6 +24,8 @@ const importBackup = vi.fn();
 const hasData = vi.fn();
 const loadDemo = vi.fn();
 const wipeData = vi.fn();
+const saveEnabledModules = vi.fn();
+const refresh = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
@@ -36,7 +39,20 @@ vi.mock('../../app/container', () => ({
     hasData: () => hasData(),
     loadDemo: (now: number) => loadDemo(now),
     wipeData: () => wipeData(),
+    saveEnabledModules: (s: string[]) => saveEnabledModules(s),
   },
+}));
+
+vi.mock('../../app/modules-context', () => ({
+  useModules: () => ({
+    modules: ['pdv'],
+    needsFirstRun: false,
+    status: 'ready',
+    refresh: () => {
+      refresh();
+      return Promise.resolve();
+    },
+  }),
 }));
 
 class FakeError extends AppError {
@@ -55,6 +71,7 @@ const CONFIG: BusinessConfig = {
   ticketAutoReset: true,
   statusControlEnabled: false,
   businessTypeId: 'tab',
+  enabledModules: [],
   extra: {},
 };
 
@@ -77,7 +94,10 @@ describe('SettingsPage', () => {
     hasData.mockReset();
     loadDemo.mockReset();
     wipeData.mockReset();
+    saveEnabledModules.mockReset();
+    refresh.mockReset();
     readConfig.mockResolvedValue(right(CONFIG));
+    saveEnabledModules.mockResolvedValue(right(['pdv', 'finance']));
   });
   afterEach(() => {
     cleanup();
@@ -881,5 +901,41 @@ describe('SettingsPage', () => {
     );
     await waitFor(() => expect(loadDemo).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('módulos', () => {
+    it('lista os módulos com o estado atual', async () => {
+      renderPage();
+      const section = await screen.findByRole('group', { name: 'Módulos' });
+      expect(
+        within(section).getByRole('button', { name: 'Ponto de Venda' }),
+      ).toHaveAttribute('aria-pressed', 'true');
+      expect(
+        within(section).getByRole('button', { name: 'Financeiro' }),
+      ).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('ativa um módulo e atualiza o provider', async () => {
+      renderPage();
+      const section = await screen.findByRole('group', { name: 'Módulos' });
+      await userEvent.click(
+        within(section).getByRole('button', { name: 'Financeiro' }),
+      );
+      expect(saveEnabledModules).toHaveBeenCalledWith(['pdv', 'finance']);
+      expect(refresh).toHaveBeenCalled();
+    });
+
+    it('mostra o erro ao tentar desativar o último módulo', async () => {
+      saveEnabledModules.mockResolvedValue(left(new LastModuleDisabledError()));
+      renderPage();
+      const section = await screen.findByRole('group', { name: 'Módulos' });
+      await userEvent.click(
+        within(section).getByRole('button', { name: 'Ponto de Venda' }),
+      );
+      expect(
+        await screen.findByText('Pelo menos um módulo precisa ficar ativo.'),
+      ).toBeInTheDocument();
+      expect(refresh).not.toHaveBeenCalled();
+    });
   });
 });

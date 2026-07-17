@@ -27,15 +27,16 @@ endereço no navegador e já começa a usar.
 
 ## Como o sistema é organizado
 
-O PDV Local funciona em duas frentes:
+O PDV Local tem dois módulos, e você escolhe o que quer usar no primeiro acesso
+(dá para mudar depois em Configurações):
 
-- **Venda e gestão do dia a dia:** vender, acompanhar pedidos e fechar o caixa.
-- **Cadastros e configurações:** produtos, adicionais, clientes e os ajustes do
-  seu negócio.
+- **Ponto de Venda** — vender, acompanhar pedidos, controlar o caixa, cadastrar
+  produtos e clientes.
+- **Financeiro** — lançamentos do mês, orçamento, projeção e fechamentos.
 
-Algumas funções avançadas, como a tela da cozinha e o painel do cliente, ficam
-desligadas no começo. Você liga quando precisar, em
-[Configurações](configuracoes).
+O menu mostra só os módulos que você ativou. Algumas funções avançadas, como a
+tela da cozinha e o painel do cliente, ficam desligadas no começo — você liga
+quando precisar em [Configurações](configuracoes).
 
 ## Seus dados são seus
 

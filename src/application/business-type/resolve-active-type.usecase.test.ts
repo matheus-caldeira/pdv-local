@@ -24,6 +24,7 @@ function configRepoWith(businessTypeId: string) {
     ticketAutoReset: true,
     statusControlEnabled: false,
     businessTypeId,
+    enabledModules: [],
     extra: {},
   };
   return {

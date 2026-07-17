@@ -1,5 +1,12 @@
-import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, TrendingUp, Clock, Wallet } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  ShoppingCart,
+  TrendingUp,
+  Clock,
+  Wallet,
+  ArrowRight,
+  PiggyBank,
+} from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { Money } from '../atoms/Money';
@@ -7,6 +14,7 @@ import { SalesSummaryCards } from '../organisms/SalesSummaryCards';
 import { ProductRankingList } from '../organisms/ProductRankingList';
 import { useSession } from '../hooks/useSession';
 import { useDashboard } from '../hooks/useDashboard';
+import { useModules } from '../../app/modules-context';
 import { formatTime } from '../../domain/shared/format';
 import type { OrderStatus } from '../../domain/order/order.entity';
 
@@ -31,6 +39,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { activeSession, loading } = useSession();
   const { data } = useDashboard(activeSession?.uid);
+  const { modules } = useModules();
 
   if (loading) {
     return (
@@ -40,19 +49,40 @@ export function DashboardPage() {
     );
   }
 
+  const financeShortcut = modules.includes('finance') ? (
+    <Link
+      to="/finance"
+      className="mt-6 flex items-center justify-between rounded-lg border border-border bg-surface-2 p-4 transition-colors hover:border-accent"
+    >
+      <span className="flex items-center gap-3">
+        <PiggyBank size={24} strokeWidth={2} className="text-accent" />
+        <span className="flex flex-col">
+          <span className="font-semibold">Ir para o Financeiro</span>
+          <span className="text-sm text-ink-tertiary">
+            Resumo do mês, lançamentos e orçamento.
+          </span>
+        </span>
+      </span>
+      <ArrowRight size={20} strokeWidth={2} className="text-ink-tertiary" />
+    </Link>
+  ) : null;
+
   if (!activeSession) {
     return (
-      <div className="mx-auto flex max-w-sm flex-col items-center gap-3 rounded-xl border border-border bg-surface-2 px-6 py-10 text-center text-ink-tertiary">
-        <Wallet size={48} />
-        <h2 className="text-lg font-bold tracking-tight text-ink-primary">
-          Nenhuma sessão aberta
-        </h2>
-        <p className="text-sm">
-          Abra uma sessão de caixa para começar a vender.
-        </p>
-        <Button fullWidth onClick={() => navigate('/cash')}>
-          Abrir Caixa
-        </Button>
+      <div className="mx-auto max-w-sm">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface-2 px-6 py-10 text-center text-ink-tertiary">
+          <Wallet size={48} />
+          <h2 className="text-lg font-bold tracking-tight text-ink-primary">
+            Nenhuma sessão aberta
+          </h2>
+          <p className="text-sm">
+            Abra uma sessão de caixa para começar a vender.
+          </p>
+          <Button fullWidth onClick={() => navigate('/cash')}>
+            Abrir Caixa
+          </Button>
+        </div>
+        {financeShortcut}
       </div>
     );
   }
@@ -148,6 +178,8 @@ export function DashboardPage() {
           </div>
         )}
       </div>
+
+      {financeShortcut}
     </div>
   );
 }

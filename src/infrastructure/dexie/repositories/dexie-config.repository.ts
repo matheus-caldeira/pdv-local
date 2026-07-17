@@ -24,6 +24,7 @@ function withDefaults(stored?: BusinessConfig): BusinessConfig {
     ...TICKET_DEFAULTS,
     ...ORDER_DEFAULTS,
     businessTypeId: '',
+    enabledModules: [],
     extra: {},
     ...stored,
   };

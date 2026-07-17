@@ -119,8 +119,12 @@ export default defineConfig({
         'src/application/**',
         'src/infrastructure/**',
         'src/ui/**',
+        'src/app/**',
       ],
-      exclude: ['src/infrastructure/dexie/dexie-database.ts'],
+      exclude: [
+        'src/infrastructure/dexie/dexie-database.ts',
+        'src/app/container.ts',
+      ],
       thresholds: { 100: true },
     },
     projects: [
@@ -145,7 +149,11 @@ export default defineConfig({
           name: 'ui',
           environment: 'jsdom',
           setupFiles: ['./src/test/setup.ui.ts'],
-          include: ['src/ui/**/*.test.{ts,tsx}'],
+          include: [
+            'src/ui/**/*.test.{ts,tsx}',
+            'src/app/**/*.test.tsx',
+            'src/App.test.tsx',
+          ],
         },
       },
     ],
