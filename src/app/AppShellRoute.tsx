@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { AppShell } from '../ui/templates/AppShell';
-import { useModules } from './ModulesProvider';
+import { useModules } from './modules-context';
 import { useSession } from '../ui/hooks/useSession';
 import { useStatusControl } from '../ui/hooks/useStatusControl';
 import { buildNavModel, resolveActiveGroupId } from './nav-model';

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEffect } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
-import { ModulesProvider, useModules } from './ModulesProvider';
+import { ModulesProvider } from './ModulesProvider';
+import { useModules } from './modules-context';
 import { ToastProvider } from '../ui/molecules/Toast';
 import { left, right } from '../domain/shared/either';
 import { AppError } from '../domain/shared/errors';
@@ -21,9 +23,12 @@ class FakeError extends AppError {
 let captured: ReturnType<typeof useModules>;
 
 function Probe() {
-  captured = useModules();
+  const value = useModules();
+  useEffect(() => {
+    captured = value;
+  });
   return (
-    <output aria-label="Estado">{`${captured.status}:${captured.modules.join(',')}:${captured.needsFirstRun}`}</output>
+    <output aria-label="Estado">{`${value.status}:${value.modules.join(',')}:${value.needsFirstRun}`}</output>
   );
 }
 
