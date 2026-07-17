@@ -17,6 +17,8 @@ let sessionState: { activeSession: Session | null; loading: boolean } = {
   loading: false,
 };
 
+let modules: string[] = ['pdv'];
+
 vi.mock('../../app/container', () => ({
   container: {
     loadDashboard: (uid: string) => loadDashboard(uid),
@@ -29,6 +31,28 @@ vi.mock('../hooks/useSession', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
+  Link: ({
+    to,
+    className,
+    children,
+  }: {
+    to: string;
+    className?: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={to} className={className}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock('../../app/modules-context', () => ({
+  useModules: () => ({
+    modules,
+    needsFirstRun: false,
+    status: 'ready',
+    refresh: () => Promise.resolve(),
+  }),
 }));
 
 class FakeError extends AppError {
@@ -171,5 +195,25 @@ describe('DashboardPage', () => {
     );
     expect(screen.getByText('R$ 0,00')).toBeInTheDocument();
     expect(screen.getByText('Nenhuma venda ainda')).toBeInTheDocument();
+  });
+
+  describe('card do financeiro', () => {
+    it('mostra o atalho quando o financeiro está ativo', async () => {
+      modules = ['pdv', 'finance'];
+      sessionState = { activeSession: ACTIVE_SESSION, loading: false };
+      renderPage();
+      expect(
+        await screen.findByRole('link', { name: /Ir para o Financeiro/ }),
+      ).toHaveAttribute('href', '/finance');
+    });
+
+    it('não mostra o atalho quando só o pdv está ativo', async () => {
+      modules = ['pdv'];
+      sessionState = { activeSession: ACTIVE_SESSION, loading: false };
+      renderPage();
+      expect(
+        screen.queryByRole('link', { name: /Ir para o Financeiro/ }),
+      ).toBeNull();
+    });
   });
 });
