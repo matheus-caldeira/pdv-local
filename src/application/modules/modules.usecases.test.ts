@@ -8,6 +8,8 @@ import {
 } from '../../domain/shared/either';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { ConfigRepository } from '../../domain/config/config.repository';
+import type { OrderRepository } from '../../domain/order/order.repository';
+import type { CashRepository } from '../../domain/cash/cash.repository';
 import type { Order } from '../../domain/order/order.entity';
 import type { Session } from '../../domain/cash/cash.entity';
 import {
@@ -139,6 +141,43 @@ describe('makeResolveModulesState', () => {
     const usecase = makeResolveModulesState({
       configRepo: failing,
       orderRepo: new FakeOrderRepo(),
+      cashRepo: new FakeCashRepo(),
+    });
+    expect(isLeft(await usecase())).toBe(true);
+  });
+
+  it('propagates an order repo listAll failure', async () => {
+    const failing: Pick<OrderRepository, 'listAll'> = {
+      listAll: async () => left(new ConnectorError('falhou')),
+    };
+    const usecase = makeResolveModulesState({
+      configRepo: new FakeConfigRepo(),
+      orderRepo: failing,
+      cashRepo: new FakeCashRepo(),
+    });
+    expect(isLeft(await usecase())).toBe(true);
+  });
+
+  it('propagates a cash repo listSessions failure', async () => {
+    const failing: Pick<CashRepository, 'listSessions'> = {
+      listSessions: async () => left(new ConnectorError('falhou')),
+    };
+    const usecase = makeResolveModulesState({
+      configRepo: new FakeConfigRepo(),
+      orderRepo: new FakeOrderRepo(),
+      cashRepo: failing,
+    });
+    expect(isLeft(await usecase())).toBe(true);
+  });
+
+  it('propagates a config save failure during silent migration', async () => {
+    const failingSave: Pick<ConfigRepository, 'read' | 'save'> = {
+      read: async () => right(baseConfig),
+      save: async () => left(new ConnectorError('falhou')),
+    };
+    const usecase = makeResolveModulesState({
+      configRepo: failingSave,
+      orderRepo: new FakeOrderRepo([fakeOrder]),
       cashRepo: new FakeCashRepo(),
     });
     expect(isLeft(await usecase())).toBe(true);
