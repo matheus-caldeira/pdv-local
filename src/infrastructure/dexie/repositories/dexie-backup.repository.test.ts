@@ -57,6 +57,7 @@ const businessConfig = (name: string): BusinessConfig => ({
   ticketAutoReset: true,
   statusControlEnabled: false,
   businessTypeId: '',
+  enabledModules: [],
   extra: {},
 });
 

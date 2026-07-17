@@ -43,6 +43,7 @@ const BASE_CONFIG: BusinessConfig = {
   ticketAutoReset: false,
   statusControlEnabled: false,
   businessTypeId: 'tab',
+  enabledModules: [],
   extra: {},
 };
 

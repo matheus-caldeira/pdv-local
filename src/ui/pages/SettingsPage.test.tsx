@@ -55,6 +55,7 @@ const CONFIG: BusinessConfig = {
   ticketAutoReset: true,
   statusControlEnabled: false,
   businessTypeId: 'tab',
+  enabledModules: [],
   extra: {},
 };
 

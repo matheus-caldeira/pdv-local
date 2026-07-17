@@ -9,5 +9,6 @@ export interface BusinessConfig {
   ticketAutoReset: boolean;
   statusControlEnabled: boolean;
   businessTypeId: string;
+  enabledModules: string[];
   extra: Record<string, string>;
 }
