@@ -74,12 +74,17 @@ export function makeLoadProjection(
     if (isLeft(closedMonths)) return closedMonths;
 
     const pendingByMonth = new Map<MonthKey, FinanceEntry[]>();
+    const paidByMonth = new Map<MonthKey, FinanceEntry[]>();
     const budgetByMonth = new Map<MonthKey, ResolvedBudgetLine[]>();
     for (let i = 0; i < input.months; i += 1) {
       const month = addMonths(currentMonth, i);
       const pending = await entries.list({ status: 'pending', month });
       if (isLeft(pending)) return pending;
       pendingByMonth.set(month, pending.right);
+      paidByMonth.set(
+        month,
+        paid.right.filter((entry) => entry.month === month),
+      );
       budgetByMonth.set(
         month,
         resolveBudget(budgetItems.right, month, categoryList.right),
@@ -94,12 +99,11 @@ export function makeLoadProjection(
         initialBalance: sumPaidBalance(paid.right),
         overdueEntries: overdue.right,
         pendingByMonth,
-        paidCurrentMonth: paid.right.filter(
-          (entry) => entry.month === currentMonth,
-        ),
+        paidByMonth,
         budgetByMonth,
         recurrences: recurrences.right,
         launchedBySourceMonth: launchedFromRecurrences.right,
+        closedMonths: closedMonths.right,
       }),
     );
   };

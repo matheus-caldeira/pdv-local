@@ -211,6 +211,26 @@ describe('FinanceEntryFormModal', () => {
     ).toBeInTheDocument();
   });
 
+  it('sends the original date unchanged when editing a derived entry', async () => {
+    const midnightDate = new Date(2026, 6, 10).getTime();
+    const { onSave } = renderModal({
+      entry: makeEntry({
+        source: 'installment',
+        sourceUid: 'plan-1',
+        installmentNumber: 1,
+        date: midnightDate,
+      }),
+    });
+    await userEvent.type(screen.getByLabelText('Descrição'), ' ajustada');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'Conta de luz ajustada',
+        date: midnightDate,
+      }),
+    );
+  });
+
   it('deletes the entry after confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const { onDelete } = renderModal({ entry: makeEntry() });

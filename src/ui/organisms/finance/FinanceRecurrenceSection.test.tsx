@@ -32,11 +32,20 @@ const CATEGORIES: FinanceCategory[] = [
     archived: false,
     createdAt: 1,
   },
+  {
+    id: 3,
+    uid: 'cat-old',
+    name: 'Antiga',
+    kind: 'expense',
+    archived: true,
+    createdAt: 1,
+  },
 ];
 
 const MEMBERS: FamilyMember[] = [
   { id: 1, uid: 'member-1', name: 'Ana', archived: false, createdAt: 1 },
   { id: 2, uid: 'member-2', name: 'Bruno', archived: false, createdAt: 1 },
+  { id: 3, uid: 'member-3', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
 const EXPENSE_RECURRENCE: Recurrence = {
@@ -95,7 +104,10 @@ describe('FinanceRecurrenceSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it('shows the empty state when there are no recurrences', () => {
     renderSection();
@@ -145,13 +157,23 @@ describe('FinanceRecurrenceSection', () => {
     expect(onLaunch).toHaveBeenCalledWith('rec-1');
   });
 
-  it('deletes a recurrence', async () => {
+  it('deletes a recurrence after confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     onDelete.mockResolvedValue(true);
     renderSection([EXPENSE_RECURRENCE]);
     await userEvent.click(
       screen.getByRole('button', { name: 'Excluir recorrência Aluguel' }),
     );
     expect(onDelete).toHaveBeenCalledWith('rec-1');
+  });
+
+  it('does not delete a recurrence when the confirmation is dismissed', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderSection([EXPENSE_RECURRENCE]);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Excluir recorrência Aluguel' }),
+    );
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('creates a recurrence through the form', async () => {
@@ -211,10 +233,40 @@ describe('FinanceRecurrenceSection', () => {
       'cat-home',
     );
     await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    await userEvent.click(
       within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
     );
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('disables the submit while no member is checked', async () => {
+    renderSection();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Nova recorrência' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Categoria'),
+      'cat-home',
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
+    ).toBeDisabled();
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
+    ).toBeEnabled();
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
+    ).toBeDisabled();
   });
 
   it('defaults amount and day to zero when blank', async () => {
@@ -228,6 +280,9 @@ describe('FinanceRecurrenceSection', () => {
     await userEvent.selectOptions(
       within(dialog).getByLabelText('Categoria'),
       'cat-home',
+    );
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
     );
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
@@ -316,6 +371,41 @@ describe('FinanceRecurrenceSection', () => {
         active: true,
       }),
     );
+  });
+
+  it('hides archived categories and members from the create form', async () => {
+    renderSection();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Nova recorrência' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).queryByRole('option', { name: /Antiga/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('checkbox', { name: /Carla/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows archived options referenced by the recurrence in edit with a badge', async () => {
+    renderSection([
+      {
+        ...EXPENSE_RECURRENCE,
+        categoryUid: 'cat-old',
+        memberUids: ['member-3'],
+      },
+    ]);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar recorrência Aluguel' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Categoria')).toHaveValue('cat-old');
+    expect(
+      within(dialog).getByRole('option', { name: 'Antiga (arquivada)' }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole('checkbox', { name: 'Carla (arquivado)' }),
+    ).toBeChecked();
   });
 
   it('offers an archived placeholder when editing a recurrence with unknown category', async () => {

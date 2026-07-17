@@ -5,13 +5,15 @@ import type { FinanceEntry } from '../../../domain/finance/finance.entity';
 
 interface FinanceOverdueCardProps {
   entries: FinanceEntry[];
-  total: number;
+  expenseTotal: number;
+  incomeTotal: number;
   onMarkPaid(uid: string): void;
 }
 
 export function FinanceOverdueCard({
   entries,
-  total,
+  expenseTotal,
+  incomeTotal,
   onMarkPaid,
 }: FinanceOverdueCardProps) {
   if (entries.length === 0) return null;
@@ -25,8 +27,16 @@ export function FinanceOverdueCard({
         <h3 className="text-xs font-bold uppercase tracking-wide text-danger">
           Atrasadas
         </h3>
-        <Money value={total} className="font-bold text-danger" />
+        <Money value={expenseTotal} className="font-bold text-danger" />
       </div>
+      {incomeTotal > 0 && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-bold uppercase tracking-wide text-success">
+            A receber
+          </span>
+          <Money value={incomeTotal} className="font-bold text-success" />
+        </div>
+      )}
       <ul className="flex flex-col gap-1">
         {entries.map((entry) => (
           <li
@@ -42,7 +52,14 @@ export function FinanceOverdueCard({
               </span>
             </div>
             <div className="flex items-center justify-between gap-3 md:justify-end">
-              <Money value={entry.amount} className="font-bold text-danger" />
+              <Money
+                value={entry.amount}
+                className={
+                  entry.kind === 'income'
+                    ? 'font-bold text-success'
+                    : 'font-bold text-danger'
+                }
+              />
               <Button
                 variant="ghost"
                 size="sm"

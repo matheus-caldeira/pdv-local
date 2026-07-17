@@ -12,13 +12,11 @@ import type {
   MonthKey,
 } from '../../domain/finance/finance.entity';
 
-const ensureFinanceDefaults = vi.fn();
 const loadFinanceDashboard = vi.fn();
 const setFinanceEntryStatus = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
-    ensureFinanceDefaults: () => ensureFinanceDefaults(),
     loadFinanceDashboard: (month: string, nowMs: number) =>
       loadFinanceDashboard(month, nowMs),
     setFinanceEntryStatus: (uid: string, status: string) =>
@@ -43,7 +41,8 @@ const EMPTY_DASHBOARD: FinanceDashboard = {
     categories: [],
   },
   overdueEntries: [],
-  overdueTotal: 0,
+  overdueExpenseTotal: 0,
+  overdueIncomeTotal: 0,
   pendingThisMonth: [],
   memberInvolvement: [],
 };
@@ -81,20 +80,17 @@ function renderHost() {
 
 describe('useFinanceDashboard', () => {
   beforeEach(() => {
-    ensureFinanceDefaults.mockReset();
     loadFinanceDashboard.mockReset();
     setFinanceEntryStatus.mockReset();
-    ensureFinanceDefaults.mockResolvedValue(right(undefined));
     loadFinanceDashboard.mockResolvedValue(right(EMPTY_DASHBOARD));
   });
   afterEach(cleanup);
 
-  it('ensures defaults and loads the dashboard on mount', async () => {
+  it('loads the dashboard on mount', async () => {
     renderHost();
     await waitFor(() =>
       expect(screen.getByText('loading:no')).toBeInTheDocument(),
     );
-    expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1);
     expect(loadFinanceDashboard).toHaveBeenCalledWith(
       '2026-07',
       expect.any(Number),
@@ -109,7 +105,7 @@ describe('useFinanceDashboard', () => {
     expect(screen.getByText('loading:yes')).toBeInTheDocument();
   });
 
-  it('ensures defaults only once across month changes', async () => {
+  it('reloads when the month changes', async () => {
     renderHost();
     await waitFor(() =>
       expect(screen.getByText('loading:no')).toBeInTheDocument(),
@@ -120,20 +116,6 @@ describe('useFinanceDashboard', () => {
         '2026-08',
         expect.any(Number),
       ),
-    );
-    expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1);
-  });
-
-  it('toasts when ensuring defaults fails and still loads the dashboard', async () => {
-    ensureFinanceDefaults.mockResolvedValue(
-      left(new FakeError('falha nos padrões')),
-    );
-    renderHost();
-    await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('falha nos padrões'),
-    );
-    await waitFor(() =>
-      expect(screen.getByText('has:yes')).toBeInTheDocument(),
     );
   });
 

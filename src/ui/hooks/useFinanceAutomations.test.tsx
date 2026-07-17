@@ -284,7 +284,7 @@ describe('useFinanceAutomations', () => {
   });
   afterEach(cleanup);
 
-  it('loads the lists and keeps only active categories and members', async () => {
+  it('loads the lists keeping archived categories and members', async () => {
     renderProbe();
     expect(screen.getByText('loading:yes')).toBeInTheDocument();
     await waitFor(() =>
@@ -293,8 +293,8 @@ describe('useFinanceAutomations', () => {
     expect(screen.getByText('formulas:1')).toBeInTheDocument();
     expect(screen.getByText('recurrences:1')).toBeInTheDocument();
     expect(screen.getByText('plans:1')).toBeInTheDocument();
-    expect(screen.getByText('categories:1')).toBeInTheDocument();
-    expect(screen.getByText('members:1')).toBeInTheDocument();
+    expect(screen.getByText('categories:2')).toBeInTheDocument();
+    expect(screen.getByText('members:2')).toBeInTheDocument();
   });
 
   it('toasts when a list fails to load', async () => {

@@ -210,16 +210,17 @@ export function createContainer() {
       financeAutomations,
     ),
     listFinanceEntries: makeListEntries(financeEntries),
-    listOverdueFinanceEntries: makeListOverdueEntries(
-      financeEntries,
-      financeClosings,
-    ),
+    listOverdueFinanceEntries: makeListOverdueEntries(financeEntries),
     createFinanceEntry: makeCreateEntry(
       financeEntries,
       financeCategories,
       financeClosings,
     ),
-    updateFinanceEntry: makeUpdateEntry(financeEntries, financeClosings),
+    updateFinanceEntry: makeUpdateEntry(
+      financeEntries,
+      financeCategories,
+      financeClosings,
+    ),
     deleteFinanceEntry: makeDeleteEntry(financeEntries, financeClosings),
     setFinanceEntryStatus: makeSetEntryStatus(financeEntries),
     loadFinanceBudget: makeLoadBudget(
@@ -262,7 +263,6 @@ export function createContainer() {
       financeBudget,
       financeCategories,
       financeMembers,
-      financeClosings,
     ),
     listFinanceFormulas: makeListFormulas(financeAutomations),
     saveFinanceFormula: makeSaveFormula(financeAutomations),

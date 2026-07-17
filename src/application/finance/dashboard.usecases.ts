@@ -8,7 +8,6 @@ import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.
 import type { FinanceBudgetRepository } from '../../domain/finance/finance-budget.repository';
 import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { FinanceMemberRepository } from '../../domain/finance/finance-member.repository';
-import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
 import {
   currentMonthKey,
   resolveBudget,
@@ -29,7 +28,8 @@ export interface FinanceDashboard {
   currentBalance: number;
   summary: MonthSummary;
   overdueEntries: FinanceEntry[];
-  overdueTotal: number;
+  overdueExpenseTotal: number;
+  overdueIncomeTotal: number;
   pendingThisMonth: FinanceEntry[];
   memberInvolvement: MemberInvolvement[];
 }
@@ -42,7 +42,6 @@ export function makeLoadFinanceDashboard(
   budget: FinanceBudgetRepository,
   categories: FinanceCategoryRepository,
   members: FinanceMemberRepository,
-  closings: FinanceClosingRepository,
 ) {
   return async (
     month: MonthKey,
@@ -65,8 +64,6 @@ export function makeLoadFinanceDashboard(
     if (isLeft(categoryList)) return categoryList;
     const memberList = await members.list();
     if (isLeft(memberList)) return memberList;
-    const closedMonths = await closings.listClosedMonths();
-    if (isLeft(closedMonths)) return closedMonths;
 
     const resolvedBudget = resolveBudget(
       budgetItems.right,
@@ -98,7 +95,12 @@ export function makeLoadFinanceDashboard(
         categoryList.right,
       ),
       overdueEntries: overdue.right,
-      overdueTotal: round2(sumAmounts(overdue.right)),
+      overdueExpenseTotal: round2(
+        sumAmounts(overdue.right.filter((entry) => entry.kind === 'expense')),
+      ),
+      overdueIncomeTotal: round2(
+        sumAmounts(overdue.right.filter((entry) => entry.kind === 'income')),
+      ),
       pendingThisMonth: [...pendingThisMonth.right].sort(
         (a, b) => a.date - b.date,
       ),

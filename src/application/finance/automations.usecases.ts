@@ -286,6 +286,11 @@ export function makeGenerateFormulaEntry(
     );
     if (matches.length === 0) return left(new FormulaHasNoMatchesError());
 
+    const amount = normalizeAmount(
+      (sumAmounts(matches) * formula.right.percent) / 100,
+    );
+    if (isLeft(amount)) return amount;
+
     const open = await ensureMonthOpen(closings, input.targetMonth);
     if (isLeft(open)) return open;
 
@@ -293,7 +298,7 @@ export function makeGenerateFormulaEntry(
     return entries.create({
       uid: createUid(),
       description: `${formula.right.outputDescription} — ${input.baseMonth}`,
-      amount: round2((sumAmounts(matches) * formula.right.percent) / 100),
+      amount: amount.right,
       kind: formula.right.outputKind,
       categoryUid: formula.right.outputCategoryUid,
       memberUids: [...new Set(matches.flatMap((entry) => entry.memberUids))],
@@ -321,6 +326,9 @@ const validateRecurrenceInput = (
 ): Either<AppError, number> => {
   const amount = normalizeAmount(input.amount);
   if (isLeft(amount)) return amount;
+  if (input.memberUids.length === 0) {
+    return left(new EmptyMemberSelectionError());
+  }
   if (!isValidDayOfMonth(input.dayOfMonth)) {
     return left(new InvalidRecurrenceRangeError());
   }
@@ -461,7 +469,9 @@ export function makePreviewInstallments() {
     count: number,
     firstMonth: MonthKey,
   ): Either<AppError, InstallmentPreviewLine[]> => {
-    const amounts = buildInstallmentAmounts(total, count);
+    const totalAmount = normalizeAmount(total);
+    if (isLeft(totalAmount)) return totalAmount;
+    const amounts = buildInstallmentAmounts(totalAmount.right, count);
     if (isLeft(amounts)) return amounts;
     return right(
       amounts.right.map((amount, index) => ({
@@ -476,8 +486,10 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
   return async (
     input: NewInstallmentPlan,
   ): Promise<Either<AppError, InstallmentPlan>> => {
+    const totalAmount = normalizeAmount(input.totalAmount);
+    if (isLeft(totalAmount)) return totalAmount;
     const amounts = buildInstallmentAmounts(
-      input.totalAmount,
+      totalAmount.right,
       input.installmentCount,
     );
     if (isLeft(amounts)) return amounts;
@@ -506,7 +518,10 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
         return left(new MonthClosedError(closedTarget));
       }
 
-      const plan = await repositories.financeAutomations.createPlan(input);
+      const plan = await repositories.financeAutomations.createPlan({
+        ...input,
+        totalAmount: totalAmount.right,
+      });
       if (isLeft(plan)) return plan;
 
       const now = Date.now();

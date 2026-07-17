@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { container } from '../../app/container';
-import { fold, isLeft } from '../../domain/shared/either';
+import { fold } from '../../domain/shared/either';
 import type { FinanceDashboard } from '../../application/finance/dashboard.usecases';
 import type {
   EntryStatus,
@@ -12,14 +12,8 @@ export function useFinanceDashboard(month: MonthKey) {
   const toast = useToast();
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
   const [loading, setLoading] = useState(true);
-  const defaultsEnsured = useRef(false);
 
   const load = useCallback(async () => {
-    if (!defaultsEnsured.current) {
-      defaultsEnsured.current = true;
-      const ensured = await container.ensureFinanceDefaults();
-      if (isLeft(ensured)) toast(ensured.left.message, 'error');
-    }
     const result = await container.loadFinanceDashboard(month, Date.now());
     fold(
       result,

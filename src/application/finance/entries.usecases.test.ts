@@ -102,9 +102,9 @@ const setup = async () => {
     incomeCategory,
     input,
     listEntries: makeListEntries(entries),
-    listOverdueEntries: makeListOverdueEntries(entries, closings),
+    listOverdueEntries: makeListOverdueEntries(entries),
     createEntry: makeCreateEntry(entries, categories, closings),
-    updateEntry: makeUpdateEntry(entries, closings),
+    updateEntry: makeUpdateEntry(entries, categories, closings),
     deleteEntry: makeDeleteEntry(entries, closings),
     setEntryStatus: makeSetEntryStatus(entries),
   };
@@ -152,16 +152,6 @@ describe('makeListOverdueEntries', () => {
       closedMonthPending.uid,
       openMonthPending.uid,
     ]);
-  });
-
-  it('propaga falha ao consultar fechamentos', async () => {
-    const { closings, listOverdueEntries } = await setup();
-    const error = new ConnectorError('falha simulada');
-    closings.failNext(error);
-
-    expect(
-      unwrapLeft(await listOverdueEntries(dateForMonthDay('2026-07', 15))),
-    ).toBe(error);
   });
 
   it('propaga falha ao listar lançamentos', async () => {
@@ -294,7 +284,7 @@ describe('makeUpdateEntry', () => {
     expect(updated.createdAt).toBe(created.createdAt);
   });
 
-  it('mantém o kind original ao trocar de categoria', async () => {
+  it('recomputa o kind a partir da nova categoria', async () => {
     const { createEntry, updateEntry, input, incomeCategory } = await setup();
     const created = unwrap(await createEntry(input()));
 
@@ -306,7 +296,27 @@ describe('makeUpdateEntry', () => {
     );
 
     expect(updated.categoryUid).toBe(incomeCategory.uid);
-    expect(updated.kind).toBe('expense');
+    expect(updated.kind).toBe('income');
+  });
+
+  it('rejeita categoria inexistente', async () => {
+    const { createEntry, updateEntry, input } = await setup();
+    const created = unwrap(await createEntry(input()));
+
+    expect(
+      unwrapLeft(
+        await updateEntry(created.uid, input({ categoryUid: 'cat-missing' })),
+      ),
+    ).toBeInstanceOf(FinanceCategoryNotFoundError);
+  });
+
+  it('propaga falha ao listar categorias', async () => {
+    const { createEntry, updateEntry, input, categories } = await setup();
+    const created = unwrap(await createEntry(input()));
+    const error = new ConnectorError('falha simulada');
+    categories.failNext(error);
+
+    expect(unwrapLeft(await updateEntry(created.uid, input()))).toBe(error);
   });
 
   it('rejeita alteração de data em lançamento derivado', async () => {

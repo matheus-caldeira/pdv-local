@@ -74,9 +74,12 @@ export function buildInstallmentAmounts(
   if (!Number.isInteger(count) || count < 2) {
     return left(new InvalidInstallmentCountError());
   }
+  if (!Number.isFinite(total) || total <= 0) {
+    return left(new InvalidInstallmentCountError());
+  }
   const base = round2(total / count);
   const last = round2(total - base * (count - 1));
-  if (last <= 0) {
+  if (base <= 0 || last <= 0) {
     return left(new InvalidInstallmentCountError());
   }
   const amounts = Array.from({ length: count - 1 }, () => base);
@@ -138,6 +141,7 @@ export function virtualRecurrenceAmounts(
   recurrences: Recurrence[],
   launchedEntries: FinanceEntry[],
   month: MonthKey,
+  isMonthClosed = false,
 ): VirtualRecurrenceAmount[] {
   return recurrences.flatMap((rec) => {
     const alreadyLaunched = launchedEntries.some(
@@ -146,7 +150,12 @@ export function virtualRecurrenceAmounts(
         entry.sourceUid === rec.uid &&
         entry.month === month,
     );
-    const launchable = canLaunchRecurrence(rec, month, alreadyLaunched, false);
+    const launchable = canLaunchRecurrence(
+      rec,
+      month,
+      alreadyLaunched,
+      isMonthClosed,
+    );
     if (!isRight(launchable)) {
       return [];
     }
@@ -280,10 +289,11 @@ export interface ProjectionComputationInput {
   initialBalance: number;
   overdueEntries: FinanceEntry[];
   pendingByMonth: Map<MonthKey, FinanceEntry[]>;
-  paidCurrentMonth: FinanceEntry[];
+  paidByMonth: Map<MonthKey, FinanceEntry[]>;
   budgetByMonth: Map<MonthKey, ResolvedBudgetLine[]>;
   recurrences: Recurrence[];
   launchedBySourceMonth: FinanceEntry[];
+  closedMonths: MonthKey[];
 }
 
 interface KindTotals {
@@ -327,10 +337,9 @@ function paidByCategory(paid: FinanceEntry[]): Map<string, number> {
 function budgetSourceTotals(
   budgetLines: ResolvedBudgetLine[],
   paid: FinanceEntry[],
-  isCurrentMonth: boolean,
 ): KindTotals {
   const totals: KindTotals = { income: 0, expense: 0 };
-  const paidTotals = paidByCategory(isCurrentMonth ? paid : []);
+  const paidTotals = paidByCategory(paid);
   for (const line of budgetLines) {
     const remaining = Math.max(
       line.amount - (paidTotals.get(line.categoryUid) ?? 0),
@@ -397,28 +406,22 @@ export function projectBalance(
     const month = addMonths(input.currentMonth, i);
     const isCurrentMonth = i === 0;
     const pendings = input.pendingByMonth.get(month) ?? [];
+    const paid = input.paidByMonth.get(month) ?? [];
+    const isMonthClosed = isCurrentMonth && input.closedMonths.includes(month);
     const virtuals = virtualRecurrenceAmounts(
       input.recurrences,
       input.launchedBySourceMonth,
       month,
+      isMonthClosed,
     );
     const budgetLines = input.budgetByMonth.get(month) ?? [];
     let totals: KindTotals;
     if (input.source === 'entries') {
       totals = entriesSourceTotals(pendings, virtuals);
     } else if (input.source === 'budget') {
-      totals = budgetSourceTotals(
-        budgetLines,
-        input.paidCurrentMonth,
-        isCurrentMonth,
-      );
+      totals = budgetSourceTotals(budgetLines, paid);
     } else {
-      totals = bothSourceTotals(
-        budgetLines,
-        pendings,
-        virtuals,
-        isCurrentMonth ? input.paidCurrentMonth : [],
-      );
+      totals = bothSourceTotals(budgetLines, pendings, virtuals, paid);
     }
     if (isCurrentMonth) {
       for (const overdue of input.overdueEntries) {

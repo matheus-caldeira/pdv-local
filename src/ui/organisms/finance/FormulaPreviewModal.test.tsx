@@ -33,10 +33,19 @@ const CATEGORIES: FinanceCategory[] = [
     archived: false,
     createdAt: 1,
   },
+  {
+    id: 3,
+    uid: 'cat-old-pj',
+    name: 'PJ Antiga',
+    kind: 'income',
+    archived: true,
+    createdAt: 1,
+  },
 ];
 
 const MEMBERS: FamilyMember[] = [
   { id: 1, uid: 'member-1', name: 'Ana', archived: false, createdAt: 1 },
+  { id: 2, uid: 'member-2', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
 const FORMULA: FinanceFormula = {
@@ -85,10 +94,10 @@ const onPreview = vi.fn();
 const onGenerate = vi.fn();
 const onClose = vi.fn();
 
-function renderModal() {
+function renderModal(formula: FinanceFormula = FORMULA) {
   return render(
     <FormulaPreviewModal
-      formula={FORMULA}
+      formula={formula}
       categories={CATEGORIES}
       members={MEMBERS}
       currentMonth="2026-07"
@@ -283,6 +292,82 @@ describe('FormulaPreviewModal', () => {
     expect(
       screen.getByRole('checkbox', { name: 'Impostos' }),
     ).not.toBeChecked();
+  });
+
+  it('keeps the chosen target month when the filter changes', async () => {
+    renderModal();
+    await waitFor(() =>
+      expect(screen.getByText('Nota fiscal')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Mês de destino'),
+      '2026-09',
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ana' }));
+    await waitFor(() => expect(onPreview).toHaveBeenCalledTimes(2));
+    expect(screen.getByLabelText('Mês de destino')).toHaveValue('2026-09');
+  });
+
+  it('reapplies the default target month when the base month changes', async () => {
+    onPreview
+      .mockResolvedValueOnce(PREVIEW)
+      .mockResolvedValue({ ...PREVIEW, defaultTargetMonth: '2026-10' });
+    renderModal();
+    await waitFor(() =>
+      expect(screen.getByText('Nota fiscal')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Mês de destino'),
+      '2026-09',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Mês de destino')).toHaveValue('2026-10'),
+    );
+  });
+
+  it('disables generation when the generated amount is zero', async () => {
+    onPreview.mockResolvedValue({ ...PREVIEW, generatedAmount: 0 });
+    renderModal();
+    await waitFor(() =>
+      expect(screen.getByText('Nota fiscal')).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Gerar lançamento' }),
+    ).toBeDisabled();
+  });
+
+  it('hides archived filter options not referenced in the filter', async () => {
+    renderModal();
+    await waitFor(() =>
+      expect(screen.getByText('Nota fiscal')).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole('checkbox', { name: /PJ Antiga/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: /Carla/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows archived options referenced in the filter with a badge', async () => {
+    renderModal({
+      ...FORMULA,
+      filter: {
+        kind: 'income',
+        categoryUids: ['cat-old-pj'],
+        memberUids: ['member-2'],
+      },
+    });
+    await waitFor(() =>
+      expect(screen.getByText('Nota fiscal')).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole('checkbox', { name: 'PJ Antiga (arquivada)' }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole('checkbox', { name: 'Carla (arquivado)' }),
+    ).toBeChecked();
   });
 
   it('keeps loading when the preview fails', async () => {

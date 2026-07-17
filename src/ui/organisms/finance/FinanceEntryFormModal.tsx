@@ -122,7 +122,7 @@ export function FinanceEntryFormModal({
       amount: parseFloat(form.amount) || 0,
       categoryUid: form.categoryUid,
       memberUids: form.memberUids,
-      date: fromDateInputValue(form.date),
+      date: dateLocked ? entry!.date : fromDateInputValue(form.date),
       status: form.status,
     });
   }

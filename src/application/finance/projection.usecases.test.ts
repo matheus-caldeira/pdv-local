@@ -254,6 +254,51 @@ describe('makeLoadProjection', () => {
     });
   });
 
+  it('não conta em dobro parcela futura já paga na fonte budget', async () => {
+    const repos = makeRepos();
+    const category = unwrap(
+      await repos.categories.create({ name: 'Mercado', kind: 'expense' }),
+    );
+    await repos.budget.save({
+      categoryUid: category.uid,
+      month: null,
+      amount: 500,
+    });
+    await repos.entries.create(
+      makeEntry({
+        amount: 200,
+        month: '2026-08',
+        status: 'paid',
+        categoryUid: category.uid,
+      }),
+    );
+    const loadProjection = makeUseCase(repos);
+    const points = unwrap(
+      await loadProjection({ months: 2, source: 'budget', nowMs }),
+    );
+    expect(points[0]).toMatchObject({
+      month: '2026-07',
+      plannedExpense: 500,
+      balance: -700,
+    });
+    expect(points[1]).toMatchObject({
+      month: '2026-08',
+      plannedExpense: 300,
+      balance: -1000,
+    });
+  });
+
+  it('suprime recorrências virtuais quando o mês atual está fechado', async () => {
+    const repos = makeRepos();
+    await repos.closings.create(makeClosing('2026-07'));
+    await repos.automations.saveRecurrence(makeRecurrence({ amount: 80 }));
+    const loadProjection = makeUseCase(repos);
+    const points = unwrap(
+      await loadProjection({ months: 2, source: 'entries', nowMs }),
+    );
+    expect(points.map((point) => point.plannedExpense)).toEqual([0, 80]);
+  });
+
   it('não conta em dobro recorrência já lançada e projeta o virtual nos meses seguintes', async () => {
     const repos = makeRepos();
     const recurrence = unwrap(

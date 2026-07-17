@@ -11,6 +11,10 @@ import {
   KIND_OPTIONS,
   monthLabel,
 } from './FinanceAutomationsSupport';
+import {
+  selectableCategories,
+  selectableMembers,
+} from './FinanceArchivedSupport';
 import type {
   FamilyMember,
   FinanceCategory,
@@ -60,12 +64,27 @@ export function FormulaPreviewModal({
     onPreview({ formulaUid: formula.uid, baseMonth, filter }).then((result) => {
       if (cancelled) return;
       setPreview(result);
-      if (result) setTargetMonth(result.defaultTargetMonth);
+      if (result) {
+        setTargetMonth((previous) =>
+          previous === '' ? result.defaultTargetMonth : previous,
+        );
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [formula.uid, baseMonth, filter, onPreview]);
+
+  const visibleCategories = selectableCategories(
+    categories,
+    filter.categoryUids,
+  );
+  const visibleMembers = selectableMembers(members, filter.memberUids);
+
+  function changeBaseMonth(month: MonthKey) {
+    setBaseMonth(month);
+    setTargetMonth('');
+  }
 
   function changeFilterKind(kind: FinanceKind) {
     setFilter((prev) => ({
@@ -113,7 +132,7 @@ export function FormulaPreviewModal({
     <Modal open onClose={onClose} title={`Gerar ${formula.name}`}>
       <div className="grid grid-cols-1 gap-3">
         <FormField label="Mês-base">
-          <MonthPicker value={baseMonth} onChange={setBaseMonth} />
+          <MonthPicker value={baseMonth} onChange={changeBaseMonth} />
         </FormField>
         <FormField label="Tipo do filtro">
           <Select
@@ -132,19 +151,21 @@ export function FormulaPreviewModal({
             Categorias do filtro
           </legend>
           <div className="flex flex-wrap gap-3">
-            {categoryOptions(categories, filter.kind, '').map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center gap-1 text-sm text-ink-secondary"
-              >
-                <input
-                  type="checkbox"
-                  checked={filter.categoryUids.includes(option.value)}
-                  onChange={() => toggleFilterCategory(option.value)}
-                />
-                {option.label}
-              </label>
-            ))}
+            {categoryOptions(visibleCategories, filter.kind, '').map(
+              (option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-1 text-sm text-ink-secondary"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filter.categoryUids.includes(option.value)}
+                    onChange={() => toggleFilterCategory(option.value)}
+                  />
+                  {option.label}
+                </label>
+              ),
+            )}
           </div>
           <span className="text-xs text-ink-tertiary">
             Nenhuma selecionada = todas
@@ -155,7 +176,7 @@ export function FormulaPreviewModal({
             Membros do filtro
           </legend>
           <div className="flex flex-wrap gap-3">
-            {members.map((member) => (
+            {visibleMembers.map((member) => (
               <label
                 key={member.uid}
                 className="flex items-center gap-1 text-sm text-ink-secondary"
@@ -248,7 +269,10 @@ export function FormulaPreviewModal({
         <Button
           fullWidth
           disabled={
-            preview === null || preview.matches.length === 0 || targetClosed
+            preview === null ||
+            preview.matches.length === 0 ||
+            preview.generatedAmount <= 0 ||
+            targetClosed
           }
           onClick={handleGenerate}
         >

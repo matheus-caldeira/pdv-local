@@ -26,6 +26,19 @@ const CSV_ENTITIES: BackupEntity[] = [
   'financeClosings',
 ];
 
+const NO_NULLABLE_COLUMNS: ReadonlySet<string> = new Set();
+
+const NULLABLE_COLUMNS: Partial<Record<BackupEntity, ReadonlySet<string>>> = {
+  sessions: new Set(['closedAt', 'cashFinal']),
+  financeEntries: new Set([
+    'sourceUid',
+    'installmentNumber',
+    'formulaBaseMonth',
+  ]),
+  financeBudgetItems: new Set(['month']),
+  financeRecurrences: new Set(['endMonth']),
+};
+
 const SNAPSHOT_TABLES: (keyof BackupSnapshot)[] = [
   'products',
   'orders',
@@ -120,7 +133,7 @@ export class DexieBackupRepository implements BackupRepository {
     try {
       const text = await file.text();
       const items = file.name.endsWith('.csv')
-        ? parseCsv(text)
+        ? parseCsv(text, entity)
         : extractItems(JSON.parse(text), entity);
       const cleaned = items.map((item) => {
         const copy = { ...item };
@@ -272,7 +285,8 @@ function tokenizeCsv(text: string): CsvField[][] {
   return records;
 }
 
-function parseCsv(text: string): Row[] {
+function parseCsv(text: string, entity: BackupEntity): Row[] {
+  const nullableColumns = NULLABLE_COLUMNS[entity] ?? NO_NULLABLE_COLUMNS;
   const records = tokenizeCsv(text.replace(/\r\n/g, '\n').replace(/\n+$/, ''));
   if (records.length < 2) return [];
   const headers = records[0].map((field) => field.value.trim());
@@ -280,7 +294,11 @@ function parseCsv(text: string): Row[] {
     const row: Row = {};
     headers.forEach((header, index) => {
       const field = record[index];
-      row[header] = field ? decodeCell(field) : '';
+      const value = field ? decodeCell(field) : '';
+      row[header] =
+        value === '' && !field?.quoted && nullableColumns.has(header)
+          ? null
+          : value;
     });
     return row;
   });
@@ -295,6 +313,8 @@ function decodeCell(field: CsvField): unknown {
     }
   }
   const value = field.value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
   if (value !== '' && !Number.isNaN(Number(value))) return Number(value);
   return value;
 }

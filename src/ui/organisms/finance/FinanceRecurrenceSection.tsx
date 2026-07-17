@@ -13,6 +13,10 @@ import {
   KIND_OPTIONS,
   monthLabel,
 } from './FinanceAutomationsSupport';
+import {
+  selectableCategories,
+  selectableMembers,
+} from './FinanceArchivedSupport';
 import type {
   FamilyMember,
   FinanceCategory,
@@ -90,6 +94,9 @@ export function FinanceRecurrenceSection({
     setFormOpen(true);
   }
 
+  const visibleCategories = selectableCategories(categories, [categoryUid]);
+  const visibleMembers = selectableMembers(members, memberUids);
+
   function changeKind(next: FinanceKind) {
     setKind(next);
     setCategoryUid('');
@@ -117,6 +124,11 @@ export function FinanceRecurrenceSection({
       active,
     });
     if (ok) setFormOpen(false);
+  }
+
+  function handleDelete(recurrence: Recurrence) {
+    if (!window.confirm('Excluir esta recorrência?')) return;
+    onDelete(recurrence.uid);
   }
 
   return (
@@ -182,7 +194,7 @@ export function FinanceRecurrenceSection({
                 <IconButton
                   tone="danger"
                   aria-label={`Excluir recorrência ${recurrence.description}`}
-                  onClick={() => onDelete(recurrence.uid)}
+                  onClick={() => handleDelete(recurrence)}
                 >
                   <Trash2 size={14} />
                 </IconButton>
@@ -233,11 +245,13 @@ export function FinanceRecurrenceSection({
               onChange={(e) => setCategoryUid(e.target.value)}
             >
               <option value="">Selecione</option>
-              {categoryOptions(categories, kind, categoryUid).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {categoryOptions(visibleCategories, kind, categoryUid).map(
+                (option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ),
+              )}
             </Select>
           </FormField>
           <fieldset className="flex flex-col gap-1">
@@ -245,7 +259,7 @@ export function FinanceRecurrenceSection({
               Membros
             </legend>
             <div className="flex flex-wrap gap-3">
-              {members.map((member) => (
+              {visibleMembers.map((member) => (
                 <label
                   key={member.uid}
                   className="flex items-center gap-1 text-sm text-ink-secondary"
@@ -296,7 +310,7 @@ export function FinanceRecurrenceSection({
         <div className="mt-4">
           <Button
             fullWidth
-            disabled={categoryUid === ''}
+            disabled={categoryUid === '' || memberUids.length === 0}
             onClick={handleSubmit}
           >
             Salvar recorrência

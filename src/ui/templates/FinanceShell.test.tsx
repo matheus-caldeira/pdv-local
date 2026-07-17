@@ -1,8 +1,30 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { FinanceShell } from './FinanceShell';
+import { ToastProvider } from '../molecules/Toast';
+import { left, right } from '../../domain/shared/either';
+import { AppError } from '../../domain/shared/errors';
+
+const ensureFinanceDefaults = vi.fn();
+
+vi.mock('../../app/container', () => ({
+  container: {
+    ensureFinanceDefaults: () => ensureFinanceDefaults(),
+  },
+}));
+
+class FakeError extends AppError {
+  readonly code = 'FAKE';
+  readonly layer = 'application' as const;
+}
 
 const TAB_LABELS = [
   'Início',
@@ -23,21 +45,26 @@ function LocationProbe() {
 
 function renderShell(initialEntry: string) {
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route path="/finance" element={<FinanceShell />}>
-          <Route index element={<div>dashboard content</div>} />
-          <Route path="entries" element={<div>entries content</div>} />
-          <Route path="budget" element={<div>budget content</div>} />
-          <Route path="automations" element={<div>automations content</div>} />
-          <Route path="projection" element={<div>projection content</div>} />
-          <Route path="closings" element={<div>closings content</div>} />
-          <Route path="settings" element={<div>settings content</div>} />
-          <Route path="*" element={<div>unknown content</div>} />
-        </Route>
-      </Routes>
-      <LocationProbe />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/finance" element={<FinanceShell />}>
+            <Route index element={<div>dashboard content</div>} />
+            <Route path="entries" element={<div>entries content</div>} />
+            <Route path="budget" element={<div>budget content</div>} />
+            <Route
+              path="automations"
+              element={<div>automations content</div>}
+            />
+            <Route path="projection" element={<div>projection content</div>} />
+            <Route path="closings" element={<div>closings content</div>} />
+            <Route path="settings" element={<div>settings content</div>} />
+            <Route path="*" element={<div>unknown content</div>} />
+          </Route>
+        </Routes>
+        <LocationProbe />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -46,8 +73,28 @@ function monthPicker() {
 }
 
 describe('FinanceShell', () => {
+  beforeEach(() => {
+    ensureFinanceDefaults.mockReset();
+    ensureFinanceDefaults.mockResolvedValue(right(undefined));
+  });
   afterEach(() => {
     cleanup();
+  });
+
+  it('ensures the finance defaults once on mount', async () => {
+    renderShell('/finance');
+    await waitFor(() => expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1));
+    await userEvent.click(screen.getByRole('link', { name: 'Lançamentos' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Início' }));
+    expect(ensureFinanceDefaults).toHaveBeenCalledTimes(1);
+  });
+
+  it('toasts when ensuring the finance defaults fails', async () => {
+    ensureFinanceDefaults.mockResolvedValue(
+      left(new FakeError('falha nos padrões')),
+    );
+    renderShell('/finance');
+    expect(await screen.findByText('falha nos padrões')).toBeInTheDocument();
   });
 
   it('renders the seven tabs inside the finance navigation', () => {

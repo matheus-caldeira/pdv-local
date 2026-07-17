@@ -31,10 +31,27 @@ const CATEGORIES: FinanceCategory[] = [
     archived: false,
     createdAt: 1,
   },
+  {
+    id: 3,
+    uid: 'cat-old-pj',
+    name: 'PJ Antiga',
+    kind: 'income',
+    archived: true,
+    createdAt: 1,
+  },
+  {
+    id: 4,
+    uid: 'cat-old-tax',
+    name: 'Imposto Antigo',
+    kind: 'expense',
+    archived: true,
+    createdAt: 1,
+  },
 ];
 
 const MEMBERS: FamilyMember[] = [
   { id: 1, uid: 'member-1', name: 'Ana', archived: false, createdAt: 1 },
+  { id: 2, uid: 'member-2', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
 const FORMULA: FinanceFormula = {
@@ -79,7 +96,10 @@ describe('FinanceFormulaSection', () => {
     vi.clearAllMocks();
     onPreview.mockResolvedValue(null);
   });
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it('shows the empty state when there are no formulas', () => {
     renderSection();
@@ -103,13 +123,23 @@ describe('FinanceFormulaSection', () => {
     expect(screen.getByText('Saída: DARF')).toBeInTheDocument();
   });
 
-  it('deletes a formula', async () => {
+  it('deletes a formula after confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     onDelete.mockResolvedValue(true);
     renderSection([FORMULA]);
     await userEvent.click(
       screen.getByRole('button', { name: 'Excluir fórmula DARF PJ' }),
     );
     expect(onDelete).toHaveBeenCalledWith('formula-1');
+  });
+
+  it('does not delete a formula when the confirmation is dismissed', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderSection([FORMULA]);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Excluir fórmula DARF PJ' }),
+    );
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('creates a formula through the form', async () => {
@@ -257,6 +287,53 @@ describe('FinanceFormulaSection', () => {
         filter: expect.objectContaining({ categoryUids: [], memberUids: [] }),
       }),
     );
+  });
+
+  it('hides archived categories and members from the create form', async () => {
+    renderSection();
+    await userEvent.click(screen.getByRole('button', { name: 'Nova fórmula' }));
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).queryByRole('checkbox', { name: /PJ Antiga/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('checkbox', { name: /Carla/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('option', { name: /Imposto Antigo/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows archived options referenced by the formula in edit with a badge', async () => {
+    renderSection([
+      {
+        ...FORMULA,
+        filter: {
+          kind: 'income',
+          categoryUids: ['cat-old-pj'],
+          memberUids: ['member-2'],
+        },
+        outputCategoryUid: 'cat-old-tax',
+      },
+    ]);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar fórmula DARF PJ' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('checkbox', { name: 'PJ Antiga (arquivada)' }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole('checkbox', { name: 'Carla (arquivado)' }),
+    ).toBeChecked();
+    expect(within(dialog).getByLabelText('Categoria de saída')).toHaveValue(
+      'cat-old-tax',
+    );
+    expect(
+      within(dialog).getByRole('option', {
+        name: 'Imposto Antigo (arquivada)',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('opens and closes the generation preview modal', async () => {

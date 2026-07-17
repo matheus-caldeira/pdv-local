@@ -12,6 +12,10 @@ import {
   KIND_OPTIONS,
   monthLabel,
 } from './FinanceAutomationsSupport';
+import {
+  selectableCategories,
+  selectableMembers,
+} from './FinanceArchivedSupport';
 import type {
   FamilyMember,
   FinanceCategory,
@@ -60,6 +64,9 @@ export function FinanceInstallmentSection({
   const [deletingPlan, setDeletingPlan] = useState<InstallmentPlan | null>(
     null,
   );
+
+  const visibleCategories = selectableCategories(categories, [categoryUid]);
+  const visibleMembers = selectableMembers(members, memberUids);
 
   function openCreate() {
     setDescription('');
@@ -238,11 +245,13 @@ export function FinanceInstallmentSection({
               onChange={(e) => setCategoryUid(e.target.value)}
             >
               <option value="">Selecione</option>
-              {categoryOptions(categories, kind, categoryUid).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {categoryOptions(visibleCategories, kind, categoryUid).map(
+                (option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ),
+              )}
             </Select>
           </FormField>
           <fieldset className="flex flex-col gap-1">
@@ -250,7 +259,7 @@ export function FinanceInstallmentSection({
               Membros
             </legend>
             <div className="flex flex-wrap gap-3">
-              {members.map((member) => (
+              {visibleMembers.map((member) => (
                 <label
                   key={member.uid}
                   className="flex items-center gap-1 text-sm text-ink-secondary"
@@ -295,7 +304,7 @@ export function FinanceInstallmentSection({
           {previewLines !== null && (
             <Button
               fullWidth
-              disabled={categoryUid === ''}
+              disabled={categoryUid === '' || memberUids.length === 0}
               onClick={handleCreate}
             >
               Confirmar parcelamento

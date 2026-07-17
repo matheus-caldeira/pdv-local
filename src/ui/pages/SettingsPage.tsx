@@ -40,6 +40,14 @@ const ENTITIES: { key: BackupEntity; label: string }[] = [
   { key: 'orders', label: 'Pedidos' },
   { key: 'sessions', label: 'Sessões' },
   { key: 'cashMovements', label: 'Movimentações' },
+  { key: 'financeMembers', label: 'Membros da família' },
+  { key: 'financeCategories', label: 'Categorias financeiras' },
+  { key: 'financeEntries', label: 'Lançamentos' },
+  { key: 'financeBudgetItems', label: 'Itens de orçamento' },
+  { key: 'financeFormulas', label: 'Fórmulas' },
+  { key: 'financeRecurrences', label: 'Recorrências' },
+  { key: 'financeInstallmentPlans', label: 'Parcelamentos' },
+  { key: 'financeClosings', label: 'Fechamentos' },
 ];
 
 function toFormState(config: BusinessConfig): FormState {

@@ -64,12 +64,8 @@ export function useFinanceAutomations() {
           fold(formulasResult, showError, (value) => setFormulas(value));
           fold(recurrencesResult, showError, (value) => setRecurrences(value));
           fold(plansResult, showError, (value) => setPlans(value));
-          fold(categoriesResult, showError, (value) =>
-            setCategories(value.filter((category) => !category.archived)),
-          );
-          fold(membersResult, showError, (value) =>
-            setMembers(value.filter((member) => !member.archived)),
-          );
+          fold(categoriesResult, showError, (value) => setCategories(value));
+          fold(membersResult, showError, (value) => setMembers(value));
           setLoading(false);
         },
       ),

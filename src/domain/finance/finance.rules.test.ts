@@ -113,10 +113,11 @@ const projectionInput = (
   initialBalance: 0,
   overdueEntries: [],
   pendingByMonth: new Map(),
-  paidCurrentMonth: [],
+  paidByMonth: new Map(),
   budgetByMonth: new Map(),
   recurrences: [],
   launchedBySourceMonth: [],
+  closedMonths: [],
   ...over,
 });
 
@@ -288,6 +289,30 @@ describe('buildInstallmentAmounts', () => {
 
   it('rejects a non-integer count', () => {
     expect(isLeft(buildInstallmentAmounts(100, 2.5))).toBe(true);
+  });
+
+  it('rejects a non-finite total', () => {
+    const result = buildInstallmentAmounts(Number.POSITIVE_INFINITY, 3);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.left).toBeInstanceOf(InvalidInstallmentCountError);
+    }
+  });
+
+  it('rejects a total of zero', () => {
+    expect(isLeft(buildInstallmentAmounts(0, 3))).toBe(true);
+  });
+
+  it('rejects a negative total', () => {
+    expect(isLeft(buildInstallmentAmounts(-10, 3))).toBe(true);
+  });
+
+  it('rejects 0.04 in 10 installments because the base rounds to zero', () => {
+    const result = buildInstallmentAmounts(0.04, 10);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.left).toBeInstanceOf(InvalidInstallmentCountError);
+    }
   });
 });
 
@@ -471,6 +496,12 @@ describe('virtualRecurrenceAmounts', () => {
       recurrence({ uid: 'rec-ended', endMonth: '2026-05' }),
     ];
     expect(virtualRecurrenceAmounts(recurrences, [], '2026-07')).toEqual([]);
+  });
+
+  it('excludes every recurrence when the month is closed', () => {
+    expect(
+      virtualRecurrenceAmounts([recurrence()], [], '2026-07', true),
+    ).toEqual([]);
   });
 });
 
@@ -739,16 +770,21 @@ describe('projectBalance', () => {
           month: '2026-05',
         }),
       ],
-      paidCurrentMonth: [
-        entry({ uid: 'e-paid-1', amount: 200, status: 'paid' }),
-        entry({
-          uid: 'e-paid-2',
-          kind: 'income',
-          categoryUid: 'cat-b',
-          amount: 2500,
-          status: 'paid',
-        }),
-      ],
+      paidByMonth: new Map([
+        [
+          '2026-07',
+          [
+            entry({ uid: 'e-paid-1', amount: 200, status: 'paid' }),
+            entry({
+              uid: 'e-paid-2',
+              kind: 'income',
+              categoryUid: 'cat-b',
+              amount: 2500,
+              status: 'paid',
+            }),
+          ],
+        ],
+      ]),
       budgetByMonth: new Map([
         ['2026-07', budgetLines],
         ['2026-08', budgetLines],
@@ -787,6 +823,35 @@ describe('projectBalance', () => {
         balance: 2090,
       });
     });
+
+    it('subtracts a future installment already paid from that month budget', () => {
+      const points = projectBalance(
+        projectionInput({
+          months: 2,
+          source: 'budget',
+          paidByMonth: new Map([
+            [
+              '2026-08',
+              [
+                entry({
+                  uid: 'e-paid-future',
+                  amount: 200,
+                  month: '2026-08',
+                  status: 'paid',
+                }),
+              ],
+            ],
+          ]),
+          budgetByMonth: new Map([
+            ['2026-07', [budgetLine({ categoryUid: 'cat-a', amount: 500 })]],
+            ['2026-08', [budgetLine({ categoryUid: 'cat-a', amount: 500 })]],
+          ]),
+        }),
+      );
+      expect(points[0].plannedExpense).toBe(500);
+      expect(points[1].plannedExpense).toBe(300);
+      expect(points[1].balance).toBe(-800);
+    });
   });
 
   describe('both source', () => {
@@ -810,16 +875,21 @@ describe('projectBalance', () => {
         ],
         ['2026-08', [entry({ uid: 'e-3', amount: 600, month: '2026-08' })]],
       ]),
-      paidCurrentMonth: [
-        entry({ uid: 'e-paid-1', amount: 200, status: 'paid' }),
-        entry({
-          uid: 'e-paid-2',
-          kind: 'income',
-          categoryUid: 'cat-b',
-          amount: 2100,
-          status: 'paid',
-        }),
-      ],
+      paidByMonth: new Map([
+        [
+          '2026-07',
+          [
+            entry({ uid: 'e-paid-1', amount: 200, status: 'paid' }),
+            entry({
+              uid: 'e-paid-2',
+              kind: 'income',
+              categoryUid: 'cat-b',
+              amount: 2100,
+              status: 'paid',
+            }),
+          ],
+        ],
+      ]),
       budgetByMonth: new Map([
         ['2026-07', budgetLines],
         ['2026-08', budgetLines],
@@ -856,15 +926,62 @@ describe('projectBalance', () => {
           pendingByMonth: new Map([
             ['2026-07', [entry({ uid: 'e-1', amount: 400 })]],
           ]),
-          paidCurrentMonth: [
-            entry({ uid: 'e-paid', amount: 200, status: 'paid' }),
-          ],
+          paidByMonth: new Map([
+            [
+              '2026-07',
+              [entry({ uid: 'e-paid', amount: 200, status: 'paid' })],
+            ],
+          ]),
           budgetByMonth: new Map([
             ['2026-07', [budgetLine({ categoryUid: 'cat-a', amount: 500 })]],
           ]),
         }),
       );
       expect(points[0].plannedExpense).toBe(400);
+    });
+
+    it('subtracts a future installment already paid without double counting', () => {
+      const points = projectBalance(
+        projectionInput({
+          months: 2,
+          source: 'both',
+          pendingByMonth: new Map([
+            ['2026-08', [entry({ uid: 'e-1', amount: 100, month: '2026-08' })]],
+          ]),
+          paidByMonth: new Map([
+            [
+              '2026-08',
+              [
+                entry({
+                  uid: 'e-paid-future',
+                  amount: 200,
+                  month: '2026-08',
+                  status: 'paid',
+                }),
+              ],
+            ],
+          ]),
+          budgetByMonth: new Map([
+            ['2026-08', [budgetLine({ categoryUid: 'cat-a', amount: 500 })]],
+          ]),
+        }),
+      );
+      expect(points[1].plannedExpense).toBe(300);
+      expect(points[1].balance).toBe(-300);
+    });
+  });
+
+  describe('closed current month', () => {
+    it('suppresses virtual recurrences at point zero when the current month is closed', () => {
+      const points = projectBalance(
+        projectionInput({
+          months: 2,
+          recurrences: [recurrence()],
+          closedMonths: ['2026-07'],
+        }),
+      );
+      expect(points[0].plannedExpense).toBe(0);
+      expect(points[1].plannedExpense).toBe(80);
     });
   });
 });

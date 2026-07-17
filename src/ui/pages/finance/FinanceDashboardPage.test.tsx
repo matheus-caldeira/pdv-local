@@ -15,13 +15,11 @@ import { AppError } from '../../../domain/shared/errors';
 import type { FinanceDashboard } from '../../../application/finance/dashboard.usecases';
 import type { FinanceEntry } from '../../../domain/finance/finance.entity';
 
-const ensureFinanceDefaults = vi.fn();
 const loadFinanceDashboard = vi.fn();
 const setFinanceEntryStatus = vi.fn();
 
 vi.mock('../../../app/container', () => ({
   container: {
-    ensureFinanceDefaults: () => ensureFinanceDefaults(),
     loadFinanceDashboard: (month: string, nowMs: number) =>
       loadFinanceDashboard(month, nowMs),
     setFinanceEntryStatus: (uid: string, status: string) =>
@@ -68,7 +66,8 @@ const EMPTY_DASHBOARD: FinanceDashboard = {
     categories: [],
   },
   overdueEntries: [],
-  overdueTotal: 0,
+  overdueExpenseTotal: 0,
+  overdueIncomeTotal: 0,
   pendingThisMonth: [],
   memberInvolvement: [],
 };
@@ -100,7 +99,8 @@ const FULL_DASHBOARD: FinanceDashboard = {
       month: '2026-06',
     }),
   ],
-  overdueTotal: 200,
+  overdueExpenseTotal: 200,
+  overdueIncomeTotal: 0,
   pendingThisMonth: [
     entry({ uid: 'pending-1', description: 'Internet', amount: 120 }),
     entry({
@@ -130,10 +130,8 @@ function renderPage() {
 
 describe('FinanceDashboardPage', () => {
   beforeEach(() => {
-    ensureFinanceDefaults.mockReset();
     loadFinanceDashboard.mockReset();
     setFinanceEntryStatus.mockReset();
-    ensureFinanceDefaults.mockResolvedValue(right(undefined));
     loadFinanceDashboard.mockResolvedValue(right(FULL_DASHBOARD));
   });
   afterEach(cleanup);
@@ -207,9 +205,51 @@ describe('FinanceDashboardPage', () => {
     expect(within(pending).getByText('R$ 120,00')).toHaveClass('text-danger');
   });
 
+  it('shows the receivable line and colors overdue amounts by kind', async () => {
+    loadFinanceDashboard.mockResolvedValue(
+      right({
+        ...FULL_DASHBOARD,
+        overdueEntries: [
+          entry({
+            uid: 'overdue-1',
+            description: 'Luz atrasada',
+            amount: 200,
+            month: '2026-06',
+          }),
+          entry({
+            uid: 'overdue-2',
+            description: 'Freela atrasado',
+            amount: 900,
+            kind: 'income',
+            month: '2026-06',
+          }),
+        ],
+        overdueExpenseTotal: 200,
+        overdueIncomeTotal: 900,
+      }),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Início financeiro')).toBeInTheDocument(),
+    );
+    const overdue = screen.getByRole('region', { name: 'Contas atrasadas' });
+    expect(within(overdue).getByText('A receber')).toBeInTheDocument();
+    for (const amount of within(overdue).getAllByText('R$ 900,00')) {
+      expect(amount).toHaveClass('text-success');
+    }
+    for (const amount of within(overdue).getAllByText('R$ 200,00')) {
+      expect(amount).toHaveClass('text-danger');
+    }
+  });
+
   it('hides the overdue card when there are no overdue entries', async () => {
     loadFinanceDashboard.mockResolvedValue(
-      right({ ...FULL_DASHBOARD, overdueEntries: [], overdueTotal: 0 }),
+      right({
+        ...FULL_DASHBOARD,
+        overdueEntries: [],
+        overdueExpenseTotal: 0,
+        overdueIncomeTotal: 0,
+      }),
     );
     renderPage();
     await waitFor(() =>

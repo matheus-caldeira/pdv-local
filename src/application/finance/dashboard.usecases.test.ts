@@ -5,16 +5,11 @@ import {
   ConnectorError,
   type InfrastructureError,
 } from '../../infrastructure/errors';
-import type {
-  MonthKey,
-  NewFinanceEntry,
-  NewMonthClosing,
-} from '../../domain/finance/finance.entity';
+import type { NewFinanceEntry } from '../../domain/finance/finance.entity';
 import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.repository';
 import {
   FakeFinanceBudgetRepository,
   FakeFinanceCategoryRepository,
-  FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
   FakeFinanceMemberRepository,
 } from './fakes';
@@ -48,19 +43,6 @@ const makeEntry = (
   createdAt: 1,
   updatedAt: 1,
   ...overrides,
-});
-
-const makeClosing = (month: MonthKey): NewMonthClosing => ({
-  uid: createUid(),
-  month,
-  closedAt: 1,
-  plannedIncome: 0,
-  plannedExpense: 0,
-  plannedBalance: 0,
-  actualIncome: 0,
-  actualExpense: 0,
-  actualBalance: 0,
-  categories: [],
 });
 
 const entriesFailingAt = (
@@ -97,7 +79,6 @@ const makeRepos = () => ({
   budget: new FakeFinanceBudgetRepository(),
   categories: new FakeFinanceCategoryRepository(),
   members: new FakeFinanceMemberRepository(),
-  closings: new FakeFinanceClosingRepository(),
 });
 
 const makeUseCase = (repos: ReturnType<typeof makeRepos>) =>
@@ -106,7 +87,6 @@ const makeUseCase = (repos: ReturnType<typeof makeRepos>) =>
     repos.budget,
     repos.categories,
     repos.members,
-    repos.closings,
   );
 
 describe('makeLoadFinanceDashboard', () => {
@@ -126,7 +106,6 @@ describe('makeLoadFinanceDashboard', () => {
       month: null,
       amount: 400,
     });
-    await repos.closings.create(makeClosing('2026-06'));
     await repos.entries.create(
       makeEntry({
         kind: 'income',
@@ -189,7 +168,8 @@ describe('makeLoadFinanceDashboard', () => {
     expect(dashboard.overdueEntries.map((entry) => entry.amount)).toEqual([
       30, 20,
     ]);
-    expect(dashboard.overdueTotal).toBe(50);
+    expect(dashboard.overdueExpenseTotal).toBe(50);
+    expect(dashboard.overdueIncomeTotal).toBe(0);
     expect(dashboard.pendingThisMonth.map((entry) => entry.amount)).toEqual([
       50,
     ]);
@@ -229,7 +209,21 @@ describe('makeLoadFinanceDashboard', () => {
       { memberUid: ana.uid, name: 'Ana', total: 0, percent: 0 },
     ]);
     expect(dashboard.overdueEntries).toEqual([]);
-    expect(dashboard.overdueTotal).toBe(0);
+    expect(dashboard.overdueExpenseTotal).toBe(0);
+    expect(dashboard.overdueIncomeTotal).toBe(0);
+  });
+
+  it('separa os totais de atrasadas por tipo', async () => {
+    const repos = makeRepos();
+    await repos.entries.create(makeEntry({ amount: 10.006, month: '2026-06' }));
+    await repos.entries.create(makeEntry({ amount: 10.007, month: '2026-05' }));
+    await repos.entries.create(
+      makeEntry({ kind: 'income', amount: 45.5, month: '2026-06' }),
+    );
+    const loadDashboard = makeUseCase(repos);
+    const dashboard = unwrap(await loadDashboard('2026-07', nowMs));
+    expect(dashboard.overdueExpenseTotal).toBe(20.01);
+    expect(dashboard.overdueIncomeTotal).toBe(45.5);
   });
 
   it('calcula atrasadas pelo mês corrente do relógio, não pelo mês exibido', async () => {
@@ -254,7 +248,6 @@ describe('makeLoadFinanceDashboard', () => {
       repos.budget,
       repos.categories,
       repos.members,
-      repos.closings,
     ]) {
       const error = new ConnectorError('falha simulada');
       repo.failNext(error);
@@ -271,7 +264,6 @@ describe('makeLoadFinanceDashboard', () => {
         repos.budget,
         repos.categories,
         repos.members,
-        repos.closings,
       );
       expect(unwrapLeft(await loadDashboard('2026-07', nowMs))).toBe(error);
     }

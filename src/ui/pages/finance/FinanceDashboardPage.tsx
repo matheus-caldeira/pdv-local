@@ -75,7 +75,8 @@ export function FinanceDashboardPage() {
       />
       <FinanceOverdueCard
         entries={dashboard.overdueEntries}
-        total={dashboard.overdueTotal}
+        expenseTotal={dashboard.overdueExpenseTotal}
+        incomeTotal={dashboard.overdueIncomeTotal}
         onMarkPaid={(uid) => setEntryStatus(uid, 'paid')}
       />
       <section

@@ -32,11 +32,20 @@ const CATEGORIES: FinanceCategory[] = [
     archived: false,
     createdAt: 1,
   },
+  {
+    id: 3,
+    uid: 'cat-old',
+    name: 'Antiga',
+    kind: 'expense',
+    archived: true,
+    createdAt: 1,
+  },
 ];
 
 const MEMBERS: FamilyMember[] = [
   { id: 1, uid: 'member-1', name: 'Ana', archived: false, createdAt: 1 },
   { id: 2, uid: 'member-2', name: 'Bruno', archived: false, createdAt: 1 },
+  { id: 3, uid: 'member-3', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
 const PLAN: InstallmentPlan = {
@@ -218,6 +227,9 @@ describe('FinanceInstallmentSection', () => {
       'cat-home',
     );
     await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    await userEvent.click(
       within(dialog).getByRole('button', { name: 'Ver prévia' }),
     );
     await userEvent.click(
@@ -235,6 +247,9 @@ describe('FinanceInstallmentSection', () => {
     await userEvent.selectOptions(
       within(dialog).getByLabelText('Categoria'),
       'cat-home',
+    );
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
     );
     onCreate.mockResolvedValue(true);
     await userEvent.click(
@@ -307,11 +322,46 @@ describe('FinanceInstallmentSection', () => {
     renderSection();
     const dialog = await openForm();
     await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    await userEvent.click(
       within(dialog).getByRole('button', { name: 'Ver prévia' }),
     );
     expect(
       within(dialog).getByRole('button', { name: 'Confirmar parcelamento' }),
     ).toBeDisabled();
+  });
+
+  it('disables the confirmation while no member is checked', async () => {
+    renderSection();
+    const dialog = await openForm();
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Categoria'),
+      'cat-home',
+    );
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Ver prévia' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Confirmar parcelamento' }),
+    ).toBeDisabled();
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Ana' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Confirmar parcelamento' }),
+    ).toBeEnabled();
+  });
+
+  it('hides archived categories and members from the form', async () => {
+    renderSection();
+    const dialog = await openForm();
+    expect(
+      within(dialog).queryByRole('option', { name: /Antiga/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('checkbox', { name: /Carla/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('resets the category when the kind changes and toggles members off', async () => {

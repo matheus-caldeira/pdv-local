@@ -517,6 +517,22 @@ describe('makeGenerateFormulaEntry', () => {
     expect(generated.createdAt).toBe(generated.updatedAt);
   });
 
+  it('rejeita quando o valor gerado arredonda para zero', async () => {
+    const { entries, saveFormula, generateFormulaEntry } = setup();
+    const formula = unwrap(await saveFormula(formulaInput({ percent: 10 })));
+    await entries.create(
+      makeStoredEntry({ month: '2026-07', kind: 'income', amount: 0.01 }),
+    );
+    await entries.create(
+      makeStoredEntry({ month: '2026-07', kind: 'income', amount: 0.01 }),
+    );
+
+    expect(
+      unwrapLeft(await generateFormulaEntry(generateInput(formula.uid))),
+    ).toBeInstanceOf(InvalidFinanceAmountError);
+    expect(unwrap(await entries.list({ month: '2026-08' }))).toEqual([]);
+  });
+
   it('rejeita quando nenhum lançamento casa com o filtro', async () => {
     const { entries, saveFormula, generateFormulaEntry } = setup();
     const formula = unwrap(await saveFormula(formulaInput()));
@@ -652,6 +668,14 @@ describe('makeSaveRecurrence', () => {
     expect(
       unwrapLeft(await saveRecurrence(recurrenceInput({ amount: 0 }))),
     ).toBeInstanceOf(InvalidFinanceAmountError);
+  });
+
+  it('rejeita seleção vazia de membros', async () => {
+    const { saveRecurrence } = setup();
+
+    expect(
+      unwrapLeft(await saveRecurrence(recurrenceInput({ memberUids: [] }))),
+    ).toBeInstanceOf(EmptyMemberSelectionError);
   });
 
   it('rejeita dayOfMonth menor que 1', async () => {
@@ -1016,6 +1040,25 @@ describe('makePreviewInstallments', () => {
     ]);
   });
 
+  it('normaliza o total antes de montar a prévia', () => {
+    const { previewInstallments } = setup();
+
+    const result = unwrap(previewInstallments(10.999, 2, '2026-07'));
+
+    expect(result).toEqual([
+      { month: '2026-07', amount: 5.5 },
+      { month: '2026-08', amount: 5.5 },
+    ]);
+  });
+
+  it('rejeita total inválido', () => {
+    const { previewInstallments } = setup();
+
+    expect(unwrapLeft(previewInstallments(0, 3, '2026-07'))).toBeInstanceOf(
+      InvalidFinanceAmountError,
+    );
+  });
+
   it('propaga parcelas inválidas', () => {
     const { previewInstallments } = setup();
 
@@ -1057,6 +1100,35 @@ describe('makeCreateInstallmentPlan', () => {
     expect(created[0].memberUids).toEqual(['member-me']);
     expect(created[0].sourceEntryUids).toEqual([]);
     expect(created[0].formulaBaseMonth).toBeNull();
+  });
+
+  it('normaliza o total e persiste o valor arredondado no plano', async () => {
+    const { entries, createInstallmentPlan, listPlans } = setup();
+
+    const plan = unwrap(
+      await createInstallmentPlan(
+        planInput({ totalAmount: 10.999, installmentCount: 2 }),
+      ),
+    );
+
+    expect(plan.totalAmount).toBe(11);
+    expect(unwrap(await listPlans())[0].totalAmount).toBe(11);
+    const created = unwrap(
+      await entries.list({ source: 'installment', sourceUid: plan.uid }),
+    );
+    expect(created.map((entry) => entry.amount)).toEqual([5.5, 5.5]);
+    expect(created.reduce((sum, entry) => sum + entry.amount, 0)).toBe(
+      plan.totalAmount,
+    );
+  });
+
+  it('rejeita total inválido', async () => {
+    const { createInstallmentPlan, listPlans } = setup();
+
+    expect(
+      unwrapLeft(await createInstallmentPlan(planInput({ totalAmount: 0 }))),
+    ).toBeInstanceOf(InvalidFinanceAmountError);
+    expect(unwrap(await listPlans())).toEqual([]);
   });
 
   it('rejeita parcelas que zeram a última', async () => {

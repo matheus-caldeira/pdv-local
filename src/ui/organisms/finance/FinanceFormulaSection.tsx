@@ -8,6 +8,10 @@ import { Select } from '../../molecules/Select';
 import { TextField } from '../../molecules/TextField';
 import { FormulaPreviewModal } from './FormulaPreviewModal';
 import { categoryOptions, KIND_OPTIONS } from './FinanceAutomationsSupport';
+import {
+  selectableCategories,
+  selectableMembers,
+} from './FinanceArchivedSupport';
 import type {
   FamilyMember,
   FinanceCategory,
@@ -81,6 +85,15 @@ export function FinanceFormulaSection({
     setFormOpen(true);
   }
 
+  const visibleFilterCategories = selectableCategories(
+    categories,
+    filterCategoryUids,
+  );
+  const visibleOutputCategories = selectableCategories(categories, [
+    outputCategoryUid,
+  ]);
+  const visibleMembers = selectableMembers(members, filterMemberUids);
+
   function changeFilterKind(kind: FinanceKind) {
     setFilterKind(kind);
     setFilterCategoryUids([]);
@@ -122,6 +135,11 @@ export function FinanceFormulaSection({
       outputDescription,
     });
     if (ok) setFormOpen(false);
+  }
+
+  function handleDelete(formula: FinanceFormula) {
+    if (!window.confirm('Excluir esta fórmula?')) return;
+    onDelete(formula.uid);
   }
 
   return (
@@ -172,7 +190,7 @@ export function FinanceFormulaSection({
                 <IconButton
                   tone="danger"
                   aria-label={`Excluir fórmula ${formula.name}`}
-                  onClick={() => onDelete(formula.uid)}
+                  onClick={() => handleDelete(formula)}
                 >
                   <Trash2 size={14} />
                 </IconButton>
@@ -222,19 +240,21 @@ export function FinanceFormulaSection({
               Categorias do filtro
             </legend>
             <div className="flex flex-wrap gap-3">
-              {categoryOptions(categories, filterKind, '').map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-center gap-1 text-sm text-ink-secondary"
-                >
-                  <input
-                    type="checkbox"
-                    checked={filterCategoryUids.includes(option.value)}
-                    onChange={() => toggleFilterCategory(option.value)}
-                  />
-                  {option.label}
-                </label>
-              ))}
+              {categoryOptions(visibleFilterCategories, filterKind, '').map(
+                (option) => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-1 text-sm text-ink-secondary"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filterCategoryUids.includes(option.value)}
+                      onChange={() => toggleFilterCategory(option.value)}
+                    />
+                    {option.label}
+                  </label>
+                ),
+              )}
             </div>
             <span className="text-xs text-ink-tertiary">
               Nenhuma selecionada = todas
@@ -245,7 +265,7 @@ export function FinanceFormulaSection({
               Membros do filtro
             </legend>
             <div className="flex flex-wrap gap-3">
-              {members.map((member) => (
+              {visibleMembers.map((member) => (
                 <label
                   key={member.uid}
                   className="flex items-center gap-1 text-sm text-ink-secondary"
@@ -281,13 +301,15 @@ export function FinanceFormulaSection({
               onChange={(e) => setOutputCategoryUid(e.target.value)}
             >
               <option value="">Selecione</option>
-              {categoryOptions(categories, outputKind, outputCategoryUid).map(
-                (option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ),
-              )}
+              {categoryOptions(
+                visibleOutputCategories,
+                outputKind,
+                outputCategoryUid,
+              ).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </FormField>
           <FormField label="Descrição de saída">

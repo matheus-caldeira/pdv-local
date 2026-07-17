@@ -1,5 +1,9 @@
+import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { container } from '../../app/container';
+import { isLeft } from '../../domain/shared/either';
 import { MonthPicker } from '../molecules/MonthPicker';
+import { useToast } from '../molecules/toast-context';
 import { useFinanceMonth } from '../hooks/useFinanceMonth';
 
 interface FinanceTab {
@@ -28,8 +32,15 @@ const tabLinkClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ');
 
 export function FinanceShell() {
+  const toast = useToast();
   const location = useLocation();
   const { month, setMonth } = useFinanceMonth();
+
+  useEffect(() => {
+    container.ensureFinanceDefaults().then((result) => {
+      if (isLeft(result)) toast(result.left.message, 'error');
+    });
+  }, [toast]);
 
   const activeTab = FINANCE_TABS.find((tab) =>
     tab.end

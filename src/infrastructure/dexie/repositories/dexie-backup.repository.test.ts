@@ -273,6 +273,69 @@ describe('DexieBackupRepository — tabelas finance', () => {
     expect(stored[0].amount).toBe(120.5);
   });
 
+  it('reimporta um CSV de itens de orçamento preservando month nulo', async () => {
+    await db.financeBudgetItems.add(budgetItem('bud-1'));
+    await repo.exportEntity('financeBudgetItems', 'csv');
+    const content = saver.saved[0].content;
+    await db.financeBudgetItems.clear();
+    const result = await repo.importEntity(
+      'financeBudgetItems',
+      new File([content], 'pdv-financeBudgetItems.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toBe(1);
+    const stored = await db.financeBudgetItems.toArray();
+    expect(stored[0].month).toBeNull();
+    expect(stored[0].amount).toBe(400);
+  });
+
+  it('reimporta um CSV de membros preservando archived booleano', async () => {
+    await db.financeMembers.add(familyMember('mem-1'));
+    await repo.exportEntity('financeMembers', 'csv');
+    const content = saver.saved[0].content;
+    await db.financeMembers.clear();
+    const result = await repo.importEntity(
+      'financeMembers',
+      new File([content], 'pdv-financeMembers.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    const stored = await db.financeMembers.toArray();
+    expect(stored[0].archived).toBe(false);
+  });
+
+  it('reimporta um CSV de recorrências preservando endMonth nulo e active booleano', async () => {
+    await db.financeRecurrences.add(recurrence('rec-1'));
+    await repo.exportEntity('financeRecurrences', 'csv');
+    const content = saver.saved[0].content;
+    await db.financeRecurrences.clear();
+    const result = await repo.importEntity(
+      'financeRecurrences',
+      new File([content], 'pdv-financeRecurrences.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    const stored = await db.financeRecurrences.toArray();
+    expect(stored[0].endMonth).toBeNull();
+    expect(stored[0].active).toBe(true);
+    expect(stored[0].startMonth).toBe('2026-01');
+  });
+
+  it('reimporta um CSV de lançamentos preservando campos de origem nulos', async () => {
+    await db.financeEntries.add(financeEntry('ent-1'));
+    await repo.exportEntity('financeEntries', 'csv');
+    const content = saver.saved[0].content;
+    await db.financeEntries.clear();
+    const result = await repo.importEntity(
+      'financeEntries',
+      new File([content], 'pdv-financeEntries.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    const stored = await db.financeEntries.toArray();
+    expect(stored[0].sourceUid).toBeNull();
+    expect(stored[0].installmentNumber).toBeNull();
+    expect(stored[0].formulaBaseMonth).toBeNull();
+  });
+
   it('importDemo substitui os dados do PDV preservando as tabelas finance', async () => {
     await db.products.add(product('pro-1', 'Antigo'));
     await db.customers.add({

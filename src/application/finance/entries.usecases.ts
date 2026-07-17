@@ -10,6 +10,7 @@ import {
 } from '../../domain/errors';
 import type {
   EntryStatus,
+  FinanceCategory,
   FinanceEntry,
   MonthKey,
 } from '../../domain/finance/finance.entity';
@@ -53,25 +54,31 @@ const ensureMonthOpen = async (
   return right(undefined);
 };
 
+const findCategory = async (
+  categories: FinanceCategoryRepository,
+  categoryUid: string,
+): Promise<Either<AppError, FinanceCategory>> => {
+  const allCategories = await categories.list();
+  if (isLeft(allCategories)) return allCategories;
+  const category = allCategories.right.find(
+    (candidate) => candidate.uid === categoryUid,
+  );
+  if (!category) return left(new FinanceCategoryNotFoundError());
+  return right(category);
+};
+
 export function makeListEntries(entries: FinanceEntryRepository) {
   return async (
     filter: FinanceEntryFilter,
   ): Promise<Either<AppError, FinanceEntry[]>> => entries.list(filter);
 }
 
-export function makeListOverdueEntries(
-  entries: FinanceEntryRepository,
-  closings: FinanceClosingRepository,
-) {
-  return async (nowMs: number): Promise<Either<AppError, FinanceEntry[]>> => {
-    const closedMonths = await closings.listClosedMonths();
-    if (isLeft(closedMonths)) return closedMonths;
-
-    return entries.list({
+export function makeListOverdueEntries(entries: FinanceEntryRepository) {
+  return async (nowMs: number): Promise<Either<AppError, FinanceEntry[]>> =>
+    entries.list({
       status: 'pending',
       monthBefore: currentMonthKey(nowMs),
     });
-  };
 }
 
 export function makeCreateEntry(
@@ -83,13 +90,8 @@ export function makeCreateEntry(
     const amount = validateInput(input);
     if (isLeft(amount)) return amount;
 
-    const allCategories = await categories.list();
-    if (isLeft(allCategories)) return allCategories;
-
-    const category = allCategories.right.find(
-      (candidate) => candidate.uid === input.categoryUid,
-    );
-    if (!category) return left(new FinanceCategoryNotFoundError());
+    const category = await findCategory(categories, input.categoryUid);
+    if (isLeft(category)) return category;
 
     const month = monthKeyFromDate(input.date);
     const open = await ensureMonthOpen(closings, month);
@@ -100,7 +102,7 @@ export function makeCreateEntry(
       uid: createUid(),
       description: input.description.trim(),
       amount: amount.right,
-      kind: category.kind,
+      kind: category.right.kind,
       categoryUid: input.categoryUid,
       memberUids: [...input.memberUids],
       date: input.date,
@@ -119,6 +121,7 @@ export function makeCreateEntry(
 
 export function makeUpdateEntry(
   entries: FinanceEntryRepository,
+  categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
 ) {
   return async (
@@ -139,6 +142,9 @@ export function makeUpdateEntry(
     const amount = validateInput(input);
     if (isLeft(amount)) return amount;
 
+    const category = await findCategory(categories, input.categoryUid);
+    if (isLeft(category)) return category;
+
     const storedOpen = await ensureMonthOpen(closings, existing.right.month);
     if (isLeft(storedOpen)) return storedOpen;
 
@@ -149,6 +155,7 @@ export function makeUpdateEntry(
     return entries.update(uid, {
       description: input.description.trim(),
       amount: amount.right,
+      kind: category.right.kind,
       categoryUid: input.categoryUid,
       memberUids: [...input.memberUids],
       date: input.date,

@@ -276,6 +276,32 @@ describe('DexieBackupRepository', () => {
     expect(stored[0].customerName).toBe('Zé');
   });
 
+  it('round-trips an open session preserving null fields and empty notes', async () => {
+    await db.sessions.add({
+      uid: 'session-1',
+      openedAt: 10,
+      closedAt: null,
+      cashInitial: 100,
+      cashFinal: null,
+      notes: '',
+    });
+    const saver = new FakeFileSaver();
+    const repo = new DexieBackupRepository(db, saver);
+    await repo.exportEntity('sessions', 'csv');
+    const csv = saver.files[0].content;
+    await db.sessions.clear();
+    const result = await repo.importEntity(
+      'sessions',
+      new File([csv], 'pdv-sessions.csv'),
+    );
+    expect(isRight(result) && result.right).toBe(1);
+    const stored = await db.sessions.toArray();
+    expect(stored[0].closedAt).toBeNull();
+    expect(stored[0].cashFinal).toBeNull();
+    expect(stored[0].cashInitial).toBe(100);
+    expect(stored[0].notes).toBe('');
+  });
+
   it('wipes every table', async () => {
     await db.products.add(product());
     await db.orders.add({ sessionId: 1 } as never);
