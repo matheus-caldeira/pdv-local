@@ -91,6 +91,20 @@ describe('OnboardingPage', () => {
     });
   });
 
+  it('returns to the module choices from the business type step', async () => {
+    renderPage();
+    await userEvent.click(
+      screen.getByRole('button', { name: /Ponto de Venda/ }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Qual é o seu tipo de negócio?' }),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(
+      screen.getByRole('heading', { name: 'O que você quer usar?' }),
+    ).toBeInTheDocument();
+  });
+
   it('toasts when completing fails and does not refresh', async () => {
     completeFirstRun.mockResolvedValue(left(new LastModuleDisabledError()));
     renderPage();

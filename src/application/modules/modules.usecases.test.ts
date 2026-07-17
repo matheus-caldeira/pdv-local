@@ -207,6 +207,14 @@ describe('makeSaveEnabledModules', () => {
     ]);
     expect(isLeft(result) && result.left.code).toBe('modules/unknown-module');
   });
+
+  it('propagates a config save failure', async () => {
+    const failingSave: Pick<ConfigRepository, 'save'> = {
+      save: async () => left(new ConnectorError('falhou')),
+    };
+    const result = await makeSaveEnabledModules(failingSave)(['pdv']);
+    expect(isLeft(result)).toBe(true);
+  });
 });
 
 describe('makeCompleteFirstRun', () => {
@@ -254,5 +262,15 @@ describe('makeCompleteFirstRun', () => {
     expect(isLeft(result) && result.left.code).toBe(
       'modules/last-module-disabled',
     );
+  });
+
+  it('propagates a config save failure', async () => {
+    const failingSave: Pick<ConfigRepository, 'save'> = {
+      save: async () => left(new ConnectorError('falhou')),
+    };
+    const result = await makeCompleteFirstRun(failingSave)({
+      modules: ['finance'],
+    });
+    expect(isLeft(result)).toBe(true);
   });
 });

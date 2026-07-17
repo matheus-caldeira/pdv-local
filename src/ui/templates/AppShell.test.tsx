@@ -111,6 +111,90 @@ describe('AppShell sidebar', () => {
     } as Session);
     expect(screen.getAllByText(/08:30/).length).toBeGreaterThan(0);
   });
+
+  it('navigates from the sidebar home link', async () => {
+    renderShell(bothModel, '/finance');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+    await userEvent.click(
+      within(sidebar).getByRole('link', { name: 'Início' }),
+    );
+    expect(screen.getByText('page content')).toBeInTheDocument();
+  });
+
+  it('opens the contact modal from the sidebar footer', async () => {
+    renderShell(bothModel, '/');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Sobre e contato' }),
+    );
+    expect(
+      screen.getByRole('dialog', { name: /sobre|contato/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('re-expands the group synced to a new active route', () => {
+    const activeGroupId = resolveActiveGroupId('/finance', bothModel);
+    const bar = bothModel.groups.find((g) => g.id === activeGroupId)?.bar ?? [];
+    const { rerender } = render(
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/finance']}>
+          <Routes>
+            <Route
+              element={
+                <AppShell
+                  model={bothModel}
+                  activeGroupId={activeGroupId}
+                  bottomBar={bar}
+                  activeSession={null}
+                />
+              }
+            >
+              <Route path="*" element={<div>page content</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>,
+    );
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+    expect(
+      within(sidebar).getByRole('button', { name: 'Financeiro' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+
+    const nextGroupId = resolveActiveGroupId('/settings', bothModel);
+    const nextBar =
+      bothModel.groups.find((g) => g.id === nextGroupId)?.bar ?? [];
+    rerender(
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/finance']}>
+          <Routes>
+            <Route
+              element={
+                <AppShell
+                  model={bothModel}
+                  activeGroupId={nextGroupId}
+                  bottomBar={nextBar}
+                  activeSession={null}
+                />
+              }
+            >
+              <Route path="*" element={<div>page content</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>,
+    );
+    expect(
+      within(sidebar).getByRole('button', { name: 'Configurações' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      within(sidebar).getByRole('button', { name: 'Financeiro' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('ignores the drawer-close microtask after unmount', () => {
+    const { unmount } = renderShell(bothModel, '/');
+    unmount();
+  });
 });
 
 describe('AppShell bottom bar', () => {
@@ -190,5 +274,44 @@ describe('AppShell modules drawer', () => {
     expect(
       screen.getByRole('dialog', { name: /sobre|contato/i }),
     ).toBeInTheDocument();
+  });
+
+  it('closes the contact modal on escape', async () => {
+    renderShell(bothModel, '/settings');
+    await userEvent.click(screen.getByRole('button', { name: 'Módulos' }));
+    const drawer = screen.getByRole('dialog', { name: 'Módulos' });
+    await userEvent.click(
+      within(drawer).getByRole('button', { name: 'Sobre e contato' }),
+    );
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: /sobre|contato/i })).toBeNull();
+  });
+
+  it('closes the drawer by clicking the backdrop', async () => {
+    renderShell(bothModel, '/');
+    await userEvent.click(screen.getByRole('button', { name: 'Módulos' }));
+    expect(screen.getByRole('dialog', { name: 'Módulos' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('presentation'));
+    expect(screen.queryByRole('dialog', { name: 'Módulos' })).toBeNull();
+  });
+
+  it('closes the drawer with the close button', async () => {
+    renderShell(bothModel, '/');
+    await userEvent.click(screen.getByRole('button', { name: 'Módulos' }));
+    const drawer = screen.getByRole('dialog', { name: 'Módulos' });
+    await userEvent.click(
+      within(drawer).getByRole('button', { name: 'Fechar menu' }),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Módulos' })).toBeNull();
+  });
+
+  it('shows the open session hint inside the drawer', async () => {
+    renderShell(bothModel, '/', {
+      uid: 's1',
+      openedAt: new Date('2026-07-17T08:30:00').getTime(),
+    } as Session);
+    await userEvent.click(screen.getByRole('button', { name: 'Módulos' }));
+    const drawer = screen.getByRole('dialog', { name: 'Módulos' });
+    expect(within(drawer).getByText(/08:30/)).toBeInTheDocument();
   });
 });
