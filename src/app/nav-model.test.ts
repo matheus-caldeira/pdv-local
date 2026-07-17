@@ -132,6 +132,12 @@ describe('resolveActiveGroupId', () => {
     expect(resolveActiveGroupId('/unknown', both)).toBe('pdv');
   });
 
+  it('prefers the longest matching prefix across groups', () => {
+    expect(resolveActiveGroupId('/finance/settings/extra', both)).toBe(
+      'settings',
+    );
+  });
+
   it('resolves the root to the first group when there is no home', () => {
     const finance = buildNavModel(['finance'], false);
     expect(resolveActiveGroupId('/', finance)).toBe('finance');

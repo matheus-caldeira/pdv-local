@@ -13,8 +13,9 @@ export function AppShellRoute() {
 
   const model = buildNavModel(modules, statusControl);
   const activeGroupId = resolveActiveGroupId(location.pathname, model);
-  const bottomBar =
-    model.groups.find((group) => group.id === activeGroupId)?.bar ?? [];
+  const bottomBar = model.groups.find(
+    (group) => group.id === activeGroupId,
+  )!.bar;
 
   return (
     <AppShell

@@ -108,4 +108,19 @@ describe('ModulesProvider', () => {
     expect(() => render(<Probe />)).toThrow();
     spy.mockRestore();
   });
+
+  it('ignores the resolution when unmounted before it settles', async () => {
+    let resolvePromise: (value: ReturnType<typeof right>) => void;
+    resolveModulesState.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePromise = resolve;
+        }),
+    );
+    const { unmount } = renderProvider();
+    unmount();
+    await act(async () => {
+      resolvePromise(right({ modules: ['pdv'], needsFirstRun: false }));
+    });
+  });
 });
