@@ -142,6 +142,15 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'app-react',
+          environment: 'jsdom',
+          setupFiles: ['./src/test/setup.ui.ts'],
+          include: ['src/app/**/*.test.tsx'],
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'ui',
           environment: 'jsdom',
           setupFiles: ['./src/test/setup.ui.ts'],
