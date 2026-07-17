@@ -125,6 +125,7 @@ describe('DashboardPage', () => {
     navigate.mockReset();
     loadDashboard.mockResolvedValue(right(DATA));
     sessionState = { activeSession: null, loading: false };
+    modules = ['pdv'];
   });
   afterEach(cleanup);
 
@@ -210,6 +211,24 @@ describe('DashboardPage', () => {
     it('não mostra o atalho quando só o pdv está ativo', async () => {
       modules = ['pdv'];
       sessionState = { activeSession: ACTIVE_SESSION, loading: false };
+      renderPage();
+      expect(
+        screen.queryByRole('link', { name: /Ir para o Financeiro/ }),
+      ).toBeNull();
+    });
+
+    it('mostra o atalho mesmo sem sessão de caixa aberta', () => {
+      modules = ['pdv', 'finance'];
+      sessionState = { activeSession: null, loading: false };
+      renderPage();
+      expect(
+        screen.getByRole('link', { name: /Ir para o Financeiro/ }),
+      ).toHaveAttribute('href', '/finance');
+    });
+
+    it('não mostra o atalho durante o carregamento', () => {
+      modules = ['pdv', 'finance'];
+      sessionState = { activeSession: null, loading: true };
       renderPage();
       expect(
         screen.queryByRole('link', { name: /Ir para o Financeiro/ }),
