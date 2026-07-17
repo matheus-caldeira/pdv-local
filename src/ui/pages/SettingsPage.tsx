@@ -19,8 +19,22 @@ import { useSettings } from '../hooks/useSettings';
 import { formatTicket } from '../../domain/config/config.rules';
 import { businessTypeIds } from '../../domain/business-type/registry';
 import { t } from '../i18n/t';
+import { container } from '../../app/container';
+import { useModules } from '../../app/modules-context';
+import { fold } from '../../domain/shared/either';
+import { ALL_MODULE_IDS, type ModuleId } from '../../domain/modules/module';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { BackupEntity } from '../../domain/backup/backup.repository';
+
+const MODULE_LABELS: Record<ModuleId, string> = {
+  pdv: 'Ponto de Venda',
+  finance: 'Financeiro',
+};
+
+const MODULE_DESCRIPTIONS: Record<ModuleId, string> = {
+  pdv: 'Vendas, caixa, pedidos, produtos e clientes.',
+  finance: 'Lançamentos, orçamento, projeção e fechamentos do mês.',
+};
 
 interface FormState {
   name: string;
@@ -116,6 +130,7 @@ export function SettingsPage() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [demoConfirmStep, setDemoConfirmStep] = useState<0 | 1 | 2>(0);
   const [seenConfig, setSeenConfig] = useState<BusinessConfig | null>(null);
+  const { modules, refresh } = useModules();
 
   if (config && config !== seenConfig) {
     setSeenConfig(config);
@@ -198,6 +213,21 @@ export function SettingsPage() {
       return;
     }
     await runDemoImport();
+  }
+
+  async function toggleModule(moduleId: ModuleId) {
+    const next = modules.includes(moduleId)
+      ? modules.filter((id) => id !== moduleId)
+      : [...modules, moduleId];
+    const result = await container.saveEnabledModules(next);
+    await fold(
+      result,
+      async (error) => toast(error.message, 'error'),
+      async () => {
+        toast('Módulos atualizados');
+        await refresh();
+      },
+    );
   }
 
   return (
@@ -487,6 +517,49 @@ export function SettingsPage() {
           </Button>
         </div>
       </Section>
+
+      <section
+        role="group"
+        aria-label="Módulos"
+        className="flex flex-col gap-3"
+      >
+        <h2 className="text-base font-bold tracking-tight text-ink-secondary">
+          Módulos
+        </h2>
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface-2 p-4">
+          <p className="text-sm text-ink-tertiary">
+            Escolha o que aparece no menu. Desativar um módulo só esconde as
+            telas — nenhum dado é apagado, e dá para reativar quando quiser.
+          </p>
+          {ALL_MODULE_IDS.map((moduleId) => {
+            const enabled = modules.includes(moduleId);
+            return (
+              <button
+                key={moduleId}
+                type="button"
+                aria-pressed={enabled}
+                aria-label={MODULE_LABELS[moduleId]}
+                className={
+                  enabled
+                    ? 'flex items-center justify-between rounded-md border border-accent bg-accent-subtle px-4 py-3 text-left transition-colors'
+                    : 'flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-3 text-left transition-colors'
+                }
+                onClick={() => toggleModule(moduleId)}
+              >
+                <span className="flex flex-col">
+                  <span className="font-medium">{MODULE_LABELS[moduleId]}</span>
+                  <span className="text-sm text-ink-tertiary">
+                    {MODULE_DESCRIPTIONS[moduleId]}
+                  </span>
+                </span>
+                <span className="text-sm font-semibold text-accent">
+                  {enabled ? 'Ativo' : 'Ativar'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <Section title="Zona de Perigo" danger>
         <p className="text-sm text-ink-tertiary">
