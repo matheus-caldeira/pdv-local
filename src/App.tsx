@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ToastProvider } from './ui/molecules/Toast';
-import { AppShell } from './ui/templates/AppShell';
+import { AppShellRoute } from './app/AppShellRoute';
+import { ModulesProvider } from './app/ModulesProvider';
 import { resolveBasename, DOCS_BASE } from './lib/docsBase';
 
 const DashboardPage = lazy(() =>
@@ -118,171 +119,173 @@ export function App() {
             </Routes>
           </Suspense>
         ) : (
-          <Routes>
-            <Route element={<AppShell />}>
-              <Route
-                path="/"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <DashboardPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/pdv"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <PdvPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/products"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <ProductsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/orders"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <OrdersPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/customers"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <CustomersPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/kds"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <KdsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/panel"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <PanelPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/cash"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <CashPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/finance"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <FinanceShell />
-                  </Suspense>
-                }
-              >
+          <ModulesProvider>
+            <Routes>
+              <Route element={<AppShellRoute />}>
                 <Route
-                  index
+                  path="/"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceDashboardPage />
+                      <DashboardPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="entries"
+                  path="/pdv"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceEntriesPage />
+                      <PdvPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="budget"
+                  path="/products"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceBudgetPage />
+                      <ProductsPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="automations"
+                  path="/orders"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceAutomationsPage />
+                      <OrdersPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="projection"
+                  path="/customers"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceProjectionPage />
+                      <CustomersPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="closings"
+                  path="/kds"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceClosingsPage />
+                      <KdsPage />
                     </Suspense>
                   }
                 />
                 <Route
-                  path="settings"
+                  path="/panel"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FinanceSettingsPage />
+                      <PanelPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/cash"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <CashPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/finance"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <FinanceShell />
+                    </Suspense>
+                  }
+                >
+                  <Route
+                    index
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceDashboardPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="entries"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceEntriesPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="budget"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceBudgetPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="automations"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceAutomationsPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="projection"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceProjectionPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="closings"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceClosingsPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="settings"
+                    element={
+                      <Suspense fallback={<RouteFallback />}>
+                        <FinanceSettingsPage />
+                      </Suspense>
+                    }
+                  />
+                </Route>
+                <Route
+                  path="/reports"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <ReportsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/customizations"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <CustomizationsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <SettingsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="*"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <NotFoundPage />
                     </Suspense>
                   }
                 />
               </Route>
-              <Route
-                path="/reports"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <ReportsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/customizations"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <CustomizationsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <SettingsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="*"
-                element={
-                  <Suspense fallback={<RouteFallback />}>
-                    <NotFoundPage />
-                  </Suspense>
-                }
-              />
-            </Route>
-          </Routes>
+            </Routes>
+          </ModulesProvider>
         )}
       </BrowserRouter>
     </ToastProvider>

@@ -95,7 +95,7 @@
   --duration-normal: 200ms;
 
   /* Layout */
-  --nav-rail-width: 72px;
+  --nav-sidebar-width: 240px;
   --nav-bottom-height: 64px;
   --header-height: 56px;
 }
