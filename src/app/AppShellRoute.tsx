@@ -3,7 +3,7 @@ import { AppShell } from '../ui/templates/AppShell';
 import { useModules } from './modules-context';
 import { useSession } from '../ui/hooks/useSession';
 import { useStatusControl } from '../ui/hooks/useStatusControl';
-import { buildNavModel, resolveActiveGroupId } from './nav-model';
+import { buildNavModel, resolveActiveGroup } from './nav-model';
 
 export function AppShellRoute() {
   const location = useLocation();
@@ -12,16 +12,13 @@ export function AppShellRoute() {
   const statusControl = useStatusControl(location.pathname);
 
   const model = buildNavModel(modules, statusControl);
-  const activeGroupId = resolveActiveGroupId(location.pathname, model);
-  const bottomBar = model.groups.find(
-    (group) => group.id === activeGroupId,
-  )!.bar;
+  const activeGroup = resolveActiveGroup(location.pathname, model);
 
   return (
     <AppShell
       model={model}
-      activeGroupId={activeGroupId}
-      bottomBar={bottomBar}
+      activeGroupId={activeGroup.id}
+      bottomBar={activeGroup.bar}
       activeSession={activeSession}
     />
   );

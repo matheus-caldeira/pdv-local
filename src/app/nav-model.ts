@@ -152,28 +152,36 @@ export function buildNavModel(
   return { home: hasPdv ? HOME : null, groups };
 }
 
-export function resolveActiveGroupId(
+export function resolveActiveGroup(
   pathname: string,
   model: NavModel,
-): NavGroupId {
+): NavGroup {
   if (pathname === '/') {
-    return model.home ? 'pdv' : model.groups[0].id;
+    const home = model.groups.find((group) => group.id === 'pdv');
+    return model.home && home ? home : model.groups[0];
   }
 
-  let best: { id: NavGroupId; length: number } | null = null;
+  let best: { group: NavGroup; length: number } | null = null;
   for (const group of model.groups) {
     for (const item of group.items) {
       if (item.kind !== 'link') continue;
-      if (item.to === pathname) return group.id;
+      if (item.to === pathname) return group;
       if (
         pathname.startsWith(`${item.to}/`) &&
         (best === null || item.to.length > best.length)
       ) {
-        best = { id: group.id, length: item.to.length };
+        best = { group, length: item.to.length };
       }
     }
   }
-  return best?.id ?? model.groups[0].id;
+  return best?.group ?? model.groups[0];
+}
+
+export function resolveActiveGroupId(
+  pathname: string,
+  model: NavModel,
+): NavGroupId {
+  return resolveActiveGroup(pathname, model).id;
 }
 
 export function preserveSearch(pathname: string, to: string): boolean {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildNavModel,
   preserveSearch,
+  resolveActiveGroup,
   resolveActiveGroupId,
 } from './nav-model';
 
@@ -141,6 +142,30 @@ describe('resolveActiveGroupId', () => {
   it('resolves the root to the first group when there is no home', () => {
     const finance = buildNavModel(['finance'], false);
     expect(resolveActiveGroupId('/', finance)).toBe('finance');
+  });
+});
+
+describe('resolveActiveGroup', () => {
+  const both = buildNavModel(['pdv', 'finance'], true);
+
+  it('returns the active group with its bottom bar', () => {
+    const group = resolveActiveGroup('/finance/entries', both);
+    expect(group.id).toBe('finance');
+    expect(labels(group.bar)).toEqual([
+      'Resumo',
+      'Lançamentos',
+      'Orçamento',
+      'Fechamentos',
+    ]);
+  });
+
+  it('returns the home group at the root', () => {
+    expect(resolveActiveGroup('/', both).id).toBe('pdv');
+  });
+
+  it('returns the first group at the root when there is no home', () => {
+    const finance = buildNavModel(['finance'], false);
+    expect(resolveActiveGroup('/', finance).id).toBe('finance');
   });
 });
 
