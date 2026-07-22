@@ -1,6 +1,11 @@
 export type FinanceKind = 'income' | 'expense';
 export type EntryStatus = 'pending' | 'paid';
-export type EntrySource = 'manual' | 'installment' | 'recurrence' | 'formula';
+export type EntrySource =
+  | 'manual'
+  | 'installment'
+  | 'recurrence'
+  | 'formula'
+  | 'invoice-adjustment';
 export type MonthKey = string;
 
 export interface FamilyMember {
@@ -40,6 +45,9 @@ export interface FinanceEntry {
   installmentNumber: number | null;
   sourceEntryUids: string[];
   formulaBaseMonth: MonthKey | null;
+  paymentMethodUid: string | null;
+  invoiceMonth: MonthKey | null;
+  invoiceUid: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -87,6 +95,7 @@ export interface Recurrence {
   kind: FinanceKind;
   categoryUid: string;
   memberUids: string[];
+  paymentMethodUid: string | null;
   dayOfMonth: number;
   startMonth: MonthKey;
   endMonth: MonthKey | null;
@@ -108,6 +117,7 @@ export interface InstallmentPlan {
   kind: FinanceKind;
   categoryUid: string;
   memberUids: string[];
+  paymentMethodUid: string | null;
   createdAt: number;
 }
 
