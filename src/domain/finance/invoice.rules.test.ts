@@ -42,8 +42,13 @@ describe('resolveInvoiceMonth', () => {
     expect(result.month).toBe('2028-03');
   });
 
-  it('compra no último dia de fevereiro com fechamento 31 cai na fatura seguinte', () => {
+  it('compra no dia do fechamento clampado cai na fatura seguinte', () => {
     const result = resolveInvoiceMonth(at(2027, 2, 28), 31, 10);
+    expect(result.month).toBe('2027-04');
+  });
+
+  it('compra na véspera do fechamento clampado cai na fatura corrente', () => {
+    const result = resolveInvoiceMonth(at(2027, 2, 27), 31, 10);
     expect(result.month).toBe('2027-03');
   });
 
