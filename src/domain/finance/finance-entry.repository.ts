@@ -19,6 +19,9 @@ export interface FinanceEntryFilter {
   sourceUid?: string;
   source?: EntrySource;
   monthBefore?: MonthKey;
+  paymentMethodUid?: string;
+  invoiceMonth?: MonthKey;
+  invoiceUid?: string;
 }
 
 export interface FinanceEntryRepository {

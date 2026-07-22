@@ -327,3 +327,49 @@ export class UnknownModuleError extends DomainError {
     this.moduleId = moduleId;
   }
 }
+
+export class PaymentMethodNotFoundError extends DomainError {
+  readonly code = 'finance/payment-method-not-found';
+
+  constructor() {
+    super('Meio de pagamento não encontrado.');
+  }
+}
+
+export class PaymentMethodInUseError extends DomainError {
+  readonly code = 'finance/payment-method-in-use';
+
+  constructor() {
+    super(
+      'O meio de pagamento está em uso e não pode ser excluído. Arquive-o.',
+    );
+  }
+}
+
+export class InvalidCardDayError extends DomainError {
+  readonly code = 'finance/invalid-card-day';
+
+  constructor() {
+    super('Informe dias de fechamento e vencimento entre 1 e 31.');
+  }
+}
+
+export class InvoiceOverdetailedError extends DomainError {
+  readonly code = 'finance/invoice-overdetailed';
+  readonly excess: number;
+
+  constructor(excess: number) {
+    super(
+      `Os lançamentos detalhados superam o valor da fatura em R$ ${excess.toFixed(2)}. Corrija os lançamentos antes de informar o valor.`,
+    );
+    this.excess = excess;
+  }
+}
+
+export class InvoicePaidError extends DomainError {
+  readonly code = 'finance/invoice-paid';
+
+  constructor() {
+    super('A fatura já foi paga e não pode ser alterada.');
+  }
+}
