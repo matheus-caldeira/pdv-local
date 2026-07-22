@@ -1,4 +1,5 @@
 import { AppError, type ErrorLayer } from './shared/errors';
+import { formatMoney } from './shared/format';
 
 export abstract class DomainError extends AppError {
   readonly layer: ErrorLayer = 'domain';
@@ -360,7 +361,7 @@ export class InvoiceOverdetailedError extends DomainError {
 
   constructor(excess: number) {
     super(
-      `Os lançamentos detalhados superam o valor da fatura em R$ ${excess.toFixed(2)}. Corrija os lançamentos antes de informar o valor.`,
+      `Os lançamentos detalhados superam o valor da fatura em ${formatMoney(excess)}. Corrija os lançamentos antes de informar o valor.`,
     );
     this.excess = excess;
   }
