@@ -47,9 +47,25 @@ describe('resolveInvoiceMonth', () => {
     expect(result.month).toBe('2027-04');
   });
 
-  it('compra na véspera do fechamento clampado cai na fatura corrente', () => {
-    const result = resolveInvoiceMonth(at(2027, 2, 27), 31, 10);
-    expect(result.month).toBe('2027-03');
+  it('vencimento igual ao fechamento vence no mês seguinte', () => {
+    const result = resolveInvoiceMonth(at(2026, 7, 5), 10, 10);
+    expect(result.month).toBe('2026-08');
+    expect(new Date(result.dueDate).getDate()).toBe(10);
+  });
+
+  it('compra no dia 1 com fechamento no dia 1 cai na fatura seguinte', () => {
+    const result = resolveInvoiceMonth(at(2026, 7, 1), 1, 15);
+    expect(result.month).toBe('2026-08');
+  });
+
+  it('vira o ano com fechamento clampado em dezembro', () => {
+    const result = resolveInvoiceMonth(at(2026, 12, 31), 31, 10);
+    expect(result.month).toBe('2027-02');
+  });
+
+  it('compra no fechamento clampado de abril cai duas faturas à frente', () => {
+    const result = resolveInvoiceMonth(at(2026, 4, 30), 31, 10);
+    expect(result.month).toBe('2026-06');
   });
 
   it('clampa o vencimento em mês de 30 dias', () => {
