@@ -45,9 +45,14 @@ export function currentMonthKey(nowMs: number): MonthKey {
   return monthKeyFromDate(nowMs);
 }
 
+export function lastDayOfMonth(year: number, monthNumber: number): number {
+  return new Date(year, monthNumber, 0).getDate();
+}
+
 export function dateForMonthDay(month: MonthKey, day: number): number {
   const [year, monthNumber] = month.split('-').map(Number);
-  return new Date(year, monthNumber - 1, day).getTime();
+  const clamped = Math.min(day, lastDayOfMonth(year, monthNumber));
+  return new Date(year, monthNumber - 1, clamped).getTime();
 }
 
 export function round2(n: number): number {
