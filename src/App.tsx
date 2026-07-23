@@ -90,6 +90,11 @@ const FinanceClosingsPage = lazy(() =>
     default: m.FinanceClosingsPage,
   })),
 );
+const FinanceInvoicesPage = lazy(() =>
+  import('./ui/pages/finance').then((m) => ({
+    default: m.FinanceInvoicesPage,
+  })),
+);
 const FinanceSettingsPage = lazy(() =>
   import('./ui/pages/finance').then((m) => ({
     default: m.FinanceSettingsPage,
@@ -278,6 +283,14 @@ export function AppRoutes() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <FinanceClosingsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="invoices"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <FinanceInvoicesPage />
                 </Suspense>
               }
             />

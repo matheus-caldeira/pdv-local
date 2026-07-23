@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
+  CreditCard,
   Info,
   LayoutDashboard,
   List,
@@ -77,6 +78,7 @@ const BUDGET = link('/finance/budget', Target, 'Orçamento');
 const AUTOMATIONS = link('/finance/automations', Zap, 'Automações');
 const PROJECTION = link('/finance/projection', TrendingUp, 'Projeção');
 const CLOSINGS = link('/finance/closings', Lock, 'Fechamentos');
+const INVOICES = link('/finance/invoices', CreditCard, 'Faturas');
 const SETTINGS = link('/settings', Settings, 'Configurações');
 const FINANCE_SETTINGS = link(
   '/finance/settings',
@@ -130,7 +132,15 @@ export function buildNavModel(
       label: 'Financeiro',
       icon: PiggyBank,
       fixed: single,
-      items: [FINANCE_HOME, ENTRIES, BUDGET, AUTOMATIONS, PROJECTION, CLOSINGS],
+      items: [
+        FINANCE_HOME,
+        ENTRIES,
+        BUDGET,
+        AUTOMATIONS,
+        PROJECTION,
+        CLOSINGS,
+        INVOICES,
+      ],
       bar: [FINANCE_HOME, ENTRIES, BUDGET, CLOSINGS],
     });
   }

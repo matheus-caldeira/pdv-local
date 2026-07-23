@@ -57,12 +57,24 @@ describe('buildNavModel', () => {
       'Automações',
       'Projeção',
       'Fechamentos',
+      'Faturas',
     ]);
     expect(labels(model.groups[1].items)).toEqual([
       'Configurações',
       'Config. do Financeiro',
       'Sobre e contato',
     ]);
+  });
+
+  it('includes the invoices link in the finance group', () => {
+    const model = buildNavModel(['finance'], false);
+    const finance = model.groups.find((g) => g.id === 'finance');
+    const invoices = finance?.items.find(
+      (item) => item.kind === 'link' && item.to === '/finance/invoices',
+    );
+    expect(invoices).toBeDefined();
+    expect(invoices?.label).toBe('Faturas');
+    expect(labels(finance!.bar)).not.toContain('Faturas');
   });
 
   it('marks the single module group as fixed', () => {

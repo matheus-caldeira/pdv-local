@@ -1,6 +1,7 @@
 import { useFinanceSettings } from '../../hooks/useFinanceSettings';
 import { FinanceCategoryManager } from '../../organisms/finance/FinanceCategoryManager';
 import { FinanceMemberManager } from '../../organisms/finance/FinanceMemberManager';
+import { FinancePaymentMethodManager } from '../../organisms/finance/FinancePaymentMethodManager';
 
 export function FinanceSettingsPage() {
   const {
@@ -42,6 +43,7 @@ export function FinanceSettingsPage() {
             onArchive={setMemberArchived}
             onDelete={deleteMember}
           />
+          <FinancePaymentMethodManager />
         </div>
       )}
     </div>
