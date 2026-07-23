@@ -37,7 +37,10 @@ import {
 import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.repository';
 import type { FinanceAutomationRepository } from '../../domain/finance/finance-automation.repository';
 import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
+import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
+import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
+import { resolveEntryInvoice } from './invoices.usecases';
 
 export interface FormulaInput {
   uid?: string;
@@ -78,6 +81,7 @@ export interface RecurrenceInput {
   kind: FinanceKind;
   categoryUid: string;
   memberUids: string[];
+  paymentMethodUid: string | null;
   dayOfMonth: number;
   startMonth: MonthKey;
   endMonth: MonthKey | null;
@@ -95,7 +99,7 @@ export interface InstallmentPreviewLine {
 }
 
 const isValidDayOfMonth = (day: number): boolean =>
-  Number.isInteger(day) && day >= 1 && day <= 28;
+  Number.isInteger(day) && day >= 1 && day <= 31;
 
 const sumAmounts = (entries: FinanceEntry[]): number =>
   entries.reduce((sum, entry) => sum + entry.amount, 0);
@@ -154,19 +158,30 @@ const alreadyLaunched = async (
   return right(launched.right.length > 0);
 };
 
-const recurrenceEntry = (
+const recurrenceEntry = async (
   recurrence: Recurrence,
   month: MonthKey,
-): NewFinanceEntry => {
+  methods: PaymentMethodRepository,
+  invoices: CardInvoiceRepository,
+): Promise<Either<AppError, NewFinanceEntry>> => {
+  const date = dateForMonthDay(month, recurrence.dayOfMonth);
+  const link = await resolveEntryInvoice(
+    methods,
+    invoices,
+    recurrence.paymentMethodUid,
+    date,
+  );
+  if (isLeft(link)) return link;
+
   const now = Date.now();
-  return {
+  return right({
     uid: createUid(),
     description: recurrence.description,
     amount: recurrence.amount,
     kind: recurrence.kind,
     categoryUid: recurrence.categoryUid,
     memberUids: [...recurrence.memberUids],
-    date: dateForMonthDay(month, recurrence.dayOfMonth),
+    date,
     month,
     status: 'pending',
     source: 'recurrence',
@@ -174,12 +189,12 @@ const recurrenceEntry = (
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
-    paymentMethodUid: null,
-    invoiceMonth: null,
-    invoiceUid: null,
+    paymentMethodUid: recurrence.paymentMethodUid,
+    invoiceMonth: link.right.invoiceMonth,
+    invoiceUid: link.right.invoiceUid,
     createdAt: now,
     updatedAt: now,
-  };
+  });
 };
 
 export function makeListFormulas(automations: FinanceAutomationRepository) {
@@ -367,11 +382,11 @@ export function makeSaveRecurrence(automations: FinanceAutomationRepository) {
       kind: input.kind,
       categoryUid: input.categoryUid,
       memberUids: [...input.memberUids],
+      paymentMethodUid: input.paymentMethodUid,
       dayOfMonth: input.dayOfMonth,
       startMonth: input.startMonth,
       endMonth: input.endMonth,
       active: input.active,
-      paymentMethodUid: null,
     };
     if (input.uid === undefined) {
       return automations.saveRecurrence({
@@ -400,6 +415,8 @@ export function makeLaunchRecurrence(
   entries: FinanceEntryRepository,
   automations: FinanceAutomationRepository,
   closings: FinanceClosingRepository,
+  methods: PaymentMethodRepository,
+  invoices: CardInvoiceRepository,
 ) {
   return async (
     uid: string,
@@ -422,7 +439,15 @@ export function makeLaunchRecurrence(
     );
     if (isLeft(allowed)) return allowed;
 
-    return entries.create(recurrenceEntry(recurrence.right, month));
+    const entry = await recurrenceEntry(
+      recurrence.right,
+      month,
+      methods,
+      invoices,
+    );
+    if (isLeft(entry)) return entry;
+
+    return entries.create(entry.right);
   };
 }
 
@@ -430,6 +455,8 @@ export function makeLaunchAllRecurrences(
   entries: FinanceEntryRepository,
   automations: FinanceAutomationRepository,
   closings: FinanceClosingRepository,
+  methods: PaymentMethodRepository,
+  invoices: CardInvoiceRepository,
 ) {
   return async (
     month: MonthKey,
@@ -457,7 +484,10 @@ export function makeLaunchAllRecurrences(
         continue;
       }
 
-      const created = await entries.create(recurrenceEntry(recurrence, month));
+      const entry = await recurrenceEntry(recurrence, month, methods, invoices);
+      if (isLeft(entry)) return entry;
+
+      const created = await entries.create(entry.right);
       if (isLeft(created)) return created;
       launchedCount += 1;
     }
@@ -532,15 +562,25 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
       if (isLeft(plan)) return plan;
 
       const now = Date.now();
-      const installmentEntries = amounts.right.map(
-        (amount, index): NewFinanceEntry => ({
+      const installmentEntries: NewFinanceEntry[] = [];
+      for (let index = 0; index < amounts.right.length; index += 1) {
+        const date = dateForMonthDay(months[index], input.dayOfMonth);
+        const link = await resolveEntryInvoice(
+          repositories.financePaymentMethods,
+          repositories.financeCardInvoices,
+          input.paymentMethodUid,
+          date,
+        );
+        if (isLeft(link)) return link;
+
+        installmentEntries.push({
           uid: createUid(),
           description: `${input.description} (${index + 1}/${input.installmentCount})`,
-          amount,
+          amount: amounts.right[index],
           kind: input.kind,
           categoryUid: input.categoryUid,
           memberUids: [...input.memberUids],
-          date: dateForMonthDay(months[index], input.dayOfMonth),
+          date,
           month: months[index],
           status: 'pending',
           source: 'installment',
@@ -548,13 +588,13 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
           installmentNumber: index + 1,
           sourceEntryUids: [],
           formulaBaseMonth: null,
-          paymentMethodUid: null,
-          invoiceMonth: null,
-          invoiceUid: null,
+          paymentMethodUid: input.paymentMethodUid,
+          invoiceMonth: link.right.invoiceMonth,
+          invoiceUid: link.right.invoiceUid,
           createdAt: now,
           updatedAt: now,
-        }),
-      );
+        });
+      }
       const created =
         await repositories.financeEntries.createMany(installmentEntries);
       if (isLeft(created)) return created;

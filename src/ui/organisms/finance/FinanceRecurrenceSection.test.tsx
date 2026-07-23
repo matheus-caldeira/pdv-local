@@ -213,6 +213,7 @@ describe('FinanceRecurrenceSection', () => {
       kind: 'expense',
       categoryUid: 'cat-home',
       memberUids: ['member-1'],
+      paymentMethodUid: null,
       dayOfMonth: 1,
       startMonth: '2026-08',
       endMonth: '2026-12',

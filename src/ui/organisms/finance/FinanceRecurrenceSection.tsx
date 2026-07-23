@@ -118,6 +118,7 @@ export function FinanceRecurrenceSection({
       kind,
       categoryUid,
       memberUids,
+      paymentMethodUid: null,
       dayOfMonth: parseInt(dayOfMonth, 10) || 0,
       startMonth,
       endMonth: endMonth === '' ? null : endMonth,
