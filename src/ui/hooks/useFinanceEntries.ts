@@ -13,6 +13,7 @@ import type {
   MonthKey,
 } from '../../domain/finance/finance.entity';
 import type { FinanceEntryFilter } from '../../domain/finance/finance-entry.repository';
+import type { PaymentMethod } from '../../domain/finance/payment-method.entity';
 import { useToast } from '../molecules/toast-context';
 
 export interface FinanceEntryFiltersState {
@@ -20,6 +21,7 @@ export interface FinanceEntryFiltersState {
   kind: FinanceKind | '';
   categoryUid: string;
   memberUid: string;
+  paymentMethodUid: string;
   text: string;
 }
 
@@ -28,6 +30,7 @@ export const EMPTY_FINANCE_ENTRY_FILTERS: FinanceEntryFiltersState = {
   kind: '',
   categoryUid: '',
   memberUid: '',
+  paymentMethodUid: '',
   text: '',
 };
 
@@ -40,6 +43,9 @@ function buildFilter(
   if (filters.kind) filter.kind = filters.kind;
   if (filters.categoryUid) filter.categoryUid = filters.categoryUid;
   if (filters.memberUid) filter.memberUid = filters.memberUid;
+  if (filters.paymentMethodUid) {
+    filter.paymentMethodUid = filters.paymentMethodUid;
+  }
   if (filters.text.trim()) filter.text = filters.text.trim();
   return filter;
 }
@@ -53,6 +59,7 @@ export function useFinanceEntries(month: MonthKey) {
   const [categories, setCategories] = useState<FinanceCategory[]>([]);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [plans, setPlans] = useState<InstallmentPlan[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [closedMonths, setClosedMonths] = useState<MonthKey[]>([]);
 
   const reportError = useCallback(
@@ -61,16 +68,23 @@ export function useFinanceEntries(month: MonthKey) {
   );
 
   const loadOptions = useCallback(async () => {
-    const [categoriesResult, membersResult, plansResult, closingsResult] =
-      await Promise.all([
-        container.listFinanceCategories(),
-        container.listFinanceMembers(),
-        container.listFinanceInstallmentPlans(),
-        container.listFinanceClosings(),
-      ]);
+    const [
+      categoriesResult,
+      membersResult,
+      plansResult,
+      paymentMethodsResult,
+      closingsResult,
+    ] = await Promise.all([
+      container.listFinanceCategories(),
+      container.listFinanceMembers(),
+      container.listFinanceInstallmentPlans(),
+      container.listPaymentMethods(),
+      container.listFinanceClosings(),
+    ]);
     fold(categoriesResult, reportError, setCategories);
     fold(membersResult, reportError, setMembers);
     fold(plansResult, reportError, setPlans);
+    fold(paymentMethodsResult, reportError, setPaymentMethods);
     fold(closingsResult, reportError, (closings) =>
       setClosedMonths(closings.map((closing) => closing.month)),
     );
@@ -170,6 +184,7 @@ export function useFinanceEntries(month: MonthKey) {
     overdueCount,
     categories,
     members,
+    paymentMethods,
     planCounts,
     closedMonths,
     isMonthClosed,

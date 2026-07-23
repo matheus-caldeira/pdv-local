@@ -22,6 +22,7 @@ const listOverdueFinanceEntries = vi.fn();
 const listFinanceCategories = vi.fn();
 const listFinanceMembers = vi.fn();
 const listFinanceInstallmentPlans = vi.fn();
+const listPaymentMethods = vi.fn();
 const listFinanceClosings = vi.fn();
 const createFinanceEntry = vi.fn();
 const updateFinanceEntry = vi.fn();
@@ -36,6 +37,7 @@ vi.mock('../../../app/container', () => ({
     listFinanceCategories: () => listFinanceCategories(),
     listFinanceMembers: () => listFinanceMembers(),
     listFinanceInstallmentPlans: () => listFinanceInstallmentPlans(),
+    listPaymentMethods: () => listPaymentMethods(),
     listFinanceClosings: () => listFinanceClosings(),
     createFinanceEntry: (input: unknown) => createFinanceEntry(input),
     updateFinanceEntry: (uid: string, input: unknown) =>
@@ -137,6 +139,7 @@ describe('FinanceEntriesPage', () => {
     listFinanceCategories.mockResolvedValue(right([CATEGORY]));
     listFinanceMembers.mockResolvedValue(right([MEMBER]));
     listFinanceInstallmentPlans.mockResolvedValue(right([]));
+    listPaymentMethods.mockResolvedValue(right([]));
     listFinanceClosings.mockResolvedValue(right([]));
   });
 

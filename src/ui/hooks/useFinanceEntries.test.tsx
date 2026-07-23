@@ -24,6 +24,7 @@ const listOverdueFinanceEntries = vi.fn();
 const listFinanceCategories = vi.fn();
 const listFinanceMembers = vi.fn();
 const listFinanceInstallmentPlans = vi.fn();
+const listPaymentMethods = vi.fn();
 const listFinanceClosings = vi.fn();
 const createFinanceEntry = vi.fn();
 const updateFinanceEntry = vi.fn();
@@ -38,6 +39,7 @@ vi.mock('../../app/container', () => ({
     listFinanceCategories: () => listFinanceCategories(),
     listFinanceMembers: () => listFinanceMembers(),
     listFinanceInstallmentPlans: () => listFinanceInstallmentPlans(),
+    listPaymentMethods: () => listPaymentMethods(),
     listFinanceClosings: () => listFinanceClosings(),
     createFinanceEntry: (input: unknown) => createFinanceEntry(input),
     updateFinanceEntry: (uid: string, input: unknown) =>
@@ -126,6 +128,17 @@ const PLAN = {
   createdAt: 1,
 };
 
+const PAYMENT_METHOD = {
+  id: 1,
+  uid: 'card-1',
+  name: 'Nubank',
+  type: 'credit' as const,
+  closingDay: 3,
+  dueDay: 10,
+  archived: false,
+  createdAt: 1,
+};
+
 function Wrapper({ children }: { children: ReactNode }) {
   return <ToastProvider>{children}</ToastProvider>;
 }
@@ -144,6 +157,7 @@ describe('useFinanceEntries', () => {
     listFinanceCategories.mockResolvedValue(right([CATEGORY]));
     listFinanceMembers.mockResolvedValue(right([MEMBER]));
     listFinanceInstallmentPlans.mockResolvedValue(right([PLAN]));
+    listPaymentMethods.mockResolvedValue(right([PAYMENT_METHOD]));
     listFinanceClosings.mockResolvedValue(right([makeClosing('2026-05')]));
   });
 
@@ -159,6 +173,7 @@ describe('useFinanceEntries', () => {
     expect(result.current.overdueCount).toBe(1);
     expect(result.current.categories).toEqual([CATEGORY]);
     expect(result.current.members).toEqual([MEMBER]);
+    expect(result.current.paymentMethods).toEqual([PAYMENT_METHOD]);
     expect(result.current.planCounts).toEqual({ 'plan-1': 10 });
     expect(result.current.closedMonths).toEqual(['2026-05']);
     expect(result.current.isMonthClosed).toBe(false);
@@ -180,6 +195,7 @@ describe('useFinanceEntries', () => {
         kind: 'expense',
         categoryUid: 'cat-1',
         memberUid: 'member-1',
+        paymentMethodUid: 'card-1',
         text: '  luz  ',
       });
     });
@@ -190,6 +206,7 @@ describe('useFinanceEntries', () => {
         kind: 'expense',
         categoryUid: 'cat-1',
         memberUid: 'member-1',
+        paymentMethodUid: 'card-1',
         text: 'luz',
       }),
     );
@@ -220,6 +237,7 @@ describe('useFinanceEntries', () => {
     listFinanceInstallmentPlans.mockResolvedValue(
       left(new FakeError('falha planos')),
     );
+    listPaymentMethods.mockResolvedValue(left(new FakeError('falha meios')));
     listFinanceClosings.mockResolvedValue(
       left(new FakeError('falha fechamentos')),
     );
@@ -228,6 +246,7 @@ describe('useFinanceEntries', () => {
     expect(screen.getByRole('status').textContent).toContain('falha');
     expect(result.current.entries).toEqual([]);
     expect(result.current.categories).toEqual([]);
+    expect(result.current.paymentMethods).toEqual([]);
   });
 
   it('creates an entry, reloads and toasts on success', async () => {
