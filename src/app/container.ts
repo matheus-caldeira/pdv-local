@@ -88,6 +88,18 @@ import {
   makeUpdateCategory,
 } from '../application/finance/categories.usecases';
 import {
+  makeArchivePaymentMethod,
+  makeCreatePaymentMethod,
+  makeListPaymentMethods,
+  makeUpdatePaymentMethod,
+} from '../application/finance/payment-methods.usecases';
+import {
+  makeGetInvoiceDetail,
+  makeListInvoiceHistory,
+  makePayInvoice,
+  makeSetInvoiceAmount,
+} from '../application/finance/invoices.usecases';
+import {
   makeCreateEntry,
   makeDeleteEntry,
   makeListEntries,
@@ -218,6 +230,21 @@ export function createContainer() {
       financeBudget,
       financeAutomations,
     ),
+    listPaymentMethods: makeListPaymentMethods(financePaymentMethods),
+    createPaymentMethod: makeCreatePaymentMethod(financePaymentMethods),
+    updatePaymentMethod: makeUpdatePaymentMethod(financePaymentMethods),
+    archivePaymentMethod: makeArchivePaymentMethod(
+      financePaymentMethods,
+      financeEntries,
+    ),
+    getInvoiceDetail: makeGetInvoiceDetail(financeCardInvoices, financeEntries),
+    setInvoiceAmount: makeSetInvoiceAmount(
+      uow,
+      financePaymentMethods,
+      financeCategories,
+    ),
+    payInvoice: makePayInvoice(financeCardInvoices),
+    listInvoiceHistory: makeListInvoiceHistory(financeCardInvoices),
     listFinanceEntries: makeListEntries(financeEntries),
     listOverdueFinanceEntries: makeListOverdueEntries(financeEntries),
     createFinanceEntry: makeCreateEntry(
