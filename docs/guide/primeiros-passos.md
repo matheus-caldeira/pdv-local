@@ -4,7 +4,7 @@ Em poucos minutos você já está vendendo. Siga esta ordem.
 
 ## 1. Abra no aparelho que vai usar no balcão
 
-Acesse o endereço do PDV Local pelo navegador do celular, tablet ou computador
+Acesse o endereço do Meu Bolso pelo navegador do celular, tablet ou computador
 que ficará no balcão. Não precisa instalar nada.
 
 > Dica: adicione a página à tela inicial do celular para abrir como se fosse um

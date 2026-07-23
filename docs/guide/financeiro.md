@@ -3,7 +3,7 @@
 A área **Financeiro** ajuda a organizar as contas da família e do negócio:
 registrar entradas e saídas, planejar um orçamento, acompanhar contas a pagar e
 projetar como o saldo fica nos próximos meses. Tudo salvo no próprio aparelho,
-como o resto do PDV Local (lembre-se do [Backup](backup)).
+como o resto do Meu Bolso (lembre-se do [Backup](backup)).
 
 ## Conceitos básicos
 

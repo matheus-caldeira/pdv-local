@@ -1,4 +1,4 @@
-# Arquitetura — PDV Local
+# Arquitetura — Meu Bolso
 
 Este documento descreve o **padrão-alvo** de arquitetura do projeto. O código
 atual (páginas falando direto com o Dexie) será migrado para cá de forma

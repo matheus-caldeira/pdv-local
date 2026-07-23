@@ -1,4 +1,4 @@
-# Atomic Design — PDV Local
+# Atomic Design — Meu Bolso
 
 A camada de UI segue o atomic design de Brad Frost, sobre **Tailwind + CVA +
 `cn()`**, consumindo a identidade definida em
