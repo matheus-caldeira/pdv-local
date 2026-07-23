@@ -38,3 +38,8 @@ pode quitá-los na tela de [Pedidos](pedidos).
 
 > Os relatórios contam apenas pedidos **pagos** nas vendas e no lucro. Pedidos
 > cancelados não entram. Por isso, mantenha as situações dos pedidos em dia.
+
+## Veja também
+
+- [Caixa](caixa)
+- [Financeiro](financeiro)

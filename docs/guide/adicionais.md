@@ -56,3 +56,8 @@ mostrando cada grupo com seus itens. O sistema:
 - Toque no **lápis** para editar um grupo ou item.
 - Toque na **lixeira** para remover. Ao remover um grupo, seus itens são apagados
   e o grupo é desvinculado automaticamente dos produtos que o usavam.
+
+## Veja também
+
+- [Produtos](produtos)
+- [Venda rápida](venda)

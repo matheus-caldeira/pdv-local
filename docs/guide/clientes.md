@@ -37,3 +37,8 @@ novo na hora.
 
 > O telefone é a chave do cadastro. Mantê-lo correto evita clientes duplicados e
 > garante que o histórico de cada pessoa fique junto.
+
+## Veja também
+
+- [Venda rápida](venda)
+- [Pedidos](pedidos)

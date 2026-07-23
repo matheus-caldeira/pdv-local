@@ -32,3 +32,8 @@ Pedidos cancelados não aparecem, e os já **finalizados** somem do painel.
 
 > Dica: deixe o aparelho do painel com a tela sempre ligada e o navegador em tela
 > cheia para um visual de praça de alimentação.
+
+## Veja também
+
+- [Tela da cozinha (KDS)](kds)
+- [Configurações](configuracoes)

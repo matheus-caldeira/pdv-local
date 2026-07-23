@@ -1,6 +1,9 @@
 # Primeiros passos
 
-Em poucos minutos você já está vendendo. Siga esta ordem.
+Em poucos minutos você deixa o Meu Bolso pronto para usar — seja para vender no
+balcão ou para organizar o dinheiro do dia a dia. Siga esta ordem para começar
+pela parte de vendas; se o seu foco for o controle financeiro, o passo do
+primeiro acesso mostra como escolher só o Financeiro.
 
 ## 1. Abra no aparelho que vai usar no balcão
 
@@ -59,3 +62,9 @@ sistema mostra quanto era esperado para você conferir. Depois, dê uma olhada n
 
 Pronto. Esse é o ciclo do dia a dia: **abrir caixa → vender → fechar caixa**. As
 próximas páginas detalham cada parte.
+
+## Veja também
+
+- [Venda rápida](venda)
+- [Caixa](caixa)
+- [Configurações](configuracoes)

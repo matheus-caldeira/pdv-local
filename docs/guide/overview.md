@@ -50,4 +50,8 @@ Tudo fica salvo **no próprio aparelho**, dentro do navegador. Por isso:
 > "Apagar todos os dados" remove as informações de vez. Faça [backups](backup)
 > com frequência.
 
-Pronto para começar? Siga para os [Primeiros passos](primeiros-passos).
+## Veja também
+
+- [Primeiros passos](primeiros-passos)
+- [Venda rápida](venda)
+- [Financeiro](financeiro)

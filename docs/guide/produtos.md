@@ -44,3 +44,9 @@ Cada produto na lista mostra o preço de venda, o custo (se houver), o estoque
 
 > Produtos **inativos** continuam no cadastro, mas não aparecem na venda. Use
 > isso para itens fora de época sem precisar apagá-los.
+
+## Veja também
+
+- [Adicionais e extras](adicionais)
+- [Venda rápida](venda)
+- [Clientes](clientes)

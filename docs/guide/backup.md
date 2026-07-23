@@ -42,3 +42,8 @@ separados por tipo.
   ou roubo.
 - Antes de usar **Apagar Todos os Dados** ou trocar de aparelho, confirme que
   você tem um backup recente.
+
+## Veja também
+
+- [Configurações](configuracoes)
+- [Primeiros passos](primeiros-passos)

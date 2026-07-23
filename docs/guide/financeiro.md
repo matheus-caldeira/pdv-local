@@ -159,3 +159,9 @@ daquele mês.
 Antes de confirmar, o sistema avisa se ainda há contas pendentes no mês. E se
 precisar corrigir algo, use **Reabrir**: o resumo congelado é descartado e o mês
 volta a aceitar alterações (você pode fechá-lo de novo depois).
+
+## Veja também
+
+- [Configurações](configuracoes)
+- [Backup dos dados](backup)
+- [Relatórios](relatorios)
