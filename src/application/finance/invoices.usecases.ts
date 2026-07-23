@@ -42,6 +42,14 @@ export interface InvoiceHistoryPoint {
   delta: number | null;
 }
 
+export interface MonthInvoiceLine {
+  uid: string;
+  paymentMethodUid: string;
+  cardName: string;
+  amount: number;
+  status: CardInvoice['status'];
+}
+
 export const INVOICE_ADJUSTMENT_DESCRIPTION = 'Outros gastos da fatura';
 
 export const INVOICE_ADJUSTMENT_CATEGORY_NAME = 'Fatura de cartão';
@@ -329,6 +337,35 @@ export function makePayInvoice(invoices: CardInvoiceRepository) {
       paidAt,
       updatedAt: Date.now(),
     });
+  };
+}
+
+export function makeListMonthInvoices(
+  invoices: CardInvoiceRepository,
+  methods: PaymentMethodRepository,
+) {
+  return async (
+    month: MonthKey,
+  ): Promise<Either<AppError, MonthInvoiceLine[]>> => {
+    const listed = await invoices.listByMonth(month);
+    if (isLeft(listed)) return listed;
+
+    const allMethods = await methods.list();
+    if (isLeft(allMethods)) return allMethods;
+
+    const nameByUid = new Map(
+      allMethods.right.map((method) => [method.uid, method.name]),
+    );
+
+    return right(
+      listed.right.map((invoice) => ({
+        uid: invoice.uid,
+        paymentMethodUid: invoice.paymentMethodUid,
+        cardName: nameByUid.get(invoice.paymentMethodUid) ?? 'Cartão removido',
+        amount: invoice.statedAmount ?? 0,
+        status: invoice.status,
+      })),
+    );
   };
 }
 

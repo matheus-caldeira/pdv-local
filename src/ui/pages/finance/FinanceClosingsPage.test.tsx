@@ -21,6 +21,7 @@ import type { MonthClosing } from '../../../domain/finance/finance.entity';
 
 const loadFinanceClosingPreview = vi.fn();
 const listFinanceClosings = vi.fn();
+const listMonthInvoices = vi.fn();
 const closeFinanceMonth = vi.fn();
 const reopenFinanceMonth = vi.fn();
 
@@ -29,6 +30,7 @@ vi.mock('../../../app/container', () => ({
     loadFinanceClosingPreview: (month: string) =>
       loadFinanceClosingPreview(month),
     listFinanceClosings: () => listFinanceClosings(),
+    listMonthInvoices: (month: string) => listMonthInvoices(month),
     closeFinanceMonth: (month: string, nowMs: number) =>
       closeFinanceMonth(month, nowMs),
     reopenFinanceMonth: (month: string) => reopenFinanceMonth(month),
@@ -131,18 +133,43 @@ describe('FinanceClosingsPage', () => {
   beforeEach(() => {
     loadFinanceClosingPreview.mockReset();
     listFinanceClosings.mockReset();
+    listMonthInvoices.mockReset();
     closeFinanceMonth.mockReset();
     reopenFinanceMonth.mockReset();
     loadFinanceClosingPreview.mockResolvedValue(right(makePreview()));
     listFinanceClosings.mockResolvedValue(right([MAY_CLOSING]));
+    listMonthInvoices.mockResolvedValue(
+      right([
+        {
+          uid: 'inv-1',
+          paymentMethodUid: 'method-1',
+          cardName: 'Cartão Nubank',
+          amount: 1200,
+          status: 'open',
+        },
+      ]),
+    );
   });
   afterEach(cleanup);
 
   it('shows the loading state while fetching', () => {
     loadFinanceClosingPreview.mockReturnValue(new Promise(() => {}));
     listFinanceClosings.mockReturnValue(new Promise(() => {}));
+    listMonthInvoices.mockReturnValue(new Promise(() => {}));
     renderPage();
     expect(screen.getByText('Carregando...')).toBeInTheDocument();
+  });
+
+  it('lists the month invoices in the preview', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Fechar junho de 2026' }),
+      ).toBeInTheDocument(),
+    );
+    expect(listMonthInvoices).toHaveBeenCalledWith('2026-06');
+    const list = screen.getByRole('list', { name: 'Faturas do mês' });
+    expect(within(list).getByText('Cartão Nubank')).toBeInTheDocument();
   });
 
   it('renders the preview, the pending warning and the history', async () => {

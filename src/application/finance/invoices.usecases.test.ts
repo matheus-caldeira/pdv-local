@@ -29,6 +29,7 @@ import {
   INVOICE_ADJUSTMENT_CATEGORY_NAME,
   makeGetInvoiceDetail,
   makeListInvoiceHistory,
+  makeListMonthInvoices,
   makePayInvoice,
   makeSetInvoiceAmount,
 } from './invoices.usecases';
@@ -118,6 +119,7 @@ const setup = () => {
     setInvoiceAmount: makeSetInvoiceAmount(uow, methods, categories),
     payInvoice: makePayInvoice(invoices),
     listInvoiceHistory: makeListInvoiceHistory(invoices),
+    listMonthInvoices: makeListMonthInvoices(invoices, methods),
   };
 };
 
@@ -695,5 +697,61 @@ describe('makeListInvoiceHistory', () => {
     invoices.failNext(error);
 
     expect(unwrapLeft(await listInvoiceHistory(CARD_UID, 12))).toBe(error);
+  });
+});
+
+describe('makeListMonthInvoices', () => {
+  it('lista as faturas do mês com o nome do cartão e o valor', async () => {
+    const { invoices, methods, listMonthInvoices } = setup();
+    await methods.create(makeCard());
+    await invoices.create(
+      makeInvoice({ uid: 'inv-1', statedAmount: 1200, status: 'open' }),
+    );
+
+    const lines = unwrap(await listMonthInvoices(DUE_MONTH));
+
+    expect(lines).toEqual([
+      {
+        uid: 'inv-1',
+        paymentMethodUid: CARD_UID,
+        cardName: 'Cartão Nubank',
+        amount: 1200,
+        status: 'open',
+      },
+    ]);
+  });
+
+  it('trata fatura sem valor como zero e cartão removido com rótulo', async () => {
+    const { invoices, listMonthInvoices } = setup();
+    await invoices.create(
+      makeInvoice({ uid: 'inv-2', statedAmount: null, status: 'paid' }),
+    );
+
+    const lines = unwrap(await listMonthInvoices(DUE_MONTH));
+
+    expect(lines[0]).toEqual({
+      uid: 'inv-2',
+      paymentMethodUid: CARD_UID,
+      cardName: 'Cartão removido',
+      amount: 0,
+      status: 'paid',
+    });
+  });
+
+  it('propaga falha ao listar as faturas do mês', async () => {
+    const { invoices, listMonthInvoices } = setup();
+    const error = new ConnectorError('falha simulada');
+    invoices.failNext(error);
+
+    expect(unwrapLeft(await listMonthInvoices(DUE_MONTH))).toBe(error);
+  });
+
+  it('propaga falha ao listar os meios de pagamento', async () => {
+    const { invoices, methods, listMonthInvoices } = setup();
+    await invoices.create(makeInvoice({ uid: 'inv-3', statedAmount: 100 }));
+    const error = new ConnectorError('falha simulada');
+    methods.failNext(error);
+
+    expect(unwrapLeft(await listMonthInvoices(DUE_MONTH))).toBe(error);
   });
 });

@@ -6,18 +6,23 @@ import { FormField } from '../../molecules/FormField';
 import { Select } from '../../molecules/Select';
 import { TextField } from '../../molecules/TextField';
 import type { EntryInput } from '../../../application/finance/entries.usecases';
+import { resolveInvoiceMonth } from '../../../domain/finance/invoice.rules';
+import { formatDate } from '../../../domain/shared/format';
 import type {
   EntryStatus,
   FamilyMember,
   FinanceCategory,
   FinanceEntry,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
+import { monthLabel } from './FinanceAutomationsSupport';
 
 interface FinanceEntryFormModalProps {
   open: boolean;
   entry: FinanceEntry | null;
   categories: FinanceCategory[];
   members: FamilyMember[];
+  paymentMethods: PaymentMethod[];
   onClose(): void;
   onSave(input: EntryInput): void;
   onDelete(uid: string): void;
@@ -30,6 +35,7 @@ interface FormState {
   memberUids: string[];
   date: string;
   status: EntryStatus;
+  paymentMethodUid: string;
 }
 
 function pad2(value: number): string {
@@ -58,6 +64,7 @@ function initialForm(
       memberUids: [...entry.memberUids],
       date: toDateInputValue(entry.date),
       status: entry.status,
+      paymentMethodUid: entry.paymentMethodUid ?? '',
     };
   }
   const activeMembers = members.filter((member) => !member.archived);
@@ -68,7 +75,28 @@ function initialForm(
     memberUids: activeMembers.length === 1 ? [activeMembers[0].uid] : [],
     date: toDateInputValue(Date.now()),
     status: 'pending',
+    paymentMethodUid: '',
   };
+}
+
+function invoicePreviewLabel(
+  method: PaymentMethod | undefined,
+  dateValue: string,
+): string | null {
+  if (
+    !method ||
+    method.type !== 'credit' ||
+    method.closingDay === null ||
+    method.dueDay === null
+  ) {
+    return null;
+  }
+  const resolved = resolveInvoiceMonth(
+    fromDateInputValue(dateValue),
+    method.closingDay,
+    method.dueDay,
+  );
+  return `Fatura de ${monthLabel(resolved.month)}, vence ${formatDate(resolved.dueDate)}`;
 }
 
 export function FinanceEntryFormModal({
@@ -76,6 +104,7 @@ export function FinanceEntryFormModal({
   entry,
   categories,
   members,
+  paymentMethods,
   onClose,
   onSave,
   onDelete,
@@ -106,6 +135,13 @@ export function FinanceEntryFormModal({
   const visibleMembers = members.filter(
     (member) => !member.archived || form.memberUids.includes(member.uid),
   );
+  const selectablePaymentMethods = paymentMethods.filter(
+    (method) => !method.archived || method.uid === form.paymentMethodUid,
+  );
+  const selectedPaymentMethod = paymentMethods.find(
+    (method) => method.uid === form.paymentMethodUid,
+  );
+  const invoicePreview = invoicePreviewLabel(selectedPaymentMethod, form.date);
 
   function toggleMember(uid: string) {
     setForm((previous) => ({
@@ -124,7 +160,8 @@ export function FinanceEntryFormModal({
       memberUids: form.memberUids,
       date: dateLocked ? entry!.date : fromDateInputValue(form.date),
       status: form.status,
-      paymentMethodUid: null,
+      paymentMethodUid:
+        form.paymentMethodUid === '' ? null : form.paymentMethodUid,
     });
   }
 
@@ -248,6 +285,29 @@ export function FinanceEntryFormModal({
             <option value="paid">Pago</option>
           </Select>
         </FormField>
+        <FormField label="Meio de pagamento">
+          <Select
+            value={form.paymentMethodUid}
+            onChange={(event) =>
+              setForm((previous) => ({
+                ...previous,
+                paymentMethodUid: event.target.value,
+              }))
+            }
+          >
+            <option value="">Nenhum</option>
+            {selectablePaymentMethods.map((method) => (
+              <option key={method.uid} value={method.uid}>
+                {method.archived ? `${method.name} (arquivado)` : method.name}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        {invoicePreview && (
+          <p className="text-sm font-semibold text-ink-secondary">
+            {invoicePreview}
+          </p>
+        )}
       </div>
       <div className="mt-4 flex justify-end gap-2">
         {entry && (

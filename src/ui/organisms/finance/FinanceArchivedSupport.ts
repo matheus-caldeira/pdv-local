@@ -2,6 +2,7 @@ import type {
   FamilyMember,
   FinanceCategory,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 
 export function selectableCategories(
   categories: FinanceCategory[],
@@ -28,5 +29,18 @@ export function selectableMembers(
       member.archived
         ? { ...member, name: `${member.name} (arquivado)` }
         : member,
+    );
+}
+
+export function selectablePaymentMethods(
+  methods: PaymentMethod[],
+  selectedUid: string,
+): PaymentMethod[] {
+  return methods
+    .filter((method) => !method.archived || method.uid === selectedUid)
+    .map((method) =>
+      method.archived
+        ? { ...method, name: `${method.name} (arquivado)` }
+        : method,
     );
 }

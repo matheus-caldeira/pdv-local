@@ -19,6 +19,19 @@ const MEMBERS = [
   { id: 1, uid: 'member-1', name: 'Ana', archived: false, createdAt: 1 },
 ];
 
+const PAYMENT_METHODS = [
+  {
+    id: 1,
+    uid: 'method-1',
+    name: 'Cartão Nubank',
+    type: 'credit' as const,
+    closingDay: 3,
+    dueDay: 10,
+    archived: false,
+    createdAt: 1,
+  },
+];
+
 function renderFilters(overrides: Record<string, unknown> = {}) {
   const onFiltersChange = vi.fn();
   const onToggleOverdue = vi.fn();
@@ -28,6 +41,7 @@ function renderFilters(overrides: Record<string, unknown> = {}) {
       onFiltersChange={onFiltersChange}
       categories={CATEGORIES}
       members={MEMBERS}
+      paymentMethods={PAYMENT_METHODS}
       overdueMode={false}
       overdueCount={3}
       onToggleOverdue={onToggleOverdue}
@@ -49,6 +63,9 @@ describe('FinanceEntriesFilters', () => {
     expect(screen.getByLabelText('Filtrar por tipo')).toBeInTheDocument();
     expect(screen.getByLabelText('Filtrar por categoria')).toBeInTheDocument();
     expect(screen.getByLabelText('Filtrar por membro')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Filtrar por meio de pagamento'),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Atrasadas (3)' }),
     ).toHaveAttribute('aria-pressed', 'false');
@@ -111,6 +128,18 @@ describe('FinanceEntriesFilters', () => {
     });
   });
 
+  it('emits the payment method filter', async () => {
+    const { onFiltersChange } = renderFilters();
+    await userEvent.selectOptions(
+      screen.getByLabelText('Filtrar por meio de pagamento'),
+      'method-1',
+    );
+    expect(onFiltersChange).toHaveBeenCalledWith({
+      ...EMPTY_FINANCE_ENTRY_FILTERS,
+      paymentMethodUid: 'method-1',
+    });
+  });
+
   it('toggles the overdue mode', async () => {
     const { onToggleOverdue } = renderFilters();
     await userEvent.click(screen.getByRole('button', { name: /Atrasadas/ }));
@@ -124,6 +153,9 @@ describe('FinanceEntriesFilters', () => {
     expect(screen.getByLabelText('Filtrar por tipo')).toBeDisabled();
     expect(screen.getByLabelText('Filtrar por categoria')).toBeDisabled();
     expect(screen.getByLabelText('Filtrar por membro')).toBeDisabled();
+    expect(
+      screen.getByLabelText('Filtrar por meio de pagamento'),
+    ).toBeDisabled();
     expect(
       screen.getByRole('button', { name: 'Atrasadas (3)' }),
     ).toHaveAttribute('aria-pressed', 'true');

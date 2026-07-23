@@ -23,7 +23,7 @@ function monthLabel(month: MonthKey): string {
 
 export function FinanceClosingsPage() {
   const { month } = useFinanceMonth();
-  const { preview, closings, loading, closeMonth, reopenMonth } =
+  const { preview, closings, invoices, loading, closeMonth, reopenMonth } =
     useFinanceClosings(month);
   const [currentMonth] = useState<MonthKey>(() => currentMonthKey(Date.now()));
   const [closeModal, setCloseModal] = useState(false);
@@ -54,6 +54,7 @@ export function FinanceClosingsPage() {
           monthLabel={monthLabel(month)}
           preview={preview}
           closing={currentClosing}
+          invoices={invoices}
           isFutureMonth={isFutureMonth}
           onRequestClose={() => setCloseModal(true)}
           onRequestReopen={() => setReopenTarget(month)}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { container } from '../../app/container';
 import { fold } from '../../domain/shared/either';
 import type { ClosingPreview } from '../../application/finance/closing.usecases';
+import type { MonthInvoiceLine } from '../../application/finance/invoices.usecases';
 import type {
   MonthClosing,
   MonthKey,
@@ -12,12 +13,14 @@ export function useFinanceClosings(month: MonthKey) {
   const toast = useToast();
   const [preview, setPreview] = useState<ClosingPreview | null>(null);
   const [closings, setClosings] = useState<MonthClosing[]>([]);
+  const [invoices, setInvoices] = useState<MonthInvoiceLine[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [previewResult, closingsResult] = await Promise.all([
+    const [previewResult, closingsResult, invoicesResult] = await Promise.all([
       container.loadFinanceClosingPreview(month),
       container.listFinanceClosings(),
+      container.listMonthInvoices(month),
     ]);
     fold(
       previewResult,
@@ -35,6 +38,11 @@ export function useFinanceClosings(month: MonthKey) {
       closingsResult,
       (error) => toast(error.message, 'error'),
       (value) => setClosings(value),
+    );
+    fold(
+      invoicesResult,
+      (error) => toast(error.message, 'error'),
+      (value) => setInvoices(value),
     );
   }, [month, toast]);
 
@@ -77,5 +85,13 @@ export function useFinanceClosings(month: MonthKey) {
     [toast, load],
   );
 
-  return { preview, closings, loading, load, closeMonth, reopenMonth };
+  return {
+    preview,
+    closings,
+    invoices,
+    loading,
+    load,
+    closeMonth,
+    reopenMonth,
+  };
 }

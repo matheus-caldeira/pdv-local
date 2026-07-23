@@ -14,6 +14,7 @@ import type {
   FinanceCategory,
   Recurrence,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 
 const CATEGORIES: FinanceCategory[] = [
   {
@@ -82,6 +83,29 @@ const INCOME_RECURRENCE: Recurrence = {
   updatedAt: 1,
 };
 
+const PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    id: 1,
+    uid: 'method-1',
+    name: 'Cartão Nubank',
+    type: 'credit',
+    closingDay: 3,
+    dueDay: 10,
+    archived: false,
+    createdAt: 1,
+  },
+  {
+    id: 2,
+    uid: 'method-old',
+    name: 'Cartão Antigo',
+    type: 'credit',
+    closingDay: 5,
+    dueDay: 12,
+    archived: true,
+    createdAt: 1,
+  },
+];
+
 const onSave = vi.fn();
 const onDelete = vi.fn();
 const onLaunch = vi.fn();
@@ -93,6 +117,7 @@ function renderSection(recurrences: Recurrence[] = []) {
       recurrences={recurrences}
       categories={CATEGORIES}
       members={MEMBERS}
+      paymentMethods={PAYMENT_METHODS}
       currentMonth="2026-07"
       onSave={onSave}
       onDelete={onDelete}
@@ -197,6 +222,10 @@ describe('FinanceRecurrenceSection', () => {
     await userEvent.click(
       within(dialog).getByRole('checkbox', { name: 'Ana' }),
     );
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Meio de pagamento'),
+      'method-1',
+    );
     fireEvent.change(within(dialog).getByLabelText('Mês de início'), {
       target: { value: '2026-08' },
     });
@@ -213,7 +242,7 @@ describe('FinanceRecurrenceSection', () => {
       kind: 'expense',
       categoryUid: 'cat-home',
       memberUids: ['member-1'],
-      paymentMethodUid: null,
+      paymentMethodUid: 'method-1',
       dayOfMonth: 1,
       startMonth: '2026-08',
       endMonth: '2026-12',
@@ -279,7 +308,7 @@ describe('FinanceRecurrenceSection', () => {
       screen.getByRole('button', { name: 'Nova recorrência' }),
     );
     const dialog = screen.getByRole('dialog');
-    await userEvent.clear(within(dialog).getByLabelText('Dia do mês (1-28)'));
+    await userEvent.clear(within(dialog).getByLabelText('Dia do mês (1-31)'));
     await userEvent.selectOptions(
       within(dialog).getByLabelText('Categoria'),
       'cat-home',
@@ -409,6 +438,45 @@ describe('FinanceRecurrenceSection', () => {
     expect(
       within(dialog).getByRole('checkbox', { name: 'Carla (arquivado)' }),
     ).toBeChecked();
+  });
+
+  it('accepts day 31 and hides archived payment methods on create', async () => {
+    renderSection();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Nova recorrência' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Dia do mês (1-31)')).toHaveAttribute(
+      'max',
+      '31',
+    );
+    expect(
+      within(dialog).getByRole('option', { name: 'Cartão Nubank' }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('option', { name: /Cartão Antigo/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('prefills and keeps the archived payment method when editing', async () => {
+    onSave.mockResolvedValue(true);
+    renderSection([{ ...EXPENSE_RECURRENCE, paymentMethodUid: 'method-old' }]);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar recorrência Aluguel' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByLabelText('Meio de pagamento')).toHaveValue(
+      'method-old',
+    );
+    expect(
+      within(dialog).getByRole('option', { name: 'Cartão Antigo (arquivado)' }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Salvar recorrência' }),
+    );
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentMethodUid: 'method-old' }),
+    );
   });
 
   it('offers an archived placeholder when editing a recurrence with unknown category', async () => {

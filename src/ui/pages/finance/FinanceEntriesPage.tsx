@@ -17,6 +17,7 @@ export function FinanceEntriesPage() {
     overdueCount,
     categories,
     members,
+    paymentMethods,
     planCounts,
     closedMonths,
     isMonthClosed,
@@ -86,6 +87,7 @@ export function FinanceEntriesPage() {
         onFiltersChange={setFilters}
         categories={categories}
         members={members}
+        paymentMethods={paymentMethods}
         overdueMode={overdueMode}
         overdueCount={overdueCount}
         onToggleOverdue={() => setOverdueMode(!overdueMode)}
@@ -111,6 +113,7 @@ export function FinanceEntriesPage() {
         entry={editingEntry}
         categories={categories}
         members={members}
+        paymentMethods={paymentMethods}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
         onDelete={handleDelete}

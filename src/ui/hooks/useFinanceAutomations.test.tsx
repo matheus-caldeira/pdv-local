@@ -22,6 +22,7 @@ const listFinanceRecurrences = vi.fn();
 const listFinanceInstallmentPlans = vi.fn();
 const listFinanceCategories = vi.fn();
 const listFinanceMembers = vi.fn();
+const listPaymentMethods = vi.fn();
 const saveFinanceFormula = vi.fn();
 const deleteFinanceFormula = vi.fn();
 const previewFinanceFormula = vi.fn();
@@ -41,6 +42,7 @@ vi.mock('../../app/container', () => ({
     listFinanceInstallmentPlans: () => listFinanceInstallmentPlans(),
     listFinanceCategories: () => listFinanceCategories(),
     listFinanceMembers: () => listFinanceMembers(),
+    listPaymentMethods: () => listPaymentMethods(),
     saveFinanceFormula: (input: unknown) => saveFinanceFormula(input),
     deleteFinanceFormula: (uid: string) => deleteFinanceFormula(uid),
     previewFinanceFormula: (input: unknown) => previewFinanceFormula(input),
@@ -139,6 +141,7 @@ function Probe() {
       <span>plans:{automations.plans.length}</span>
       <span>categories:{automations.categories.length}</span>
       <span>members:{automations.members.length}</span>
+      <span>methods:{automations.paymentMethods.length}</span>
       <button
         onClick={() =>
           automations.saveFormula({
@@ -217,6 +220,7 @@ function Probe() {
             kind: 'expense',
             categoryUid: 'cat-home',
             memberUids: ['member-1'],
+            paymentMethodUid: 'method-1',
           })
         }
       >
@@ -284,6 +288,20 @@ describe('useFinanceAutomations', () => {
         },
       ]),
     );
+    listPaymentMethods.mockResolvedValue(
+      right([
+        {
+          id: 1,
+          uid: 'method-1',
+          name: 'Cartão Nubank',
+          type: 'credit',
+          closingDay: 3,
+          dueDay: 10,
+          archived: false,
+          createdAt: 1,
+        },
+      ]),
+    );
   });
   afterEach(cleanup);
 
@@ -298,6 +316,7 @@ describe('useFinanceAutomations', () => {
     expect(screen.getByText('plans:1')).toBeInTheDocument();
     expect(screen.getByText('categories:2')).toBeInTheDocument();
     expect(screen.getByText('members:2')).toBeInTheDocument();
+    expect(screen.getByText('methods:1')).toBeInTheDocument();
   });
 
   it('toasts when a list fails to load', async () => {
@@ -494,6 +513,7 @@ describe('useFinanceAutomations', () => {
         description: 'Geladeira',
         totalAmount: 3000,
         installmentCount: 10,
+        paymentMethodUid: 'method-1',
         uid: expect.any(String),
         createdAt: expect.any(Number),
       }),

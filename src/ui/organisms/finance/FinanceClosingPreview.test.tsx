@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FinanceClosingPreview } from './FinanceClosingPreview';
 import type { ClosingPreview } from '../../../application/finance/closing.usecases';
+import type { MonthInvoiceLine } from '../../../application/finance/invoices.usecases';
 import type {
   FinanceEntry,
   MonthClosing,
@@ -83,6 +84,23 @@ const CLOSING: MonthClosing = {
   ],
 };
 
+const INVOICES: MonthInvoiceLine[] = [
+  {
+    uid: 'inv-1',
+    paymentMethodUid: 'method-1',
+    cardName: 'Cartão Nubank',
+    amount: 1200,
+    status: 'open',
+  },
+  {
+    uid: 'inv-2',
+    paymentMethodUid: 'method-2',
+    cardName: 'Cartão Inter',
+    amount: 340,
+    status: 'paid',
+  },
+];
+
 function renderPreview(
   overrides: Partial<Parameters<typeof FinanceClosingPreview>[0]> = {},
 ) {
@@ -93,6 +111,7 @@ function renderPreview(
       monthLabel="junho de 2026"
       preview={PREVIEW}
       closing={null}
+      invoices={[]}
       isFutureMonth={false}
       onRequestClose={onRequestClose}
       onRequestReopen={onRequestReopen}
@@ -136,6 +155,31 @@ describe('FinanceClosingPreview', () => {
   it('omits the pending warning when there are no pending entries', () => {
     renderPreview({ preview: { ...PREVIEW, pendingEntries: [] } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('lists the invoices due in the month with amount and status', () => {
+    renderPreview({ invoices: INVOICES });
+    const list = screen.getByRole('list', { name: 'Faturas do mês' });
+    expect(within(list).getByText('Cartão Nubank')).toBeInTheDocument();
+    expect(within(list).getByText('R$ 1200,00')).toBeInTheDocument();
+    expect(within(list).getByText('Pendente')).toBeInTheDocument();
+    expect(within(list).getByText('Cartão Inter')).toBeInTheDocument();
+    expect(within(list).getByText('R$ 340,00')).toBeInTheDocument();
+    expect(within(list).getByText('Paga')).toBeInTheDocument();
+  });
+
+  it('omits the invoices block when there are none', () => {
+    renderPreview();
+    expect(
+      screen.queryByRole('list', { name: 'Faturas do mês' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the invoices in a closed month snapshot', () => {
+    renderPreview({ closing: CLOSING, invoices: INVOICES });
+    expect(
+      screen.getByRole('list', { name: 'Faturas do mês' }),
+    ).toBeInTheDocument();
   });
 
   it('requests the closing confirmation when clicking the close button', async () => {

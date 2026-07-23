@@ -16,6 +16,7 @@ import {
 import {
   selectableCategories,
   selectableMembers,
+  selectablePaymentMethods,
 } from './FinanceArchivedSupport';
 import type {
   FamilyMember,
@@ -24,12 +25,14 @@ import type {
   MonthKey,
   Recurrence,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 import type { RecurrenceInput } from '../../../application/finance/automations.usecases';
 
 interface FinanceRecurrenceSectionProps {
   recurrences: Recurrence[];
   categories: FinanceCategory[];
   members: FamilyMember[];
+  paymentMethods: PaymentMethod[];
   currentMonth: MonthKey;
   onSave(input: RecurrenceInput): Promise<boolean>;
   onDelete(uid: string): Promise<boolean>;
@@ -48,6 +51,7 @@ export function FinanceRecurrenceSection({
   recurrences,
   categories,
   members,
+  paymentMethods,
   currentMonth,
   onSave,
   onDelete,
@@ -61,6 +65,7 @@ export function FinanceRecurrenceSection({
   const [kind, setKind] = useState<FinanceKind>('expense');
   const [categoryUid, setCategoryUid] = useState('');
   const [memberUids, setMemberUids] = useState<string[]>([]);
+  const [paymentMethodUid, setPaymentMethodUid] = useState('');
   const [dayOfMonth, setDayOfMonth] = useState('1');
   const [startMonth, setStartMonth] = useState(currentMonth);
   const [endMonth, setEndMonth] = useState('');
@@ -73,6 +78,7 @@ export function FinanceRecurrenceSection({
     setKind('expense');
     setCategoryUid('');
     setMemberUids([]);
+    setPaymentMethodUid('');
     setDayOfMonth('1');
     setStartMonth(currentMonth);
     setEndMonth('');
@@ -87,6 +93,7 @@ export function FinanceRecurrenceSection({
     setKind(recurrence.kind);
     setCategoryUid(recurrence.categoryUid);
     setMemberUids([...recurrence.memberUids]);
+    setPaymentMethodUid(recurrence.paymentMethodUid ?? '');
     setDayOfMonth(String(recurrence.dayOfMonth));
     setStartMonth(recurrence.startMonth);
     setEndMonth(recurrence.endMonth ?? '');
@@ -96,6 +103,10 @@ export function FinanceRecurrenceSection({
 
   const visibleCategories = selectableCategories(categories, [categoryUid]);
   const visibleMembers = selectableMembers(members, memberUids);
+  const visiblePaymentMethods = selectablePaymentMethods(
+    paymentMethods,
+    paymentMethodUid,
+  );
 
   function changeKind(next: FinanceKind) {
     setKind(next);
@@ -118,7 +129,7 @@ export function FinanceRecurrenceSection({
       kind,
       categoryUid,
       memberUids,
-      paymentMethodUid: null,
+      paymentMethodUid: paymentMethodUid === '' ? null : paymentMethodUid,
       dayOfMonth: parseInt(dayOfMonth, 10) || 0,
       startMonth,
       endMonth: endMonth === '' ? null : endMonth,
@@ -275,12 +286,25 @@ export function FinanceRecurrenceSection({
               ))}
             </div>
           </fieldset>
-          <FormField label="Dia do mês (1-28)">
+          <FormField label="Meio de pagamento">
+            <Select
+              value={paymentMethodUid}
+              onChange={(e) => setPaymentMethodUid(e.target.value)}
+            >
+              <option value="">Nenhum</option>
+              {visiblePaymentMethods.map((method) => (
+                <option key={method.uid} value={method.uid}>
+                  {method.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField label="Dia do mês (1-31)">
             <TextField
               type="number"
               inputMode="numeric"
               min={1}
-              max={28}
+              max={31}
               value={dayOfMonth}
               onChange={(e) => setDayOfMonth(e.target.value)}
             />

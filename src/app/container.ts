@@ -96,6 +96,7 @@ import {
 import {
   makeGetInvoiceDetail,
   makeListInvoiceHistory,
+  makeListMonthInvoices,
   makePayInvoice,
   makeSetInvoiceAmount,
 } from '../application/finance/invoices.usecases';
@@ -245,6 +246,10 @@ export function createContainer() {
     ),
     payInvoice: makePayInvoice(financeCardInvoices),
     listInvoiceHistory: makeListInvoiceHistory(financeCardInvoices),
+    listMonthInvoices: makeListMonthInvoices(
+      financeCardInvoices,
+      financePaymentMethods,
+    ),
     listFinanceEntries: makeListEntries(financeEntries),
     listOverdueFinanceEntries: makeListOverdueEntries(financeEntries),
     createFinanceEntry: makeCreateEntry(

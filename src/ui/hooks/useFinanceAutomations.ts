@@ -13,6 +13,7 @@ import type {
   MonthKey,
   Recurrence,
 } from '../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../domain/finance/payment-method.entity';
 import type {
   FormulaInput,
   FormulaPreview,
@@ -32,6 +33,7 @@ export interface InstallmentPlanInput {
   kind: FinanceKind;
   categoryUid: string;
   memberUids: string[];
+  paymentMethodUid: string | null;
 }
 
 export function useFinanceAutomations() {
@@ -42,6 +44,7 @@ export function useFinanceAutomations() {
   const [plans, setPlans] = useState<InstallmentPlan[]>([]);
   const [categories, setCategories] = useState<FinanceCategory[]>([]);
   const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [currentMonth] = useState<MonthKey>(() => currentMonthKey(Date.now()));
 
   const load = useCallback(
@@ -52,6 +55,7 @@ export function useFinanceAutomations() {
         container.listFinanceInstallmentPlans(),
         container.listFinanceCategories(),
         container.listFinanceMembers(),
+        container.listPaymentMethods(),
       ]).then(
         ([
           formulasResult,
@@ -59,6 +63,7 @@ export function useFinanceAutomations() {
           plansResult,
           categoriesResult,
           membersResult,
+          paymentMethodsResult,
         ]) => {
           const showError = (error: AppError) => toast(error.message, 'error');
           fold(formulasResult, showError, (value) => setFormulas(value));
@@ -66,6 +71,9 @@ export function useFinanceAutomations() {
           fold(plansResult, showError, (value) => setPlans(value));
           fold(categoriesResult, showError, (value) => setCategories(value));
           fold(membersResult, showError, (value) => setMembers(value));
+          fold(paymentMethodsResult, showError, (value) =>
+            setPaymentMethods(value),
+          );
           setLoading(false);
         },
       ),
@@ -180,7 +188,6 @@ export function useFinanceAutomations() {
         container.createFinanceInstallmentPlan({
           ...input,
           uid: createUid(),
-          paymentMethodUid: null,
           createdAt: Date.now(),
         }),
         'Parcelamento criado!',
@@ -227,6 +234,7 @@ export function useFinanceAutomations() {
     plans,
     categories,
     members,
+    paymentMethods,
     currentMonth,
     load,
     saveFormula,

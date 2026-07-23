@@ -15,6 +15,7 @@ import {
 import {
   selectableCategories,
   selectableMembers,
+  selectablePaymentMethods,
 } from './FinanceArchivedSupport';
 import type {
   FamilyMember,
@@ -23,6 +24,7 @@ import type {
   InstallmentPlan,
   MonthKey,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 import type { InstallmentPreviewLine } from '../../../application/finance/automations.usecases';
 import type { InstallmentPlanInput } from '../../hooks/useFinanceAutomations';
 
@@ -30,6 +32,7 @@ interface FinanceInstallmentSectionProps {
   plans: InstallmentPlan[];
   categories: FinanceCategory[];
   members: FamilyMember[];
+  paymentMethods: PaymentMethod[];
   currentMonth: MonthKey;
   onPreview(
     total: number,
@@ -44,6 +47,7 @@ export function FinanceInstallmentSection({
   plans,
   categories,
   members,
+  paymentMethods,
   currentMonth,
   onPreview,
   onCreate,
@@ -58,6 +62,7 @@ export function FinanceInstallmentSection({
   const [kind, setKind] = useState<FinanceKind>('expense');
   const [categoryUid, setCategoryUid] = useState('');
   const [memberUids, setMemberUids] = useState<string[]>([]);
+  const [paymentMethodUid, setPaymentMethodUid] = useState('');
   const [previewLines, setPreviewLines] = useState<
     InstallmentPreviewLine[] | null
   >(null);
@@ -67,6 +72,10 @@ export function FinanceInstallmentSection({
 
   const visibleCategories = selectableCategories(categories, [categoryUid]);
   const visibleMembers = selectableMembers(members, memberUids);
+  const visiblePaymentMethods = selectablePaymentMethods(
+    paymentMethods,
+    paymentMethodUid,
+  );
 
   function openCreate() {
     setDescription('');
@@ -77,6 +86,7 @@ export function FinanceInstallmentSection({
     setKind('expense');
     setCategoryUid('');
     setMemberUids([]);
+    setPaymentMethodUid('');
     setPreviewLines(null);
     setFormOpen(true);
   }
@@ -125,6 +135,7 @@ export function FinanceInstallmentSection({
       kind,
       categoryUid,
       memberUids,
+      paymentMethodUid: paymentMethodUid === '' ? null : paymentMethodUid,
     });
     if (ok) setFormOpen(false);
   }
@@ -217,12 +228,12 @@ export function FinanceInstallmentSection({
               onChange={(e) => changeFirstMonth(e.target.value)}
             />
           </FormField>
-          <FormField label="Dia do mês (1-28)">
+          <FormField label="Dia do mês (1-31)">
             <TextField
               type="number"
               inputMode="numeric"
               min={1}
-              max={28}
+              max={31}
               value={dayOfMonth}
               onChange={(e) => setDayOfMonth(e.target.value)}
             />
@@ -274,6 +285,19 @@ export function FinanceInstallmentSection({
               ))}
             </div>
           </fieldset>
+          <FormField label="Meio de pagamento">
+            <Select
+              value={paymentMethodUid}
+              onChange={(e) => setPaymentMethodUid(e.target.value)}
+            >
+              <option value="">Nenhum</option>
+              {visiblePaymentMethods.map((method) => (
+                <option key={method.uid} value={method.uid}>
+                  {method.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
         </div>
 
         {previewLines !== null && (
