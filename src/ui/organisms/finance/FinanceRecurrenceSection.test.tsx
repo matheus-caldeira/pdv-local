@@ -60,6 +60,7 @@ const EXPENSE_RECURRENCE: Recurrence = {
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 };
@@ -76,6 +77,7 @@ const INCOME_RECURRENCE: Recurrence = {
   startMonth: '2026-01',
   endMonth: '2026-12',
   active: false,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 };

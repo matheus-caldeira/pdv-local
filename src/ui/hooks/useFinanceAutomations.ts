@@ -180,6 +180,7 @@ export function useFinanceAutomations() {
         container.createFinanceInstallmentPlan({
           ...input,
           uid: createUid(),
+          paymentMethodUid: null,
           createdAt: Date.now(),
         }),
         'Parcelamento criado!',

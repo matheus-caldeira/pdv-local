@@ -59,6 +59,7 @@ const PLAN: InstallmentPlan = {
   kind: 'expense',
   categoryUid: 'cat-home',
   memberUids: ['member-1'],
+  paymentMethodUid: null,
   createdAt: 1,
 };
 

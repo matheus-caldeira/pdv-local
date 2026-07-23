@@ -24,6 +24,9 @@ const PENDING_ENTRY: FinanceEntry = {
   installmentNumber: null,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 1780000000000,
   updatedAt: 1780000000000,
 };

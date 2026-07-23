@@ -39,6 +39,9 @@ const newEntry = (over: Partial<NewFinanceEntry> = {}): NewFinanceEntry => ({
   installmentNumber: 1,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 1,
   updatedAt: 1,
   ...over,
@@ -56,6 +59,7 @@ const newPlan = (
   kind: 'expense',
   categoryUid: 'cat-1',
   memberUids: [],
+  paymentMethodUid: null,
   createdAt: 1,
   ...over,
 });

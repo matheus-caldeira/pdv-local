@@ -113,6 +113,9 @@ export function makeCreateEntry(
       installmentNumber: null,
       sourceEntryUids: [],
       formulaBaseMonth: null,
+      paymentMethodUid: null,
+      invoiceMonth: null,
+      invoiceUid: null,
       createdAt: now,
       updatedAt: now,
     });

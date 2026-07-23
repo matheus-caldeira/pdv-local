@@ -93,6 +93,9 @@ const makeStoredEntry = (
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
+    paymentMethodUid: null,
+    invoiceMonth: null,
+    invoiceUid: null,
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -136,6 +139,7 @@ const planInput = (
   kind: 'expense',
   categoryUid: 'cat-shopping',
   memberUids: ['member-me'],
+  paymentMethodUid: null,
   createdAt: 1,
   ...overrides,
 });

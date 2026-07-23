@@ -134,6 +134,7 @@ const recurrence = (uid: string): NewRecurrence => ({
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 });
@@ -148,6 +149,7 @@ const installmentPlan = (uid: string): NewInstallmentPlan => ({
   kind: 'expense',
   categoryUid: 'cat-1',
   memberUids: ['mem-1'],
+  paymentMethodUid: null,
   createdAt: 1,
 });
 

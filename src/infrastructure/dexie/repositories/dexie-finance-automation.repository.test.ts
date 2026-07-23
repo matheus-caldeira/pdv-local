@@ -41,6 +41,7 @@ function buildRecurrence(
     startMonth: '2026-01',
     endMonth: null,
     active: true,
+    paymentMethodUid: null,
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -60,6 +61,7 @@ function buildPlan(
     kind: 'expense',
     categoryUid: 'cat-lazer',
     memberUids: ['m-1'],
+    paymentMethodUid: null,
     createdAt: 1,
     ...overrides,
   };

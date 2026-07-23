@@ -21,9 +21,11 @@ import type { BusinessTypeDefinition } from '../../domain/business-type/registry
 import type { Repositories } from '../../domain/shared/repositories';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 import {
+  FakeCardInvoiceRepository,
   FakeFinanceAutomationRepository,
   FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
+  FakePaymentMethodRepository,
 } from '../finance/fakes';
 
 function definitionWith(
@@ -153,6 +155,8 @@ class FakeRepositories implements Repositories {
   financeEntries = new FakeFinanceEntryRepository();
   financeAutomations = new FakeFinanceAutomationRepository();
   financeClosings = new FakeFinanceClosingRepository();
+  financePaymentMethods = new FakePaymentMethodRepository();
+  financeCardInvoices = new FakeCardInvoiceRepository();
 }
 
 class FakeUnitOfWork implements UnitOfWork {

@@ -94,6 +94,7 @@ const RECURRENCE: Recurrence = {
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 };
@@ -109,6 +110,7 @@ const PLAN: InstallmentPlan = {
   kind: 'expense',
   categoryUid: 'cat-home',
   memberUids: ['member-1'],
+  paymentMethodUid: null,
   createdAt: 1,
 };
 

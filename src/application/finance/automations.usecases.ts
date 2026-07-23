@@ -174,6 +174,9 @@ const recurrenceEntry = (
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
+    paymentMethodUid: null,
+    invoiceMonth: null,
+    invoiceUid: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -310,6 +313,9 @@ export function makeGenerateFormulaEntry(
       installmentNumber: null,
       sourceEntryUids: matches.map((entry) => entry.uid),
       formulaBaseMonth: input.baseMonth,
+      paymentMethodUid: null,
+      invoiceMonth: null,
+      invoiceUid: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -365,6 +371,7 @@ export function makeSaveRecurrence(automations: FinanceAutomationRepository) {
       startMonth: input.startMonth,
       endMonth: input.endMonth,
       active: input.active,
+      paymentMethodUid: null,
     };
     if (input.uid === undefined) {
       return automations.saveRecurrence({
@@ -541,6 +548,9 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
           installmentNumber: index + 1,
           sourceEntryUids: [],
           formulaBaseMonth: null,
+          paymentMethodUid: null,
+          invoiceMonth: null,
+          invoiceUid: null,
           createdAt: now,
           updatedAt: now,
         }),
