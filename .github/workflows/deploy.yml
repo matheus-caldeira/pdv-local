@@ -44,6 +44,8 @@ jobs:
           cp dist/index.html _site/docs/index.html
           # Conteudo markdown da documentacao em /docs-content (apenas os .md)
           cp docs/guide/*.md _site/docs-content/
+          # Indice de busca da documentacao (derivado dos .md)
+          npx tsx scripts/build-docs-search-index.mjs _site/docs-content/search-index.json
           # Landing page na raiz
           cp landing.html _site/index.html
           # Fallback de rota do GitHub Pages (decide landing vs app vs docs)

@@ -48,6 +48,22 @@ function serveDocsInDev(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const url = (req.url || '').split('?')[0];
 
+        if (url === `${SITE_BASE}/docs-content/search-index.json`) {
+          const { buildEntriesForPage } =
+            await import('./src/domain/docs/search-index.ts');
+          const { DOCS_PAGES } = await import('./docs/guide/manifest.ts');
+          const entries = DOCS_PAGES.flatMap((page) => {
+            const md = readFileSync(
+              resolve(__dirname, 'docs/guide', `${page.slug}.md`),
+              'utf-8',
+            );
+            return buildEntriesForPage(page, md);
+          });
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.end(JSON.stringify(entries));
+          return;
+        }
+
         // Conteudo markdown: /meu-bolso/docs-content/<slug>.md -> docs/guide/<slug>.md
         const contentPrefix = `${SITE_BASE}/docs-content/`;
         if (url.startsWith(contentPrefix) && url.endsWith('.md')) {
@@ -120,6 +136,7 @@ export default defineConfig({
         'src/infrastructure/**',
         'src/ui/**',
         'src/app/**',
+        'src/pages/**',
       ],
       exclude: [
         'src/infrastructure/dexie/dexie-database.ts',
@@ -151,6 +168,7 @@ export default defineConfig({
           setupFiles: ['./src/test/setup.ui.ts'],
           include: [
             'src/ui/**/*.test.{ts,tsx}',
+            'src/pages/**/*.test.{ts,tsx}',
             'src/app/**/*.test.tsx',
             'src/App.test.tsx',
           ],
