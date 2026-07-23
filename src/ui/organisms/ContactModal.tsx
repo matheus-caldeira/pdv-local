@@ -16,12 +16,12 @@ export function ContactModal({ open, onClose }: ContactModalProps) {
       <div className="flex flex-col items-center gap-4 text-center">
         <img
           src={`${import.meta.env.BASE_URL}logo.png`}
-          alt="PDV Local"
+          alt="Meu Bolso"
           className="h-16 w-16 object-contain"
         />
         <p className="text-sm leading-relaxed text-ink-secondary">
-          PDV Local — ponto de venda gratuito para o celular. Desenvolvido por{' '}
-          <strong>Matheus Caldeira</strong>.
+          Meu Bolso — controle tudo no seu bolso, offline e de graça.
+          Desenvolvido por <strong>Matheus Caldeira</strong>.
         </p>
         <div className="flex w-full flex-col gap-2">
           <a className={LINK_CLASS} href={`${DOCS_BASE}/`}>

@@ -1,13 +1,14 @@
-# PDV Local
+# Meu Bolso
 
-Ponto de venda gratuito que roda no navegador, **offline-first**, pensado para o
-celular. Vendas, caixa, cozinha (KDS), painel do cliente, produtos com
-adicionais, clientes, relatórios e backup — tudo salvo localmente no aparelho
-(IndexedDB), sem servidor, sem mensalidade e sem cadastro.
+Controle do seu negócio e do seu dinheiro no navegador, **offline-first**,
+pensado para o celular. Vendas, caixa, cozinha (KDS), painel do cliente,
+produtos com adicionais, clientes, finanças (meios de pagamento e faturas de
+cartão), relatórios e backup — tudo salvo localmente no aparelho (IndexedDB),
+sem servidor, sem mensalidade e sem cadastro.
 
-- **Site:** https://matheus-caldeira.github.io/pdv-local/
-- **App:** https://matheus-caldeira.github.io/pdv-local/app/
-- **Documentação (uso):** https://matheus-caldeira.github.io/pdv-local/docs/
+- **Site:** https://matheus-caldeira.github.io/meu-bolso/
+- **App:** https://matheus-caldeira.github.io/meu-bolso/app/
+- **Documentação (uso):** https://matheus-caldeira.github.io/meu-bolso/docs/
 
 ## Stack
 
@@ -33,12 +34,12 @@ npm run lint     # eslint
 Em dev:
 
 - Landing: http://localhost:5173/
-- App: http://localhost:5173/pdv-local/app/
-- Documentação: http://localhost:5173/pdv-local/docs/
+- App: http://localhost:5173/meu-bolso/app/
+- Documentação: http://localhost:5173/meu-bolso/docs/
 
 ## As três áreas de URL
 
-O site tem três áreas, todas sob a base `/pdv-local/` no GitHub Pages:
+O site tem três áreas, todas sob a base `/meu-bolso/` no GitHub Pages:
 
 | URL       | Conteúdo           | Origem                         |
 | --------- | ------------------ | ------------------------------ |
@@ -48,7 +49,7 @@ O site tem três áreas, todas sob a base `/pdv-local/` no GitHub Pages:
 
 - **Bundle único:** o app e a documentação usam o mesmo build. A SPA decide o
   `basename` do roteador em tempo de execução conforme o prefixo da URL
-  (`/pdv-local/app` ou `/pdv-local/docs`) — ver `src/lib/docsBase.ts` e
+  (`/meu-bolso/app` ou `/meu-bolso/docs`) — ver `src/lib/docsBase.ts` e
   `src/App.tsx`.
 - **Persistência:** toda a informação fica em IndexedDB via Dexie
   (`src/db/database.ts`). Não há backend.
@@ -133,7 +134,7 @@ landing.html    landing page (servida em /)
   publicados.
 
 Em dev, um middleware do Vite (`serveDocsInDev` em `vite.config.ts`) serve o
-conteúdo de `docs/guide/` em `/pdv-local/docs-content/<slug>.md`. Em produção, o
+conteúdo de `docs/guide/` em `/meu-bolso/docs-content/<slug>.md`. Em produção, o
 workflow copia esses arquivos para `_site/docs-content/`.
 
 ## Deploy

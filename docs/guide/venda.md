@@ -1,7 +1,8 @@
 # Venda rápida
 
-A tela **Vender** é onde você monta o pedido e recebe o pagamento. É a tela que
-você mais vai usar no balcão.
+A tela **Vender** é onde você monta o pedido e recebe o pagamento no Meu Bolso.
+Sempre que alguém compra algo do seu negócio, é por aqui que você registra a
+venda e recebe — e cada venda entra no controle do dinheiro do dia.
 
 > Para vender, o **caixa precisa estar aberto**. Se aparecer "Abra o caixa para
 > vender", toque em **Abrir Caixa** e informe o valor inicial. Veja [Caixa](caixa).
@@ -71,3 +72,9 @@ automaticamente, pronto para a próxima venda.
 A numeração da comanda é gerada automaticamente a cada venda. A **impressão em
 impressora térmica** está em preparação — por enquanto, o botão de imprimir
 apenas avisa que a impressora precisa ser configurada. Acompanhe as novidades.
+
+## Veja também
+
+- [Caixa](caixa)
+- [Produtos](produtos)
+- [Pedidos](pedidos)

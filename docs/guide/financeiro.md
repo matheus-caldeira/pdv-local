@@ -3,7 +3,7 @@
 A área **Financeiro** ajuda a organizar as contas da família e do negócio:
 registrar entradas e saídas, planejar um orçamento, acompanhar contas a pagar e
 projetar como o saldo fica nos próximos meses. Tudo salvo no próprio aparelho,
-como o resto do PDV Local (lembre-se do [Backup](backup)).
+como o resto do Meu Bolso (lembre-se do [Backup](backup)).
 
 ## Conceitos básicos
 
@@ -159,3 +159,9 @@ daquele mês.
 Antes de confirmar, o sistema avisa se ainda há contas pendentes no mês. E se
 precisar corrigir algo, use **Reabrir**: o resumo congelado é descartado e o mês
 volta a aceitar alterações (você pode fechá-lo de novo depois).
+
+## Veja também
+
+- [Configurações](configuracoes)
+- [Backup dos dados](backup)
+- [Relatórios](relatorios)

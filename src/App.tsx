@@ -106,6 +106,11 @@ const DocsLayout = lazy(() =>
 const DocsPage = lazy(() =>
   import('./pages/docs/DocsPage').then((m) => ({ default: m.DocsPage })),
 );
+const DocsSearchPage = lazy(() =>
+  import('./pages/docs/DocsSearchPage').then((m) => ({
+    default: m.DocsSearchPage,
+  })),
+);
 const OnboardingPage = lazy(() =>
   import('./ui/pages/OnboardingPage').then((m) => ({
     default: m.OnboardingPage,
@@ -334,6 +339,7 @@ export function App() {
             <Routes>
               <Route element={<DocsLayout />}>
                 <Route index element={<DocsPage />} />
+                <Route path="busca" element={<DocsSearchPage />} />
                 <Route path=":slug" element={<DocsPage />} />
               </Route>
             </Routes>

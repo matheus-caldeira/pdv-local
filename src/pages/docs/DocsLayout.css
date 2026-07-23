@@ -48,6 +48,15 @@
 .docs-sidebar-action:hover {
   color: var(--accent);
 }
+.docs-search-kbd {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+}
 .docs-nav-section {
   font-size: 0.72rem;
   text-transform: uppercase;

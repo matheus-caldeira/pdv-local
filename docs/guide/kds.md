@@ -35,3 +35,9 @@ atualizar a página.
 
 > No celular, use as abas na parte de baixo para alternar entre as etapas e ver
 > os pedidos de cada uma.
+
+## Veja também
+
+- [Configurações](configuracoes)
+- [Painel do cliente](painel)
+- [Pedidos](pedidos)

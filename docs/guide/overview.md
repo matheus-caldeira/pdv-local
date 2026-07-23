@@ -1,9 +1,9 @@
-# O que é o PDV Local
+# O que é o Meu Bolso
 
-O PDV Local é um ponto de venda gratuito que roda direto no navegador do seu
-celular, tablet ou computador. Serve para feiras, cantinas, lanchonetes,
-bazares, food trucks e qualquer negócio que precise vender com agilidade no
-balcão.
+O Meu Bolso é um app gratuito para controlar o seu negócio e o seu dinheiro,
+direto no navegador do celular, tablet ou computador. Serve tanto para vender no
+balcão (feiras, cantinas, lanchonetes, bazares, food trucks) quanto para
+organizar as suas finanças do mês — tudo no mesmo lugar.
 
 Não precisa instalar nada, não tem mensalidade e não pede cadastro. Você abre o
 endereço no navegador e já começa a usar.
@@ -27,7 +27,7 @@ endereço no navegador e já começa a usar.
 
 ## Como o sistema é organizado
 
-O PDV Local tem dois módulos, e você escolhe o que quer usar no primeiro acesso
+O Meu Bolso tem dois módulos, e você escolhe o que quer usar no primeiro acesso
 (dá para mudar depois em Configurações):
 
 - **Ponto de Venda** — vender, acompanhar pedidos, controlar o caixa, cadastrar
@@ -50,4 +50,8 @@ Tudo fica salvo **no próprio aparelho**, dentro do navegador. Por isso:
 > "Apagar todos os dados" remove as informações de vez. Faça [backups](backup)
 > com frequência.
 
-Pronto para começar? Siga para os [Primeiros passos](primeiros-passos).
+## Veja também
+
+- [Primeiros passos](primeiros-passos)
+- [Venda rápida](venda)
+- [Financeiro](financeiro)

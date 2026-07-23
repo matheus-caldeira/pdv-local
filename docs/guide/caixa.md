@@ -54,3 +54,9 @@ caixa é encerrado e você pode abrir um novo na próxima vez.
 Abaixo, a tela lista as **sessões anteriores** já fechadas, com data, horário de
 abertura e fechamento e os valores inicial e final. Para um relatório completo de
 cada sessão, veja [Relatórios](relatorios).
+
+## Veja também
+
+- [Venda rápida](venda)
+- [Relatórios](relatorios)
+- [Pedidos](pedidos)

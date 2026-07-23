@@ -2,16 +2,17 @@
 
 Guia para agentes trabalhando neste repositório. Leia antes de tocar no código.
 
-## O que é o PDV Local
+## O que é o Meu Bolso
 
-Ponto de venda gratuito, **offline-first**, que roda no navegador e é pensado
-para o celular. Vendas, caixa, cozinha (KDS), painel do cliente, produtos com
-adicionais, clientes, relatórios e backup — tudo salvo localmente no aparelho
+Controle do seu negócio e do seu dinheiro, **offline-first**, que roda no
+navegador e é pensado para o celular. Vendas, caixa, cozinha (KDS), painel do
+cliente, produtos com adicionais, clientes, finanças (meios de pagamento e
+faturas de cartão), relatórios e backup — tudo salvo localmente no aparelho
 (IndexedDB via Dexie), **sem servidor, sem mensalidade e sem cadastro**.
 
-- **App:** https://matheus-caldeira.github.io/pdv-local/app/
-- **Docs (uso):** https://matheus-caldeira.github.io/pdv-local/docs/
-- **Landing:** https://matheus-caldeira.github.io/pdv-local/
+- **App:** https://matheus-caldeira.github.io/meu-bolso/app/
+- **Docs (uso):** https://matheus-caldeira.github.io/meu-bolso/docs/
+- **Landing:** https://matheus-caldeira.github.io/meu-bolso/
 
 ## Stack
 
@@ -36,12 +37,12 @@ npm run test     # suíte de testes
 Em dev:
 
 - Landing: http://localhost:5173/
-- App: http://localhost:5173/pdv-local/app/
-- Docs: http://localhost:5173/pdv-local/docs/
+- App: http://localhost:5173/meu-bolso/app/
+- Docs: http://localhost:5173/meu-bolso/docs/
 
 ## As três áreas de URL
 
-Tudo sob a base `/pdv-local/` no GitHub Pages. O **app e a documentação usam o
+Tudo sob a base `/meu-bolso/` no GitHub Pages. O **app e a documentação usam o
 mesmo bundle** — a SPA decide o `basename` do roteador em runtime conforme o
 prefixo da URL. Ver `src/lib/docsBase.ts` e `src/App.tsx`.
 
@@ -150,7 +151,7 @@ landing.html      landing page (servida em /)
 - **Interno (arquitetura):** `docs/architecture.md`, `docs/atomic-design.md`,
   `docs/design-system.md`, `docs/site-structure.md` — **não** são publicados.
 - Em dev, um middleware do Vite (`serveDocsInDev` em `vite.config.ts`) serve
-  `docs/guide/` em `/pdv-local/docs-content/<slug>.md`. Em prod, o workflow copia
+  `docs/guide/` em `/meu-bolso/docs-content/<slug>.md`. Em prod, o workflow copia
   para `_site/docs-content/`.
 
 ## Deploy

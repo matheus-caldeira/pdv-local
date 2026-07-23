@@ -1,8 +1,10 @@
 # Configurações
 
-A tela **Config** (Configurações) reúne os ajustes do seu negócio, a numeração
-das comandas, o controle de status dos pedidos, a exportação/importação de dados
-e a impressora.
+A tela **Config** (Configurações) reúne os ajustes do **Meu Bolso**: os dados do
+seu negócio, a numeração das comandas, os módulos ativos (Ponto de Venda e
+Financeiro), o controle de status dos pedidos, a exportação/importação de dados e
+a impressora. É aqui que você adapta o app ao seu uso — seja para vender, para
+cuidar do dinheiro pessoal, ou os dois.
 
 ## Dados do Negócio
 
@@ -65,3 +67,9 @@ imprimir recibos e comandas.
 O botão **Apagar Todos os Dados** remove tudo do aparelho e não pode ser
 desfeito. Antes de usar, faça um [backup](backup). O sistema pede duas
 confirmações por segurança.
+
+## Veja também
+
+- [Financeiro](financeiro)
+- [Backup dos dados](backup)
+- [Primeiros passos](primeiros-passos)

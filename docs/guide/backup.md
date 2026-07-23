@@ -24,7 +24,7 @@ separados por tipo.
 
 ## Restaurar ou migrar para outro aparelho (importar)
 
-1. No aparelho novo, abra o PDV Local e vá em **Config** → seção **Importar
+1. No aparelho novo, abra o Meu Bolso e vá em **Config** → seção **Importar
    Dados**.
 2. Em **Tipo de Dado**, escolha o que vai importar (Produtos, Pedidos, Sessões ou
    Movimentações).
@@ -42,3 +42,8 @@ separados por tipo.
   ou roubo.
 - Antes de usar **Apagar Todos os Dados** ou trocar de aparelho, confirme que
   você tem um backup recente.
+
+## Veja também
+
+- [Configurações](configuracoes)
+- [Primeiros passos](primeiros-passos)

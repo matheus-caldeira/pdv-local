@@ -15,7 +15,7 @@ describe('ContactModal', () => {
   it('renders the intro, author and every contact link when open', () => {
     render(<ContactModal open onClose={() => {}} />);
     expect(screen.getByText('Matheus Caldeira')).toBeInTheDocument();
-    expect(screen.getByText(/ponto de venda gratuito/)).toBeInTheDocument();
+    expect(screen.getByText(/controle tudo no seu bolso/)).toBeInTheDocument();
 
     const docs = screen.getByRole('link', { name: /Documentação \/ Ajuda/ });
     expect(docs).toHaveAttribute('href', `${DOCS_BASE}/`);

@@ -5,9 +5,9 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-const BASE = '/pdv-local/app/';
+const BASE = '/meu-bolso/app/';
 
-const SITE_BASE = '/pdv-local';
+const SITE_BASE = '/meu-bolso';
 
 // Em dev, serve a landing.html na raiz reescrevendo os caminhos relativos
 // `app/...` e `docs/...` para os caminhos do site, reproduzindo producao
@@ -21,8 +21,8 @@ function serveLandingInDev(): Plugin {
         const url = (req.url || '').split('?')[0];
         if (
           url === '/' ||
-          url === '/pdv-local/' ||
-          url === '/pdv-local/index.html'
+          url === '/meu-bolso/' ||
+          url === '/meu-bolso/index.html'
         ) {
           const html = readFileSync(resolve(__dirname, 'landing.html'), 'utf-8')
             .replace(/(src|href)="app\//g, `$1="${BASE}`)
@@ -38,7 +38,7 @@ function serveLandingInDev(): Plugin {
 }
 
 // Em dev, serve o conteudo markdown da documentacao a partir de docs/guide/,
-// e serve o index.html da SPA para as rotas /pdv-local/docs/* (para o
+// e serve o index.html da SPA para as rotas /meu-bolso/docs/* (para o
 // roteamento client-side funcionar sem 404 do dev server). Nao afeta o build.
 function serveDocsInDev(): Plugin {
   return {
@@ -48,7 +48,23 @@ function serveDocsInDev(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const url = (req.url || '').split('?')[0];
 
-        // Conteudo markdown: /pdv-local/docs-content/<slug>.md -> docs/guide/<slug>.md
+        if (url === `${SITE_BASE}/docs-content/search-index.json`) {
+          const { buildEntriesForPage } =
+            await import('./src/domain/docs/search-index.ts');
+          const { DOCS_PAGES } = await import('./docs/guide/manifest.ts');
+          const entries = DOCS_PAGES.flatMap((page) => {
+            const md = readFileSync(
+              resolve(__dirname, 'docs/guide', `${page.slug}.md`),
+              'utf-8',
+            );
+            return buildEntriesForPage(page, md);
+          });
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.end(JSON.stringify(entries));
+          return;
+        }
+
+        // Conteudo markdown: /meu-bolso/docs-content/<slug>.md -> docs/guide/<slug>.md
         const contentPrefix = `${SITE_BASE}/docs-content/`;
         if (url.startsWith(contentPrefix) && url.endsWith('.md')) {
           const slug = url.slice(contentPrefix.length, -'.md'.length);
@@ -72,7 +88,7 @@ function serveDocsInDev(): Plugin {
           return;
         }
 
-        // Rotas da SPA da docs: /pdv-local/docs ou /pdv-local/docs/<algo>
+        // Rotas da SPA da docs: /meu-bolso/docs ou /meu-bolso/docs/<algo>
         // (mas NAO /docs-content). Serve o index.html do app, passando pela
         // transformacao do Vite para que os modulos (/src/main.tsx) e o HMR
         // sejam reescritos corretamente em dev.
@@ -120,6 +136,7 @@ export default defineConfig({
         'src/infrastructure/**',
         'src/ui/**',
         'src/app/**',
+        'src/pages/**',
       ],
       exclude: [
         'src/infrastructure/dexie/dexie-database.ts',
@@ -151,6 +168,7 @@ export default defineConfig({
           setupFiles: ['./src/test/setup.ui.ts'],
           include: [
             'src/ui/**/*.test.{ts,tsx}',
+            'src/pages/**/*.test.{ts,tsx}',
             'src/app/**/*.test.tsx',
             'src/App.test.tsx',
           ],

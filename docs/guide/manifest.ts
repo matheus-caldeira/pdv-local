@@ -6,7 +6,7 @@ export interface DocPage {
 
 // Ordem = ordem de exibição na sidebar. Agrupado por `section`.
 export const DOCS_PAGES: DocPage[] = [
-  { slug: 'overview', title: 'O que é o PDV Local', section: 'Começar' },
+  { slug: 'overview', title: 'O que é o Meu Bolso', section: 'Começar' },
   { slug: 'primeiros-passos', title: 'Primeiros passos', section: 'Começar' },
   { slug: 'venda', title: 'Venda rápida', section: 'No dia a dia' },
   { slug: 'pedidos', title: 'Pedidos', section: 'No dia a dia' },

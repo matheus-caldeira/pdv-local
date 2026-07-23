@@ -45,3 +45,9 @@ aparecem.
 
 > A **impressão em impressora térmica** ainda está em preparação. Por enquanto,
 > o botão **Imprimir** apenas mostra um aviso para configurar a impressora.
+
+## Veja também
+
+- [Venda rápida](venda)
+- [Caixa](caixa)
+- [Clientes](clientes)

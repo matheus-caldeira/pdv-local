@@ -1,6 +1,6 @@
-# Modelo de dados — PDV Local
+# Modelo de dados — Meu Bolso
 
-Retrato do **modelo lógico** do PDV Local, **independente de infraestrutura**.
+Retrato do **modelo lógico** do Meu Bolso, **independente de infraestrutura**.
 Descreve as entidades, seus campos e as relações entre elas — o contrato que
 qualquer provider de persistência (Dexie hoje; API/Supabase/Postgres/Firebase no
 futuro) precisa satisfazer, e a base do que a exportação de dados serializa.

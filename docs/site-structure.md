@@ -13,7 +13,7 @@ Relacionados: [`architecture.md`](./architecture.md) (a arquitetura DDD da SPA d
 
 ## As três áreas
 
-Sob a base do GitHub Pages (`/pdv-local/`):
+Sob a base do GitHub Pages (`/meu-bolso/`):
 
 | URL       | Conteúdo                 | Origem                        |
 | --------- | ------------------------ | ----------------------------- |
@@ -30,22 +30,22 @@ não há um segundo build.
 
 Conceito central: **um só `index.html` / um só bundle** serve tanto `/app`
 quanto `/docs`. O Vite gera assets com caminho absoluto
-(`/pdv-local/app/assets/...`), então o mesmo `index.html` funciona nas duas
-áreas — os assets sempre carregam de `/pdv-local/app/assets`.
+(`/meu-bolso/app/assets/...`), então o mesmo `index.html` funciona nas duas
+áreas — os assets sempre carregam de `/meu-bolso/app/assets`.
 
 A SPA escolhe o `basename` do `BrowserRouter` em **runtime**, conforme o prefixo
 da URL atual:
 
 ```ts
 const path = window.location.pathname;
-const SITE_BASE = '/pdv-local';
+const SITE_BASE = '/meu-bolso';
 const basename = path.startsWith(`${SITE_BASE}/docs`)
   ? `${SITE_BASE}/docs`
   : `${SITE_BASE}/app`;
 ```
 
-- Em `/pdv-local/app/*` → basename `/pdv-local/app` → rotas do app ativas.
-- Em `/pdv-local/docs/*` → basename `/pdv-local/docs` → rotas de docs ativas.
+- Em `/meu-bolso/app/*` → basename `/meu-bolso/app` → rotas do app ativas.
+- Em `/meu-bolso/docs/*` → basename `/meu-bolso/docs` → rotas de docs ativas.
 
 As rotas de docs ficam **fora** do `<Route element={<Layout/>}>` do app, num
 `DocsLayout` próprio, para não herdar a navegação do PDV.
@@ -58,7 +58,7 @@ A pasta `docs/` na raiz tem duas naturezas:
 
 ```
 docs/
-  guide/             ← PÚBLICO — vira /pdv-local/docs-content/ no site
+  guide/             ← PÚBLICO — vira /meu-bolso/docs-content/ no site
     _manifest.ts       lista ordenada (slug, título, seção) → monta a sidebar
     *.md               páginas do guia (uma por tópico)
   architecture.md    ← INTERNO (não publicado)
@@ -77,13 +77,13 @@ docs/
 ### Caminho de fetch único (dev + prod)
 
 ```ts
-const url = `/pdv-local/docs-content/${slug}.md`;
+const url = `/meu-bolso/docs-content/${slug}.md`;
 ```
 
 - **Prod:** o workflow copia `docs/guide/` para `_site/docs-content/`, e a URL
   resolve nativamente.
 - **Dev:** um middleware no `vite.config.ts` (`serveDocsInDev`, análogo ao
-  `serveLandingInDev` já existente) intercepta `/pdv-local/docs-content/<slug>.md`
+  `serveLandingInDev` já existente) intercepta `/meu-bolso/docs-content/<slug>.md`
   e serve o arquivo de `docs/guide/<slug>.md` direto do disco — dispensa symlink.
 
 ---
@@ -107,9 +107,9 @@ O GitHub Pages devolve `404.html` para caminhos sem arquivo físico. Ele
 reconhece **dois** prefixos como deep-link da SPA e reencaminha mantendo os dois
 segmentos de base:
 
-- `/pdv-local/app/<rota>` → SPA (área app).
-- `/pdv-local/docs/<rota>` → SPA (área docs).
-- qualquer outro caminho → landing em `/pdv-local/`.
+- `/meu-bolso/app/<rota>` → SPA (área app).
+- `/meu-bolso/docs/<rota>` → SPA (área docs).
+- qualquer outro caminho → landing em `/meu-bolso/`.
 
 ---
 
@@ -117,8 +117,8 @@ segmentos de base:
 
 - **Landing → app/docs:** links no header e no footer da `landing.html`.
 - **App → docs:** link "Documentação" no menu "Mais" (`ContactModal`).
-- **Docs → app/landing:** o `DocsLayout` tem "Abrir o app" (`/pdv-local/app/`) e
-  "Voltar ao site" (`/pdv-local/`).
+- **Docs → app/landing:** o `DocsLayout` tem "Abrir o app" (`/meu-bolso/app/`) e
+  "Voltar ao site" (`/meu-bolso/`).
 
 ---
 

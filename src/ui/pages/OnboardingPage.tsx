@@ -75,7 +75,7 @@ export function OnboardingPage() {
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-surface-1 p-6">
       <img
         src={LOGO_URL}
-        alt="PDV Local"
+        alt="Meu Bolso"
         className="h-16 w-16 object-contain"
       />
       {choice === null ? (
