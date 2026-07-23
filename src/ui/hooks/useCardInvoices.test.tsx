@@ -88,6 +88,21 @@ describe('useCardInvoices', () => {
     expect(result.current.history).toEqual([]);
   });
 
+  it('fetches when the card changes from empty to selected', async () => {
+    const { result, rerender } = renderHook(
+      ({ cardUid }) => useCardInvoices(cardUid, '2026-07'),
+      { wrapper: Wrapper, initialProps: { cardUid: '' } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(getInvoiceDetail).not.toHaveBeenCalled();
+
+    rerender({ cardUid: 'card-1' });
+
+    await waitFor(() => expect(result.current.detail).toEqual(DETAIL));
+    expect(getInvoiceDetail).toHaveBeenCalledWith('card-1', '2026-07');
+    expect(result.current.history).toEqual(HISTORY);
+  });
+
   it('shows a toast and keeps an empty state when loading fails', async () => {
     getInvoiceDetail.mockResolvedValue(left(new FakeError('falha detalhe')));
     listInvoiceHistory.mockResolvedValue(
