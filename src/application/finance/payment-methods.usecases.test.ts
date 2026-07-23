@@ -194,10 +194,31 @@ describe('payment methods use cases', () => {
     expect(result.left).toBe(error);
   });
 
-  it('exclui quando não há lançamentos', async () => {
+  it('exclui quando não há lançamentos do próprio meio de pagamento', async () => {
     const create = makeCreatePaymentMethod(methods);
     const created = await create(creditInput);
     if (!isRight(created)) throw new Error('setup');
+    await entries.create({
+      uid: 'other',
+      description: 'Mercado',
+      amount: 100,
+      kind: 'expense',
+      categoryUid: 'cat-1',
+      memberUids: ['m1'],
+      date: Date.now(),
+      month: '2026-07',
+      status: 'pending',
+      source: 'manual',
+      sourceUid: null,
+      installmentNumber: null,
+      sourceEntryUids: [],
+      formulaBaseMonth: null,
+      paymentMethodUid: 'another-card',
+      invoiceMonth: '2026-08',
+      invoiceUid: null,
+      createdAt: 1,
+      updatedAt: 1,
+    });
     const archive = makeArchivePaymentMethod(methods, entries);
     const result = await archive(created.right.uid);
     expect(isRight(result)).toBe(true);

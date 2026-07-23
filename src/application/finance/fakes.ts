@@ -227,7 +227,12 @@ const matchesEntryFilter = (
     entry.description.toLowerCase().includes(filter.text.toLowerCase())) &&
   (filter.sourceUid === undefined || entry.sourceUid === filter.sourceUid) &&
   (filter.source === undefined || entry.source === filter.source) &&
-  (filter.monthBefore === undefined || entry.month < filter.monthBefore);
+  (filter.monthBefore === undefined || entry.month < filter.monthBefore) &&
+  (filter.paymentMethodUid === undefined ||
+    entry.paymentMethodUid === filter.paymentMethodUid) &&
+  (filter.invoiceMonth === undefined ||
+    entry.invoiceMonth === filter.invoiceMonth) &&
+  (filter.invoiceUid === undefined || entry.invoiceUid === filter.invoiceUid);
 
 const byEntryOrder = (a: FinanceEntry, b: FinanceEntry): number =>
   a.date - b.date || a.createdAt - b.createdAt || a.uid.localeCompare(b.uid);
