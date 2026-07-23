@@ -110,10 +110,10 @@ export function AppShell({
         <div className="mb-3 flex items-center gap-2 px-3 py-2">
           <img
             src={LOGO_URL}
-            alt="PDV Local"
+            alt="Meu Bolso"
             className="h-9 w-9 object-contain"
           />
-          <span className="text-base font-bold">PDV Local</span>
+          <span className="text-base font-bold">Meu Bolso</span>
         </div>
         {groupList(() => {})}
         <div className="mt-auto flex flex-col gap-2 pt-2">
@@ -196,7 +196,7 @@ export function AppShell({
               <span className="flex items-center text-lg font-bold">
                 <img
                   src={LOGO_URL}
-                  alt="PDV Local"
+                  alt="Meu Bolso"
                   className="mr-2 h-7 w-7 object-contain align-middle"
                 />
                 Módulos

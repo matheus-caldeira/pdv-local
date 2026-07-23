@@ -372,7 +372,7 @@ describe('DexieBackupRepository — tabelas finance', () => {
     expect(stored[0].formulaBaseMonth).toBeNull();
   });
 
-  it('importDemo substitui os dados do PDV preservando as tabelas finance', async () => {
+  it('importDemo substitui os dados preservando as tabelas finance', async () => {
     await db.products.add(product('pro-1', 'Antigo'));
     await db.customers.add({
       uid: 'cus-1',

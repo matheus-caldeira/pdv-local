@@ -462,8 +462,8 @@ export function SettingsPage() {
       <Section icon={<Database size={20} />} title="Demonstração">
         <p className="text-sm text-ink-tertiary">
           Carregue um conjunto de dados de exemplo (produtos, vendas e caixa)
-          para experimentar o sistema. Isto substitui os dados atuais do PDV; os
-          dados financeiros não são alterados.
+          para experimentar o sistema. Isto substitui os dados atuais; os dados
+          financeiros não são alterados.
         </p>
         <Button
           variant="ghost"
@@ -598,7 +598,7 @@ export function SettingsPage() {
       >
         <p className="text-sm text-ink-secondary">
           Isto vai <strong className="text-ink-primary">apagar</strong> os dados
-          atuais do PDV e substituí-los pelos dados de demonstração. Os dados
+          atuais e substituí-los pelos dados de demonstração. Os dados
           financeiros são preservados.
         </p>
         <div className="mt-4 flex justify-end gap-2">
@@ -617,9 +617,8 @@ export function SettingsPage() {
         title="Esta ação não pode ser desfeita"
       >
         <p className="text-sm text-ink-secondary">
-          Os dados atuais do PDV serão perdidos permanentemente; os dados
-          financeiros são preservados. Tem certeza que deseja carregar a
-          demonstração?
+          Os dados atuais serão perdidos permanentemente; os dados financeiros
+          são preservados. Tem certeza que deseja carregar a demonstração?
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDemoConfirmStep(0)}>

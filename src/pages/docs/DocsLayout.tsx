@@ -28,7 +28,7 @@ export function DocsLayout() {
     <div className="docs-layout">
       <header className="docs-topbar">
         <a className="docs-topbar-brand" href={`${SITE_BASE}/`}>
-          <img src={LOGO_URL} alt="PDV Local" /> Documentação
+          <img src={LOGO_URL} alt="Meu Bolso" /> Documentação
         </a>
         <button
           className="docs-menu-btn"
@@ -43,7 +43,7 @@ export function DocsLayout() {
 
       <aside className={`docs-sidebar ${open ? 'open' : ''}`}>
         <div className="docs-sidebar-brand">
-          <img src={LOGO_URL} alt="PDV Local" /> PDV Local
+          <img src={LOGO_URL} alt="Meu Bolso" /> Meu Bolso
           <button
             className="docs-menu-btn"
             style={{ marginLeft: 'auto' }}
