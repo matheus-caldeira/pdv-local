@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isLeft, isRight, type Either } from '../../domain/shared/either';
 import { createUid } from '../../domain/shared/uid';
 import {
+  InvoiceNotFoundError,
   InvoiceOverdetailedError,
   InvoicePaidError,
   InvalidFinanceAmountError,
@@ -464,7 +465,7 @@ describe('makePayInvoice', () => {
 
     expect(
       unwrapLeft(await payInvoice(CARD_UID, DUE_MONTH, 987)),
-    ).toBeInstanceOf(InvoicePaidError);
+    ).toBeInstanceOf(InvoiceNotFoundError);
   });
 
   it('propaga falha ao buscar a fatura', async () => {

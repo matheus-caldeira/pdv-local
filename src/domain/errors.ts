@@ -374,3 +374,11 @@ export class InvoicePaidError extends DomainError {
     super('A fatura já foi paga e não pode ser alterada.');
   }
 }
+
+export class InvoiceNotFoundError extends DomainError {
+  readonly code = 'finance/invoice-not-found';
+
+  constructor() {
+    super('Fatura não encontrada.');
+  }
+}

@@ -2,6 +2,7 @@ import { isLeft, left, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import { createUid } from '../../domain/shared/uid';
 import {
+  InvoiceNotFoundError,
   InvoiceOverdetailedError,
   InvoicePaidError,
   PaymentMethodNotFoundError,
@@ -287,7 +288,7 @@ export function makePayInvoice(invoices: CardInvoiceRepository) {
   ): Promise<Either<AppError, CardInvoice>> => {
     const existing = await invoices.findByCardAndMonth(cardUid, month);
     if (isLeft(existing)) return existing;
-    if (!existing.right) return left(new InvoicePaidError());
+    if (!existing.right) return left(new InvoiceNotFoundError());
 
     return invoices.update(existing.right.uid, {
       status: 'paid',
