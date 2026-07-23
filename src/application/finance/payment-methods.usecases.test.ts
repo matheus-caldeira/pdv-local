@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { isLeft, isRight, left } from '../../domain/shared/either';
 import { ConnectorError } from '../../infrastructure/errors';
-import type { PaymentMethod } from '../../domain/finance/payment-method.entity';
 import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
 import {
   FakePaymentMethodRepository,
@@ -185,7 +184,7 @@ describe('payment methods use cases', () => {
       findByUid: (...args) => methods.findByUid(...args),
       create: (...args) => methods.create(...args),
       delete: (...args) => methods.delete(...args),
-      update: async () => left<ConnectorError, PaymentMethod>(error),
+      update: async () => left(error),
     };
     const archive = makeArchivePaymentMethod(failingMethods, entries);
     const result = await archive(created.right.uid);

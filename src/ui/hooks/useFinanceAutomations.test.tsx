@@ -191,6 +191,7 @@ function Probe() {
             startMonth: '2026-01',
             endMonth: null,
             active: true,
+            paymentMethodUid: null,
           })
         }
       >

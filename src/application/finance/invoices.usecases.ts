@@ -195,7 +195,7 @@ async function applyAdjustment(
   categories: FinanceCategoryRepository,
   invoice: CardInvoice,
   existingAdjustment: FinanceEntry | undefined,
-  reconciliation: ReconcileResult,
+  reconciliation: Exclude<ReconcileResult, { kind: 'over' }>,
 ): Promise<Either<AppError, void>> {
   if (reconciliation.kind === 'balanced') {
     if (existingAdjustment) {
@@ -260,6 +260,7 @@ export function makeSetInvoiceAmount(
     const method = await methods.findByUid(cardUid);
     if (isLeft(method)) return method;
     if (!method.right) return left(new PaymentMethodNotFoundError());
+    const paymentMethod = method.right;
 
     return uow.run(async (repositories) => {
       const existing =
@@ -293,7 +294,7 @@ export function makeSetInvoiceAmount(
         existing.right,
         cardUid,
         month,
-        method.right.dueDay ?? 1,
+        paymentMethod.dueDay ?? 1,
         statedAmount.right,
       );
       if (isLeft(invoice)) return invoice;

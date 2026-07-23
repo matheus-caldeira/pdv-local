@@ -261,6 +261,7 @@ describe('useFinanceEntries', () => {
       memberUids: ['member-1'],
       date: Date.now(),
       status: 'pending' as const,
+      paymentMethodUid: null,
     };
     let ok = false;
     await act(async () => {
@@ -285,6 +286,7 @@ describe('useFinanceEntries', () => {
         memberUids: ['member-1'],
         date: Date.now(),
         status: 'pending',
+        paymentMethodUid: null,
       });
     });
     expect(ok).toBe(false);
@@ -304,6 +306,7 @@ describe('useFinanceEntries', () => {
         memberUids: ['member-1'],
         date: Date.now(),
         status: 'paid',
+        paymentMethodUid: null,
       });
     });
     expect(ok).toBe(true);
