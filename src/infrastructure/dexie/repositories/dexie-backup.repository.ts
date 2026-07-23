@@ -24,6 +24,8 @@ const CSV_ENTITIES: BackupEntity[] = [
   'financeRecurrences',
   'financeInstallmentPlans',
   'financeClosings',
+  'financePaymentMethods',
+  'financeCardInvoices',
 ];
 
 const NO_NULLABLE_COLUMNS: ReadonlySet<string> = new Set();
@@ -34,9 +36,14 @@ const NULLABLE_COLUMNS: Partial<Record<BackupEntity, ReadonlySet<string>>> = {
     'sourceUid',
     'installmentNumber',
     'formulaBaseMonth',
+    'paymentMethodUid',
+    'invoiceMonth',
+    'invoiceUid',
   ]),
   financeBudgetItems: new Set(['month']),
   financeRecurrences: new Set(['endMonth']),
+  financePaymentMethods: new Set(['closingDay', 'dueDay']),
+  financeCardInvoices: new Set(['statedAmount', 'paidAt']),
 };
 
 const SNAPSHOT_TABLES: (keyof BackupSnapshot)[] = [
@@ -82,6 +89,8 @@ export class DexieBackupRepository implements BackupRepository {
         financeInstallmentPlans:
           await this.db.financeInstallmentPlans.toArray(),
         financeClosings: await this.db.financeClosings.toArray(),
+        financePaymentMethods: await this.db.financePaymentMethods.toArray(),
+        financeCardInvoices: await this.db.financeCardInvoices.toArray(),
         exportedAt: Date.now(),
         version: 1,
       };

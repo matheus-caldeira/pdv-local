@@ -22,6 +22,9 @@ function buildEntry(overrides: Partial<NewFinanceEntry> = {}): NewFinanceEntry {
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
+    paymentMethodUid: null,
+    invoiceMonth: null,
+    invoiceUid: null,
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -177,6 +180,36 @@ describe('DexieFinanceEntryRepository', () => {
     if (!isRight(result)) return;
     expect(result.right).toHaveLength(1);
     expect(result.right[0].month).toBe('2026-05');
+  });
+
+  it('list filtra por paymentMethodUid', async () => {
+    await repo.create(buildEntry({ paymentMethodUid: 'card-a' }));
+    await repo.create(buildEntry({ paymentMethodUid: 'card-b' }));
+    const result = await repo.list({ paymentMethodUid: 'card-a' });
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toHaveLength(1);
+    expect(result.right[0].paymentMethodUid).toBe('card-a');
+  });
+
+  it('list filtra por invoiceMonth', async () => {
+    await repo.create(buildEntry({ invoiceMonth: '2026-09' }));
+    await repo.create(buildEntry({ invoiceMonth: '2026-10' }));
+    const result = await repo.list({ invoiceMonth: '2026-09' });
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toHaveLength(1);
+    expect(result.right[0].invoiceMonth).toBe('2026-09');
+  });
+
+  it('list filtra por invoiceUid', async () => {
+    await repo.create(buildEntry({ invoiceUid: 'inv-a' }));
+    await repo.create(buildEntry({ invoiceUid: 'inv-b' }));
+    const result = await repo.list({ invoiceUid: 'inv-a' });
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toHaveLength(1);
+    expect(result.right[0].invoiceUid).toBe('inv-a');
   });
 
   it('update aplica changes preservando uid e createdAt', async () => {

@@ -16,6 +16,10 @@ import type {
   NewMonthClosing,
   NewRecurrence,
 } from '../../../domain/finance/finance.entity';
+import type {
+  NewCardInvoice,
+  NewPaymentMethod,
+} from '../../../domain/finance/payment-method.entity';
 import type { NewProduct } from '../../../domain/product/product.entity';
 import type { BusinessConfig } from '../../../domain/config/config.entity';
 
@@ -91,6 +95,9 @@ const financeEntry = (uid: string): NewFinanceEntry => ({
   installmentNumber: null,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 1,
   updatedAt: 1,
 });
@@ -157,6 +164,28 @@ const monthClosing = (uid: string, month: string): NewMonthClosing => ({
   categories: [],
 });
 
+const paymentMethod = (uid: string): NewPaymentMethod => ({
+  uid,
+  name: 'Nubank',
+  type: 'credit',
+  closingDay: 25,
+  dueDay: 5,
+  archived: false,
+  createdAt: 1,
+});
+
+const cardInvoice = (uid: string): NewCardInvoice => ({
+  uid,
+  paymentMethodUid: 'pay-1',
+  month: '2026-08',
+  dueDate: 1,
+  statedAmount: null,
+  status: 'open',
+  paidAt: null,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
 const FINANCE_TABLES = [
   'financeMembers',
   'financeCategories',
@@ -166,6 +195,8 @@ const FINANCE_TABLES = [
   'financeRecurrences',
   'financeInstallmentPlans',
   'financeClosings',
+  'financePaymentMethods',
+  'financeCardInvoices',
 ] as const;
 
 async function seedAllFinanceTables(db: PDVDatabase) {
@@ -177,6 +208,8 @@ async function seedAllFinanceTables(db: PDVDatabase) {
   await db.financeRecurrences.add(recurrence('rec-1'));
   await db.financeInstallmentPlans.add(installmentPlan('pla-1'));
   await db.financeClosings.add(monthClosing('clo-1', '2026-06'));
+  await db.financePaymentMethods.add(paymentMethod('pay-1'));
+  await db.financeCardInvoices.add(cardInvoice('inv-1'));
 }
 
 describe('DexieBackupRepository — tabelas finance', () => {
@@ -201,7 +234,7 @@ describe('DexieBackupRepository — tabelas finance', () => {
     expect(result.right).toBe(true);
   });
 
-  it('exportAll inclui as 8 tabelas finance no JSON', async () => {
+  it('exportAll inclui as tabelas finance no JSON', async () => {
     await db.products.add(product('pro-1'));
     await db.config.put(businessConfig('Bar do Zé'));
     await seedAllFinanceTables(db);
@@ -362,6 +395,84 @@ describe('DexieBackupRepository — tabelas finance', () => {
     for (const table of FINANCE_TABLES) {
       expect(await db.table(table).count()).toBe(1);
     }
+  });
+
+  it('exporta e reimporta meios de pagamento preservando dias nulos', async () => {
+    await db.financePaymentMethods.add(paymentMethod('pay-1'));
+    await db.financePaymentMethods.add({
+      ...paymentMethod('pay-2'),
+      name: 'Dinheiro',
+      type: 'cash',
+      closingDay: null,
+      dueDay: null,
+    });
+    await repo.exportEntity('financePaymentMethods', 'csv');
+    const content = saver.saved[0].content;
+    await db.financePaymentMethods.clear();
+    const result = await repo.importEntity(
+      'financePaymentMethods',
+      new File([content], 'pdv-financePaymentMethods.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toBe(2);
+    const stored = await db.financePaymentMethods.orderBy('uid').toArray();
+    expect(stored[0].name).toBe('Nubank');
+    expect(stored[0].closingDay).toBe(25);
+    expect(stored[1].name).toBe('Dinheiro');
+    expect(stored[1].closingDay).toBeNull();
+    expect(stored[1].dueDay).toBeNull();
+  });
+
+  it('exporta e reimporta faturas preservando valores nulos', async () => {
+    await db.financeCardInvoices.add(cardInvoice('inv-1'));
+    await repo.exportEntity('financeCardInvoices', 'csv');
+    const content = saver.saved[0].content;
+    await db.financeCardInvoices.clear();
+    const result = await repo.importEntity(
+      'financeCardInvoices',
+      new File([content], 'pdv-financeCardInvoices.csv'),
+    );
+    expect(isRight(result)).toBe(true);
+    if (!isRight(result)) return;
+    expect(result.right).toBe(1);
+    const stored = await db.financeCardInvoices.toArray();
+    expect(stored[0].uid).toBe('inv-1');
+    expect(stored[0].paymentMethodUid).toBe('pay-1');
+    expect(stored[0].month).toBe('2026-08');
+    expect(stored[0].statedAmount).toBeNull();
+    expect(stored[0].paidAt).toBeNull();
+  });
+
+  it('exportAll e reimport preservam meios de pagamento e faturas', async () => {
+    await db.financePaymentMethods.add(paymentMethod('pay-1'));
+    await db.financeCardInvoices.add(cardInvoice('inv-1'));
+    const result = await repo.exportAll('json');
+    expect(isRight(result)).toBe(true);
+    const data = JSON.parse(saver.saved[0].content);
+    expect(data.financePaymentMethods).toHaveLength(1);
+    expect(data.financeCardInvoices).toHaveLength(1);
+    await db.financePaymentMethods.clear();
+    await db.financeCardInvoices.clear();
+    await repo.importEntity(
+      'financePaymentMethods',
+      new File(
+        [JSON.stringify(data.financePaymentMethods)],
+        'financePaymentMethods.json',
+      ),
+    );
+    await repo.importEntity(
+      'financeCardInvoices',
+      new File(
+        [JSON.stringify(data.financeCardInvoices)],
+        'financeCardInvoices.json',
+      ),
+    );
+    const methods = await db.financePaymentMethods.toArray();
+    const invoices = await db.financeCardInvoices.toArray();
+    expect(methods[0].uid).toBe('pay-1');
+    expect(invoices[0].uid).toBe('inv-1');
+    expect(invoices[0].paymentMethodUid).toBe('pay-1');
   });
 
   it('wipeAll apaga todas as tabelas, incluindo as finance', async () => {
