@@ -15,6 +15,7 @@ import type {
 import type { CardInvoice } from '../../domain/finance/payment-method.entity';
 import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
 import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
+import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.repository';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 import {
@@ -42,6 +43,27 @@ export interface InvoiceHistoryPoint {
 }
 
 export const INVOICE_ADJUSTMENT_DESCRIPTION = 'Outros gastos da fatura';
+
+export const INVOICE_ADJUSTMENT_CATEGORY_NAME = 'Fatura de cartão';
+
+async function resolveAdjustmentCategory(
+  categories: FinanceCategoryRepository,
+): Promise<Either<AppError, string>> {
+  const listed = await categories.list();
+  if (isLeft(listed)) return listed;
+
+  const existing = listed.right.find(
+    (category) => category.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+  );
+  if (existing) return right(existing.uid);
+
+  const created = await categories.create({
+    name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    kind: 'expense',
+  });
+  if (isLeft(created)) return created;
+  return right(created.right.uid);
+}
 
 function isAdjustment(entry: FinanceEntry): boolean {
   return entry.source === 'invoice-adjustment';
@@ -165,6 +187,7 @@ async function ensureInvoice(
 
 async function applyAdjustment(
   entries: FinanceEntryRepository,
+  categories: FinanceCategoryRepository,
   invoice: CardInvoice,
   existingAdjustment: FinanceEntry | undefined,
   reconciliation: ReconcileResult,
@@ -187,12 +210,15 @@ async function applyAdjustment(
     return right(undefined);
   }
 
+  const categoryUid = await resolveAdjustmentCategory(categories);
+  if (isLeft(categoryUid)) return categoryUid;
+
   const adjustment: NewFinanceEntry = {
     uid: createUid(),
     description: INVOICE_ADJUSTMENT_DESCRIPTION,
     amount: reconciliation.amount,
     kind: 'expense',
-    categoryUid: '',
+    categoryUid: categoryUid.right,
     memberUids: [],
     date: invoice.dueDate,
     month: invoice.month,
@@ -216,6 +242,7 @@ async function applyAdjustment(
 export function makeSetInvoiceAmount(
   uow: UnitOfWork,
   methods: PaymentMethodRepository,
+  categories: FinanceCategoryRepository,
 ) {
   return async (
     cardUid: string,
@@ -269,6 +296,7 @@ export function makeSetInvoiceAmount(
       const existingAdjustment = entriesResult.right.find(isAdjustment);
       const applied = await applyAdjustment(
         repositories.financeEntries,
+        categories,
         invoice.right,
         existingAdjustment,
         reconciliation,

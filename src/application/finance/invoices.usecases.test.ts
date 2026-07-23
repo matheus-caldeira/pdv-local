@@ -20,11 +20,13 @@ import type {
 import { dateForMonthDay } from '../../domain/finance/finance.rules';
 import {
   FakeCardInvoiceRepository,
+  FakeFinanceCategoryRepository,
   FakeFinanceEntryRepository,
   FakePaymentMethodRepository,
   makeFakeUnitOfWork,
 } from './fakes';
 import {
+  INVOICE_ADJUSTMENT_CATEGORY_NAME,
   makeGetInvoiceDetail,
   makeListInvoiceHistory,
   makePayInvoice,
@@ -100,6 +102,7 @@ const setup = () => {
   const entries = new FakeFinanceEntryRepository();
   const invoices = new FakeCardInvoiceRepository();
   const methods = new FakePaymentMethodRepository();
+  const categories = new FakeFinanceCategoryRepository();
   const uow = makeFakeUnitOfWork({
     financeEntries: entries,
     financeCardInvoices: invoices,
@@ -109,9 +112,10 @@ const setup = () => {
     entries,
     invoices,
     methods,
+    categories,
     uow,
     getInvoiceDetail: makeGetInvoiceDetail(invoices, entries),
-    setInvoiceAmount: makeSetInvoiceAmount(uow, methods),
+    setInvoiceAmount: makeSetInvoiceAmount(uow, methods, categories),
     payInvoice: makePayInvoice(invoices),
     listInvoiceHistory: makeListInvoiceHistory(invoices),
   };
@@ -446,6 +450,110 @@ describe('makeSetInvoiceAmount', () => {
 
     expect(invoice.uid).toBe(existing.uid);
     expect(invoice.statedAmount).toBe(1000);
+  });
+
+  it('usa a categoria dedicada no ajuste criado', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+
+    const category = unwrap(await categories.list()).find(
+      (item) => item.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    );
+    expect(category).toBeDefined();
+    expect(category?.kind).toBe('expense');
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments[0].categoryUid).toBe(category?.uid);
+  });
+
+  it('reusa a categoria dedicada existente sem duplicar', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    const existing = unwrap(
+      await categories.create({
+        name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+        kind: 'expense',
+      }),
+    );
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+
+    const matches = unwrap(await categories.list()).filter(
+      (item) => item.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    );
+    expect(matches).toHaveLength(1);
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments[0].categoryUid).toBe(existing.uid);
+  });
+
+  it('cria a categoria dedicada quando ainda não existe', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    expect(unwrap(await categories.list())).toEqual([]);
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+
+    const matches = unwrap(await categories.list()).filter(
+      (item) => item.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    );
+    expect(matches).toHaveLength(1);
+  });
+
+  it('não altera a categoria ao atualizar o ajuste existente', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+    const before = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    )[0].categoryUid;
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 900);
+
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(500);
+    expect(adjustments[0].categoryUid).toBe(before);
+    const matches = unwrap(await categories.list()).filter(
+      (item) => item.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    );
+    expect(matches).toHaveLength(1);
+  });
+
+  it('propaga falha ao listar categorias na criação do ajuste', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+    const error = new ConnectorError('falha ao listar categorias');
+    categories.failNext(error);
+
+    expect(unwrapLeft(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000))).toBe(
+      error,
+    );
+  });
+
+  it('propaga falha ao criar a categoria dedicada', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+    const error = new ConnectorError('falha ao criar categoria');
+    categories.failOnCall(2, error);
+
+    expect(unwrapLeft(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000))).toBe(
+      error,
+    );
   });
 });
 
