@@ -147,6 +147,7 @@ describe('FinanceEntryFormModal', () => {
       memberUids: ['member-2'],
       date: new Date(2026, 6, 20, 12).getTime(),
       status: 'paid',
+      paymentMethodUid: null,
     });
   });
 

@@ -13,6 +13,8 @@ import { DexieFinanceEntryRepository } from '../infrastructure/dexie/repositorie
 import { DexieFinanceBudgetRepository } from '../infrastructure/dexie/repositories/dexie-finance-budget.repository';
 import { DexieFinanceAutomationRepository } from '../infrastructure/dexie/repositories/dexie-finance-automation.repository';
 import { DexieFinanceClosingRepository } from '../infrastructure/dexie/repositories/dexie-finance-closing.repository';
+import { DexiePaymentMethodRepository } from '../infrastructure/dexie/repositories/dexie-payment-method.repository';
+import { DexieCardInvoiceRepository } from '../infrastructure/dexie/repositories/dexie-card-invoice.repository';
 import { browserFileSaver } from '../infrastructure/dexie/browser-file-saver';
 import {
   makeCreateProduct,
@@ -149,6 +151,8 @@ export function createContainer() {
   const financeBudget = new DexieFinanceBudgetRepository(db);
   const financeAutomations = new DexieFinanceAutomationRepository(db);
   const financeClosings = new DexieFinanceClosingRepository(db);
+  const financePaymentMethods = new DexiePaymentMethodRepository(db);
+  const financeCardInvoices = new DexieCardInvoiceRepository(db);
 
   return {
     listProducts: makeListProducts(products),
@@ -220,11 +224,15 @@ export function createContainer() {
       financeEntries,
       financeCategories,
       financeClosings,
+      financePaymentMethods,
+      financeCardInvoices,
     ),
     updateFinanceEntry: makeUpdateEntry(
       financeEntries,
       financeCategories,
       financeClosings,
+      financePaymentMethods,
+      financeCardInvoices,
     ),
     deleteFinanceEntry: makeDeleteEntry(financeEntries, financeClosings),
     setFinanceEntryStatus: makeSetEntryStatus(financeEntries),

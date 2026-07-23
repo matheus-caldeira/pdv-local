@@ -25,6 +25,9 @@ import type {
 } from '../../domain/finance/finance-entry.repository';
 import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
+import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
+import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
+import { resolveEntryInvoice } from './invoices.usecases';
 
 export interface EntryInput {
   description: string;
@@ -33,6 +36,7 @@ export interface EntryInput {
   memberUids: string[];
   date: number;
   status: EntryStatus;
+  paymentMethodUid: string | null;
 }
 
 const validateInput = (input: EntryInput): Either<AppError, number> => {
@@ -85,6 +89,8 @@ export function makeCreateEntry(
   entries: FinanceEntryRepository,
   categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
+  methods: PaymentMethodRepository,
+  invoices: CardInvoiceRepository,
 ) {
   return async (input: EntryInput): Promise<Either<AppError, FinanceEntry>> => {
     const amount = validateInput(input);
@@ -96,6 +102,14 @@ export function makeCreateEntry(
     const month = monthKeyFromDate(input.date);
     const open = await ensureMonthOpen(closings, month);
     if (isLeft(open)) return open;
+
+    const link = await resolveEntryInvoice(
+      methods,
+      invoices,
+      input.paymentMethodUid,
+      input.date,
+    );
+    if (isLeft(link)) return link;
 
     const now = Date.now();
     return entries.create({
@@ -113,9 +127,9 @@ export function makeCreateEntry(
       installmentNumber: null,
       sourceEntryUids: [],
       formulaBaseMonth: null,
-      paymentMethodUid: null,
-      invoiceMonth: null,
-      invoiceUid: null,
+      paymentMethodUid: input.paymentMethodUid,
+      invoiceMonth: link.right.invoiceMonth,
+      invoiceUid: link.right.invoiceUid,
       createdAt: now,
       updatedAt: now,
     });
@@ -126,6 +140,8 @@ export function makeUpdateEntry(
   entries: FinanceEntryRepository,
   categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
+  methods: PaymentMethodRepository,
+  invoices: CardInvoiceRepository,
 ) {
   return async (
     uid: string,
@@ -155,6 +171,14 @@ export function makeUpdateEntry(
     const targetOpen = await ensureMonthOpen(closings, month);
     if (isLeft(targetOpen)) return targetOpen;
 
+    const link = await resolveEntryInvoice(
+      methods,
+      invoices,
+      input.paymentMethodUid,
+      input.date,
+    );
+    if (isLeft(link)) return link;
+
     return entries.update(uid, {
       description: input.description.trim(),
       amount: amount.right,
@@ -164,6 +188,9 @@ export function makeUpdateEntry(
       date: input.date,
       month,
       status: input.status,
+      paymentMethodUid: input.paymentMethodUid,
+      invoiceMonth: link.right.invoiceMonth,
+      invoiceUid: link.right.invoiceUid,
       updatedAt: Date.now(),
     });
   };

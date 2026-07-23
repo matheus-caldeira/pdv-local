@@ -8,6 +8,7 @@ import {
   FinanceEntryNotFoundError,
   InvalidFinanceAmountError,
   MonthClosedError,
+  PaymentMethodNotFoundError,
 } from '../../domain/errors';
 import { ConnectorError } from '../../infrastructure/errors';
 import type {
@@ -16,10 +17,13 @@ import type {
   NewMonthClosing,
 } from '../../domain/finance/finance.entity';
 import { dateForMonthDay } from '../../domain/finance/finance.rules';
+import type { NewPaymentMethod } from '../../domain/finance/payment-method.entity';
 import {
+  FakeCardInvoiceRepository,
   FakeFinanceCategoryRepository,
   FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
+  FakePaymentMethodRepository,
 } from './fakes';
 import {
   makeCreateEntry,
@@ -78,10 +82,25 @@ const makeStoredEntry = (
   };
 };
 
+const makeCard = (
+  overrides: Partial<NewPaymentMethod> = {},
+): NewPaymentMethod => ({
+  uid: 'card-credit',
+  name: 'Cartão de crédito',
+  type: 'credit',
+  closingDay: 20,
+  dueDay: 5,
+  archived: false,
+  createdAt: 1,
+  ...overrides,
+});
+
 const setup = async () => {
   const entries = new FakeFinanceEntryRepository();
   const categories = new FakeFinanceCategoryRepository();
   const closings = new FakeFinanceClosingRepository();
+  const methods = new FakePaymentMethodRepository();
+  const invoices = new FakeCardInvoiceRepository();
   const expenseCategory = unwrap(
     await categories.create({ name: 'Mercado', kind: 'expense' }),
   );
@@ -95,19 +114,34 @@ const setup = async () => {
     memberUids: ['member-me'],
     date: dateForMonthDay('2026-07', 10),
     status: 'pending',
+    paymentMethodUid: null,
     ...overrides,
   });
   return {
     entries,
     categories,
     closings,
+    methods,
+    invoices,
     expenseCategory,
     incomeCategory,
     input,
     listEntries: makeListEntries(entries),
     listOverdueEntries: makeListOverdueEntries(entries),
-    createEntry: makeCreateEntry(entries, categories, closings),
-    updateEntry: makeUpdateEntry(entries, categories, closings),
+    createEntry: makeCreateEntry(
+      entries,
+      categories,
+      closings,
+      methods,
+      invoices,
+    ),
+    updateEntry: makeUpdateEntry(
+      entries,
+      categories,
+      closings,
+      methods,
+      invoices,
+    ),
     deleteEntry: makeDeleteEntry(entries, closings),
     setEntryStatus: makeSetEntryStatus(entries),
   };
@@ -203,6 +237,108 @@ describe('makeCreateEntry', () => {
     expect(created.kind).toBe('income');
   });
 
+  it('sem meio de pagamento mantém os campos de fatura nulos', async () => {
+    const { createEntry, input } = await setup();
+
+    const created = unwrap(await createEntry(input()));
+
+    expect(created.paymentMethodUid).toBeNull();
+    expect(created.invoiceMonth).toBeNull();
+    expect(created.invoiceUid).toBeNull();
+  });
+
+  it('resolve o invoiceMonth ao usar cartão de crédito', async () => {
+    const { createEntry, input, methods } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+
+    const created = unwrap(
+      await createEntry(input({ paymentMethodUid: card.uid })),
+    );
+
+    expect(created.paymentMethodUid).toBe(card.uid);
+    expect(created.invoiceMonth).toBe('2026-08');
+    expect(created.invoiceUid).toBeNull();
+  });
+
+  it('vincula ao invoiceUid quando a fatura já existe', async () => {
+    const { createEntry, input, methods, invoices } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    const invoice = unwrap(
+      await invoices.create({
+        uid: createUid(),
+        paymentMethodUid: card.uid,
+        month: '2026-08',
+        dueDate: dateForMonthDay('2026-08', 5),
+        statedAmount: null,
+        status: 'open',
+        paidAt: null,
+        createdAt: 1,
+        updatedAt: 1,
+      }),
+    );
+
+    const created = unwrap(
+      await createEntry(input({ paymentMethodUid: card.uid })),
+    );
+
+    expect(created.invoiceMonth).toBe('2026-08');
+    expect(created.invoiceUid).toBe(invoice.uid);
+  });
+
+  it('meio não-crédito mantém invoiceMonth nulo', async () => {
+    const { createEntry, input, methods } = await setup();
+    const debit = unwrap(
+      await methods.create(
+        makeCard({
+          uid: 'card-debit',
+          name: 'Débito',
+          type: 'debit',
+          closingDay: null,
+          dueDay: null,
+        }),
+      ),
+    );
+
+    const created = unwrap(
+      await createEntry(input({ paymentMethodUid: debit.uid })),
+    );
+
+    expect(created.paymentMethodUid).toBe(debit.uid);
+    expect(created.invoiceMonth).toBeNull();
+    expect(created.invoiceUid).toBeNull();
+  });
+
+  it('rejeita meio de pagamento inexistente', async () => {
+    const { createEntry, input } = await setup();
+
+    expect(
+      unwrapLeft(
+        await createEntry(input({ paymentMethodUid: 'card-missing' })),
+      ),
+    ).toBeInstanceOf(PaymentMethodNotFoundError);
+  });
+
+  it('propaga falha ao buscar o meio de pagamento', async () => {
+    const { createEntry, input, methods } = await setup();
+    const error = new ConnectorError('falha simulada');
+    methods.failNext(error);
+
+    expect(
+      unwrapLeft(await createEntry(input({ paymentMethodUid: 'card-x' }))),
+    ).toBe(error);
+  });
+
+  it('propaga falha ao buscar a fatura', async () => {
+    const { createEntry, input, methods, invoices } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    const error = new ConnectorError('falha simulada');
+    invoices.failNext(error);
+
+    expect(
+      unwrapLeft(await createEntry(input({ paymentMethodUid: card.uid }))),
+    ).toBe(error);
+  });
+
   it('rejeita valor menor ou igual a zero', async () => {
     const { createEntry, input } = await setup();
 
@@ -285,6 +421,34 @@ describe('makeUpdateEntry', () => {
     expect(updated.month).toBe('2026-08');
     expect(updated.status).toBe('paid');
     expect(updated.createdAt).toBe(created.createdAt);
+  });
+
+  it('resolve os campos de fatura ao vincular um cartão de crédito', async () => {
+    const { createEntry, updateEntry, input, methods } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    const created = unwrap(await createEntry(input()));
+
+    const updated = unwrap(
+      await updateEntry(created.uid, input({ paymentMethodUid: card.uid })),
+    );
+
+    expect(updated.paymentMethodUid).toBe(card.uid);
+    expect(updated.invoiceMonth).toBe('2026-08');
+    expect(updated.invoiceUid).toBeNull();
+  });
+
+  it('rejeita meio de pagamento inexistente ao vincular na atualização', async () => {
+    const { createEntry, updateEntry, input } = await setup();
+    const created = unwrap(await createEntry(input()));
+
+    expect(
+      unwrapLeft(
+        await updateEntry(
+          created.uid,
+          input({ paymentMethodUid: 'card-missing' }),
+        ),
+      ),
+    ).toBeInstanceOf(PaymentMethodNotFoundError);
   });
 
   it('recomputa o kind a partir da nova categoria', async () => {

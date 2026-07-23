@@ -17,15 +17,20 @@ import {
   FormulaHasNoMatchesError,
   InstallmentPlanNotFoundError,
   InsufficientStockError,
+  InvalidCardDayError,
   InvalidFinanceAmountError,
   InvalidInstallmentCountError,
   InvalidMonthError,
   InvalidPercentError,
   InvalidRecurrenceRangeError,
+  InvoiceOverdetailedError,
+  InvoicePaidError,
   MissingTicketError,
   MonthAlreadyClosedError,
   MonthClosedError,
   MonthNotClosedError,
+  PaymentMethodInUseError,
+  PaymentMethodNotFoundError,
   RecurrenceAlreadyLaunchedError,
   RecurrenceNotFoundError,
   RecurrenceOutOfRangeError,
@@ -249,5 +254,41 @@ describe('erros do financeiro', () => {
     expect(e).toBeInstanceOf(DomainError);
     expect(e.code).toBe('finance/installment-plan-not-found');
     expect(e.message).toContain('Plano de parcelamento não encontrado');
+  });
+
+  it('PaymentMethodNotFoundError', () => {
+    const e = new PaymentMethodNotFoundError();
+    expect(e).toBeInstanceOf(DomainError);
+    expect(e.code).toBe('finance/payment-method-not-found');
+    expect(e.message).toContain('Meio de pagamento não encontrado');
+  });
+
+  it('PaymentMethodInUseError', () => {
+    const e = new PaymentMethodInUseError();
+    expect(e).toBeInstanceOf(DomainError);
+    expect(e.code).toBe('finance/payment-method-in-use');
+    expect(e.message).toContain('em uso');
+  });
+
+  it('InvalidCardDayError', () => {
+    const e = new InvalidCardDayError();
+    expect(e).toBeInstanceOf(DomainError);
+    expect(e.code).toBe('finance/invalid-card-day');
+    expect(e.message).toContain('fechamento');
+  });
+
+  it('InvoiceOverdetailedError guarda o excesso', () => {
+    const e = new InvoiceOverdetailedError(150.5);
+    expect(e).toBeInstanceOf(DomainError);
+    expect(e.code).toBe('finance/invoice-overdetailed');
+    expect(e.excess).toBe(150.5);
+    expect(e.message).toContain('superam');
+  });
+
+  it('InvoicePaidError', () => {
+    const e = new InvoicePaidError();
+    expect(e).toBeInstanceOf(DomainError);
+    expect(e.code).toBe('finance/invoice-paid');
+    expect(e.message).toContain('já foi paga');
   });
 });

@@ -45,16 +45,26 @@ import {
 } from '../../infrastructure/errors';
 
 export abstract class FakeFinanceRepository {
-  private nextFailure: InfrastructureError | null = null;
+  private failures: InfrastructureError[] = [];
+  private failuresByCall = new Map<number, InfrastructureError>();
+  private callCount = 0;
 
   failNext(error: InfrastructureError): void {
-    this.nextFailure = error;
+    this.failures.push(error);
+  }
+
+  failOnCall(callsAhead: number, error: InfrastructureError): void {
+    this.failuresByCall.set(this.callCount + callsAhead, error);
   }
 
   protected takeFailure(): InfrastructureError | null {
-    const failure = this.nextFailure;
-    this.nextFailure = null;
-    return failure;
+    this.callCount += 1;
+    const indexed = this.failuresByCall.get(this.callCount);
+    if (indexed) {
+      this.failuresByCall.delete(this.callCount);
+      return indexed;
+    }
+    return this.failures.shift() ?? null;
   }
 
   abstract snapshot(): () => void;

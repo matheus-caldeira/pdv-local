@@ -124,6 +124,7 @@ export function FinanceEntryFormModal({
       memberUids: form.memberUids,
       date: dateLocked ? entry!.date : fromDateInputValue(form.date),
       status: form.status,
+      paymentMethodUid: null,
     });
   }
 

@@ -16,13 +16,19 @@ import type {
   NewMonthClosing,
   NewRecurrence,
 } from '../../domain/finance/finance.entity';
+import type {
+  NewCardInvoice,
+  NewPaymentMethod,
+} from '../../domain/finance/payment-method.entity';
 import {
+  FakeCardInvoiceRepository,
   FakeFinanceAutomationRepository,
   FakeFinanceBudgetRepository,
   FakeFinanceCategoryRepository,
   FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
   FakeFinanceMemberRepository,
+  FakePaymentMethodRepository,
   makeFakeUnitOfWork,
   type FakeFinanceRepository,
 } from './fakes';
@@ -346,6 +352,9 @@ describe('FakeFinanceEntryRepository', () => {
           memberUids: ['m1', 'm2'],
           source: 'installment',
           sourceUid: 'plan-1',
+          paymentMethodUid: 'card-1',
+          invoiceMonth: '2026-08',
+          invoiceUid: 'invoice-1',
         }),
       ),
     );
@@ -360,6 +369,9 @@ describe('FakeFinanceEntryRepository', () => {
           memberUids: ['m3'],
           source: 'manual',
           sourceUid: null,
+          paymentMethodUid: 'card-2',
+          invoiceMonth: '2026-09',
+          invoiceUid: 'invoice-2',
         }),
       ),
     );
@@ -374,6 +386,15 @@ describe('FakeFinanceEntryRepository', () => {
     expect(unwrap(await repo.list({ sourceUid: 'plan-1' }))).toEqual([target]);
     expect(unwrap(await repo.list({ source: 'manual' }))).toEqual([other]);
     expect(unwrap(await repo.list({ monthBefore: '2026-08' }))).toEqual([
+      target,
+    ]);
+    expect(unwrap(await repo.list({ paymentMethodUid: 'card-1' }))).toEqual([
+      target,
+    ]);
+    expect(unwrap(await repo.list({ invoiceMonth: '2026-09' }))).toEqual([
+      other,
+    ]);
+    expect(unwrap(await repo.list({ invoiceUid: 'invoice-1' }))).toEqual([
       target,
     ]);
     expect(
@@ -718,6 +739,163 @@ describe('FakeFinanceClosingRepository', () => {
       () => repo.create(makeClosing()),
       () => repo.deleteByMonth('2026-06'),
     ]);
+  });
+});
+
+const makePaymentMethod = (
+  overrides: Partial<NewPaymentMethod> = {},
+): NewPaymentMethod => ({
+  uid: createUid(),
+  name: 'Cartão Nubank',
+  type: 'credit',
+  closingDay: 20,
+  dueDay: 5,
+  archived: false,
+  createdAt: 1,
+  ...overrides,
+});
+
+const makeCardInvoice = (
+  overrides: Partial<NewCardInvoice> = {},
+): NewCardInvoice => ({
+  uid: createUid(),
+  paymentMethodUid: 'card-1',
+  month: '2026-08',
+  dueDate: 100,
+  statedAmount: null,
+  status: 'open',
+  paidAt: null,
+  createdAt: 1,
+  updatedAt: 1,
+  ...overrides,
+});
+
+describe('FakePaymentMethodRepository', () => {
+  it('cria com id incremental e localiza por uid', async () => {
+    const repo = new FakePaymentMethodRepository();
+    const first = unwrap(await repo.create(makePaymentMethod()));
+    const second = unwrap(await repo.create(makePaymentMethod()));
+    expect(first.id).toBe(1);
+    expect(second.id).toBe(2);
+    expect(unwrap(await repo.findByUid(first.uid))).toEqual(first);
+    expect(unwrap(await repo.findByUid('missing'))).toBeUndefined();
+    expect(unwrap(await repo.list())).toEqual([first, second]);
+  });
+
+  it('update altera campos e recusa uid inexistente', async () => {
+    const repo = new FakePaymentMethodRepository();
+    const created = unwrap(await repo.create(makePaymentMethod()));
+    const updated = unwrap(
+      await repo.update(created.uid, { name: 'Cartão Itaú', archived: true }),
+    );
+    expect(updated.name).toBe('Cartão Itaú');
+    expect(updated.archived).toBe(true);
+    const error = unwrapLeft(await repo.update('missing', { name: 'X' }));
+    expect(error.code).toBe('RECORD_NOT_FOUND');
+  });
+
+  it('delete remove e é idempotente', async () => {
+    const repo = new FakePaymentMethodRepository();
+    const created = unwrap(await repo.create(makePaymentMethod()));
+    expect(isRight(await repo.delete(created.uid))).toBe(true);
+    expect(isRight(await repo.delete(created.uid))).toBe(true);
+    expect(unwrap(await repo.list())).toEqual([]);
+  });
+
+  it('failNext faz o próximo método retornar o erro injetado', async () => {
+    const repo = new FakePaymentMethodRepository();
+    const created = unwrap(await repo.create(makePaymentMethod()));
+    await expectFailNextOnEveryMethod(repo, [
+      () => repo.list(),
+      () => repo.findByUid(created.uid),
+      () => repo.create(makePaymentMethod()),
+      () => repo.update(created.uid, { archived: true }),
+      () => repo.delete(created.uid),
+    ]);
+  });
+});
+
+describe('FakeCardInvoiceRepository', () => {
+  it('cria com id incremental e localiza por cartão e mês', async () => {
+    const repo = new FakeCardInvoiceRepository();
+    const august = unwrap(
+      await repo.create(
+        makeCardInvoice({ paymentMethodUid: 'card-1', month: '2026-08' }),
+      ),
+    );
+    const september = unwrap(
+      await repo.create(
+        makeCardInvoice({ paymentMethodUid: 'card-1', month: '2026-09' }),
+      ),
+    );
+    expect(august.id).toBe(1);
+    expect(september.id).toBe(2);
+    expect(unwrap(await repo.findByCardAndMonth('card-1', '2026-08'))).toEqual(
+      august,
+    );
+    expect(
+      unwrap(await repo.findByCardAndMonth('card-1', '2026-01')),
+    ).toBeUndefined();
+  });
+
+  it('listByCard ordena por mês e listByMonth filtra pelo mês', async () => {
+    const repo = new FakeCardInvoiceRepository();
+    const september = unwrap(
+      await repo.create(
+        makeCardInvoice({ paymentMethodUid: 'card-1', month: '2026-09' }),
+      ),
+    );
+    const august = unwrap(
+      await repo.create(
+        makeCardInvoice({ paymentMethodUid: 'card-1', month: '2026-08' }),
+      ),
+    );
+    const otherCard = unwrap(
+      await repo.create(
+        makeCardInvoice({ paymentMethodUid: 'card-2', month: '2026-08' }),
+      ),
+    );
+    expect(unwrap(await repo.listByCard('card-1'))).toEqual([
+      august,
+      september,
+    ]);
+    expect(unwrap(await repo.listByMonth('2026-08'))).toEqual([
+      august,
+      otherCard,
+    ]);
+  });
+
+  it('update altera campos e recusa uid inexistente', async () => {
+    const repo = new FakeCardInvoiceRepository();
+    const created = unwrap(await repo.create(makeCardInvoice()));
+    const updated = unwrap(
+      await repo.update(created.uid, { statedAmount: 1000, status: 'paid' }),
+    );
+    expect(updated.statedAmount).toBe(1000);
+    expect(updated.status).toBe('paid');
+    const error = unwrapLeft(await repo.update('missing', { statedAmount: 1 }));
+    expect(error.code).toBe('RECORD_NOT_FOUND');
+  });
+
+  it('failNext faz o próximo método retornar o erro injetado', async () => {
+    const repo = new FakeCardInvoiceRepository();
+    const created = unwrap(await repo.create(makeCardInvoice()));
+    await expectFailNextOnEveryMethod(repo, [
+      () => repo.findByCardAndMonth('card-1', '2026-08'),
+      () => repo.listByCard('card-1'),
+      () => repo.listByMonth('2026-08'),
+      () => repo.create(makeCardInvoice()),
+      () => repo.update(created.uid, { statedAmount: 1 }),
+    ]);
+  });
+
+  it('failOnCall faz falhar apenas a enésima chamada seguinte', async () => {
+    const repo = new FakeCardInvoiceRepository();
+    const error = new ConnectorError('falha simulada');
+    repo.failOnCall(2, error);
+    expect(isRight(await repo.listByCard('card-1'))).toBe(true);
+    expect(unwrapLeft(await repo.listByCard('card-1'))).toBe(error);
+    expect(isRight(await repo.listByCard('card-1'))).toBe(true);
   });
 });
 
