@@ -508,6 +508,50 @@ describe('makeSetInvoiceAmount', () => {
     expect(matches).toHaveLength(1);
   });
 
+  it('desarquiva a categoria dedicada quando estava arquivada', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    const existing = unwrap(
+      await categories.create({
+        name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+        kind: 'expense',
+      }),
+    );
+    await categories.update(existing.uid, { archived: true });
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+
+    const matches = unwrap(await categories.list()).filter(
+      (item) => item.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
+    );
+    expect(matches).toHaveLength(1);
+    expect(matches[0].archived).toBe(false);
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments[0].categoryUid).toBe(existing.uid);
+  });
+
+  it('propaga falha ao desarquivar a categoria dedicada', async () => {
+    const { entries, methods, categories, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    const existing = unwrap(
+      await categories.create({
+        name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+        kind: 'expense',
+      }),
+    );
+    await categories.update(existing.uid, { archived: true });
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+    const error = new ConnectorError('falha ao desarquivar categoria');
+    categories.failOnCall(2, error);
+
+    expect(unwrapLeft(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000))).toBe(
+      error,
+    );
+  });
+
   it('não altera a categoria ao atualizar o ajuste existente', async () => {
     const { entries, methods, categories, setInvoiceAmount } = setup();
     await methods.create(makeCard());

@@ -55,7 +55,12 @@ async function resolveAdjustmentCategory(
   const existing = listed.right.find(
     (category) => category.name === INVOICE_ADJUSTMENT_CATEGORY_NAME,
   );
-  if (existing) return right(existing.uid);
+  if (existing) {
+    if (!existing.archived) return right(existing.uid);
+    const restored = await categories.update(existing.uid, { archived: false });
+    if (isLeft(restored)) return restored;
+    return right(existing.uid);
+  }
 
   const created = await categories.create({
     name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
