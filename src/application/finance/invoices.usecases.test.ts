@@ -6,12 +6,14 @@ import {
   InvoiceOverdetailedError,
   InvoicePaidError,
   InvalidFinanceAmountError,
+  MonthClosedError,
   PaymentMethodNotFoundError,
 } from '../../domain/errors';
 import { ConnectorError } from '../../infrastructure/errors';
 import type {
   MonthKey,
   NewFinanceEntry,
+  NewMonthClosing,
 } from '../../domain/finance/finance.entity';
 import type {
   NewCardInvoice,
@@ -21,6 +23,7 @@ import { dateForMonthDay } from '../../domain/finance/finance.rules';
 import {
   FakeCardInvoiceRepository,
   FakeFinanceCategoryRepository,
+  FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
   FakePaymentMethodRepository,
   makeFakeUnitOfWork,
@@ -55,6 +58,19 @@ const makeCard = (
   archived: false,
   createdAt: 1,
   ...overrides,
+});
+
+const makeClosing = (month: MonthKey): NewMonthClosing => ({
+  uid: `closing-${month}`,
+  month,
+  closedAt: 1,
+  plannedIncome: 0,
+  plannedExpense: 0,
+  plannedBalance: 0,
+  actualIncome: 0,
+  actualExpense: 0,
+  actualBalance: 0,
+  categories: [],
 });
 
 const makeInvoice = (
@@ -105,16 +121,19 @@ const setup = () => {
   const invoices = new FakeCardInvoiceRepository();
   const methods = new FakePaymentMethodRepository();
   const categories = new FakeFinanceCategoryRepository();
+  const closings = new FakeFinanceClosingRepository();
   const uow = makeFakeUnitOfWork({
     financeEntries: entries,
     financeCardInvoices: invoices,
     financePaymentMethods: methods,
+    financeClosings: closings,
   });
   return {
     entries,
     invoices,
     methods,
     categories,
+    closings,
     uow,
     getInvoiceDetail: makeGetInvoiceDetail(invoices, entries),
     setInvoiceAmount: makeSetInvoiceAmount(uow, methods, categories),
@@ -223,8 +242,14 @@ describe('makeSetInvoiceAmount', () => {
   });
 
   it('encolhe o ajuste ao detalhar mais gastos', async () => {
-    const { entries, categories, methods, invoices, setInvoiceAmount } =
-      setup();
+    const {
+      entries,
+      categories,
+      methods,
+      invoices,
+      closings,
+      setInvoiceAmount,
+    } = setup();
     await methods.create(makeCard());
     await entries.create(makeInvoiceEntry({ amount: 400 }));
 
@@ -233,7 +258,11 @@ describe('makeSetInvoiceAmount', () => {
 
     unwrap(
       await reconcileInvoiceAdjustment(
-        { financeEntries: entries, financeCardInvoices: invoices },
+        {
+          financeEntries: entries,
+          financeCardInvoices: invoices,
+          financeClosings: closings,
+        },
         categories,
         invoice.paymentMethodUid,
         DUE_MONTH,
@@ -611,6 +640,30 @@ describe('makeSetInvoiceAmount', () => {
       error,
     );
   });
+
+  it('recusa informar o valor quando o mês de vencimento está fechado', async () => {
+    const { methods, closings, entries, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    await closings.create(makeClosing(DUE_MONTH));
+
+    const result = await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+
+    expect(unwrapLeft(result)).toBeInstanceOf(MonthClosedError);
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('propaga falha ao consultar o fechamento do mês', async () => {
+    const { methods, closings, setInvoiceAmount } = setup();
+    await methods.create(makeCard());
+    const error = new ConnectorError('falha ao consultar fechamento');
+    closings.failNext(error);
+
+    expect(unwrapLeft(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000))).toBe(
+      error,
+    );
+  });
 });
 
 describe('reconcileInvoiceAdjustment', () => {
@@ -619,9 +672,14 @@ describe('reconcileInvoiceAdjustment', () => {
     invoices: FakeCardInvoiceRepository,
     categories: FakeFinanceCategoryRepository,
     month: MonthKey = DUE_MONTH,
+    closings: FakeFinanceClosingRepository = new FakeFinanceClosingRepository(),
   ) =>
     reconcileInvoiceAdjustment(
-      { financeEntries: entries, financeCardInvoices: invoices },
+      {
+        financeEntries: entries,
+        financeCardInvoices: invoices,
+        financeClosings: closings,
+      },
       categories,
       CARD_UID,
       month,
@@ -635,6 +693,31 @@ describe('reconcileInvoiceAdjustment', () => {
     expect(
       unwrap(await entries.list({ source: 'invoice-adjustment' })),
     ).toEqual([]);
+  });
+
+  it('é no-op quando o mês de vencimento está fechado', async () => {
+    const { entries, invoices, categories, closings } = setup();
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+    await closings.create(makeClosing(DUE_MONTH));
+
+    unwrap(await reconcile(entries, invoices, categories, DUE_MONTH, closings));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('propaga falha ao consultar o fechamento do mês', async () => {
+    const { entries, invoices, categories, closings } = setup();
+    const error = new ConnectorError('falha ao consultar fechamento');
+    closings.failNext(error);
+
+    expect(
+      unwrapLeft(
+        await reconcile(entries, invoices, categories, DUE_MONTH, closings),
+      ),
+    ).toBe(error);
   });
 
   it('é no-op quando a fatura está paga', async () => {

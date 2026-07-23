@@ -693,6 +693,44 @@ describe('recálculo automático do ajuste da fatura', () => {
     expect(adjustments[0].amount).toBe(700);
   });
 
+  it('não recalcula o ajuste quando o mês de vencimento está fechado', async () => {
+    const {
+      createEntry,
+      input,
+      methods,
+      invoices,
+      categories,
+      closings,
+      entries,
+    } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await categories.create({
+      name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+      kind: 'expense',
+    });
+    await entries.create(
+      makeStoredEntry({
+        month: INVOICE_MONTH,
+        amount: 400,
+        paymentMethodUid: card.uid,
+        invoiceMonth: INVOICE_MONTH,
+        source: 'invoice-adjustment',
+        sourceUid: 'inv',
+        invoiceUid: 'inv',
+      }),
+    );
+    await closings.create(makeClosing(INVOICE_MONTH));
+
+    unwrap(
+      await createEntry(input({ amount: 300, paymentMethodUid: card.uid })),
+    );
+
+    const adjustments = unwrap(await listAdjustments(entries));
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(400);
+  });
+
   it('cria o ajuste ao criar o primeiro lançamento da fatura', async () => {
     const { createEntry, input, methods, invoices, entries } = await setup();
     const card = unwrap(await methods.create(makeCard()));

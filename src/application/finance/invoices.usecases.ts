@@ -5,6 +5,7 @@ import {
   InvoiceNotFoundError,
   InvoiceOverdetailedError,
   InvoicePaidError,
+  MonthClosedError,
   PaymentMethodNotFoundError,
 } from '../../domain/errors';
 import type {
@@ -254,11 +255,18 @@ async function applyAdjustment(
 }
 
 export async function reconcileInvoiceAdjustment(
-  repositories: Pick<Repositories, 'financeEntries' | 'financeCardInvoices'>,
+  repositories: Pick<
+    Repositories,
+    'financeEntries' | 'financeCardInvoices' | 'financeClosings'
+  >,
   categories: FinanceCategoryRepository,
   paymentMethodUid: string,
   invoiceMonth: MonthKey,
 ): Promise<Either<AppError, void>> {
+  const closing = await repositories.financeClosings.findByMonth(invoiceMonth);
+  if (isLeft(closing)) return closing;
+  if (closing.right) return right(undefined);
+
   const existing = await repositories.financeCardInvoices.findByCardAndMonth(
     paymentMethodUid,
     invoiceMonth,
@@ -319,6 +327,10 @@ export function makeSetInvoiceAmount(
     const paymentMethod = method.right;
 
     return uow.run(async (repositories) => {
+      const closing = await repositories.financeClosings.findByMonth(month);
+      if (isLeft(closing)) return closing;
+      if (closing.right) return left(new MonthClosedError(month));
+
       const existing =
         await repositories.financeCardInvoices.findByCardAndMonth(
           cardUid,
