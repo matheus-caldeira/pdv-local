@@ -12,3 +12,7 @@ export function resolveBasename(pathname: string): string {
 export function docsContentUrl(slug: string): string {
   return `${SITE_BASE}/docs-content/${slug}.md`;
 }
+
+export function docsSearchIndexUrl(): string {
+  return `${SITE_BASE}/docs-content/search-index.json`;
+}

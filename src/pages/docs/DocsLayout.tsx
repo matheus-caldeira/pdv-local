@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Menu, X, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Menu, X, ArrowLeft, ExternalLink, Search } from 'lucide-react';
 import { DOCS_PAGES } from '../../../docs/guide/manifest';
 import { APP_BASE, SITE_BASE } from '../../lib/docsBase';
+import { DocsSearch } from '../../ui/organisms/DocsSearch';
 import './DocsLayout.css';
 
 const LOGO_URL = `${import.meta.env.BASE_URL}logo.png`;
@@ -22,7 +23,19 @@ function groupBySection() {
 
 export function DocsLayout() {
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const groups = groupBySection();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="docs-layout">
@@ -55,6 +68,15 @@ export function DocsLayout() {
         </div>
         <p className="docs-sidebar-sub">Guia de uso</p>
         <div className="docs-sidebar-actions">
+          <button
+            type="button"
+            className="docs-sidebar-action"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Buscar na documentação"
+          >
+            <Search size={15} /> Buscar{' '}
+            <kbd className="docs-search-kbd">Ctrl K</kbd>
+          </button>
           <a className="docs-sidebar-action" href={`${APP_BASE}/`}>
             <ExternalLink size={15} /> Abrir o app
           </a>
@@ -84,6 +106,8 @@ export function DocsLayout() {
       <main className="docs-main">
         <Outlet />
       </main>
+
+      <DocsSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
