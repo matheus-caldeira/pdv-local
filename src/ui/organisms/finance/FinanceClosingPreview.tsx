@@ -1,7 +1,9 @@
+import { Badge } from '../../atoms/Badge';
 import { Button } from '../../atoms/Button';
 import { Money } from '../../atoms/Money';
 import { formatDateTime } from '../../../domain/shared/format';
 import type { ClosingPreview } from '../../../application/finance/closing.usecases';
+import type { MonthInvoiceLine } from '../../../application/finance/invoices.usecases';
 import type {
   FinanceKind,
   MonthClosing,
@@ -27,9 +29,39 @@ interface FinanceClosingPreviewProps {
   monthLabel: string;
   preview: ClosingPreview;
   closing: MonthClosing | null;
+  invoices: MonthInvoiceLine[];
   isFutureMonth: boolean;
   onRequestClose(): void;
   onRequestReopen(): void;
+}
+
+function InvoiceLines({ invoices }: { invoices: MonthInvoiceLine[] }) {
+  if (invoices.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
+        Faturas que vencem no mês
+      </h3>
+      <ul aria-label="Faturas do mês" className="flex flex-col gap-1">
+        {invoices.map((invoice) => (
+          <li
+            key={invoice.uid}
+            className="flex items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-4 py-2"
+          >
+            <span className="text-sm font-semibold text-ink-primary">
+              {invoice.cardName}
+            </span>
+            <span className="flex items-center gap-3">
+              <Money value={invoice.amount} className="font-bold" />
+              <Badge tone={invoice.status === 'paid' ? 'success' : 'warning'}>
+                {invoice.status === 'paid' ? 'Paga' : 'Pendente'}
+              </Badge>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function SummaryTotals({ summary }: { summary: ClosingSummaryData }) {
@@ -109,6 +141,7 @@ export function FinanceClosingPreview({
   monthLabel,
   preview,
   closing,
+  invoices,
   isFutureMonth,
   onRequestClose,
   onRequestReopen,
@@ -130,6 +163,7 @@ export function FinanceClosingPreview({
         </div>
         <SummaryTotals summary={closing} />
         <CategoryLines categories={closing.categories} />
+        <InvoiceLines invoices={invoices} />
         <Button variant="ghost" onClick={onRequestReopen}>
           Reabrir mês
         </Button>
@@ -145,6 +179,7 @@ export function FinanceClosingPreview({
       <h2 className="text-lg font-bold tracking-tight">Fechar {monthLabel}</h2>
       <SummaryTotals summary={preview.summary} />
       <CategoryLines categories={preview.summary.categories} />
+      <InvoiceLines invoices={invoices} />
       {preview.pendingEntries.length > 0 && (
         <div
           role="alert"

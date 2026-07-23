@@ -17,6 +17,7 @@ const listFinanceRecurrences = vi.fn();
 const listFinanceInstallmentPlans = vi.fn();
 const listFinanceCategories = vi.fn();
 const listFinanceMembers = vi.fn();
+const listPaymentMethods = vi.fn();
 const saveFinanceFormula = vi.fn();
 const deleteFinanceFormula = vi.fn();
 const previewFinanceFormula = vi.fn();
@@ -36,6 +37,7 @@ vi.mock('../../../app/container', () => ({
     listFinanceInstallmentPlans: () => listFinanceInstallmentPlans(),
     listFinanceCategories: () => listFinanceCategories(),
     listFinanceMembers: () => listFinanceMembers(),
+    listPaymentMethods: () => listPaymentMethods(),
     saveFinanceFormula: (input: unknown) => saveFinanceFormula(input),
     deleteFinanceFormula: (uid: string) => deleteFinanceFormula(uid),
     previewFinanceFormula: (input: unknown) => previewFinanceFormula(input),
@@ -76,6 +78,7 @@ const RECURRENCE: Recurrence = {
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 };
@@ -91,6 +94,7 @@ const PLAN: InstallmentPlan = {
   kind: 'expense',
   categoryUid: 'cat-home',
   memberUids: ['member-1'],
+  paymentMethodUid: null,
   createdAt: 1,
 };
 
@@ -123,6 +127,7 @@ describe('FinanceAutomationsPage', () => {
     listFinanceInstallmentPlans.mockResolvedValue(right([PLAN]));
     listFinanceCategories.mockResolvedValue(right([]));
     listFinanceMembers.mockResolvedValue(right([]));
+    listPaymentMethods.mockResolvedValue(right([]));
   });
   afterEach(cleanup);
 

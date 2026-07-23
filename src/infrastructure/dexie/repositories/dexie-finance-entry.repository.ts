@@ -42,6 +42,18 @@ function matchesFilter(
     return false;
   if (filter.monthBefore !== undefined && entry.month >= filter.monthBefore)
     return false;
+  if (
+    filter.paymentMethodUid !== undefined &&
+    entry.paymentMethodUid !== filter.paymentMethodUid
+  )
+    return false;
+  if (
+    filter.invoiceMonth !== undefined &&
+    entry.invoiceMonth !== filter.invoiceMonth
+  )
+    return false;
+  if (filter.invoiceUid !== undefined && entry.invoiceUid !== filter.invoiceUid)
+    return false;
   return true;
 }
 

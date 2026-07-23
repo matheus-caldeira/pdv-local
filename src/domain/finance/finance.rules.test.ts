@@ -22,6 +22,7 @@ import {
   currentMonthKey,
   dateForMonthDay,
   isValidMonthKey,
+  lastDayOfMonth,
   matchesFormulaFilter,
   monthKeyFromDate,
   normalizeAmount,
@@ -50,6 +51,9 @@ const entry = (over: Partial<FinanceEntry> = {}): FinanceEntry => ({
   installmentNumber: null,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 0,
   updatedAt: 0,
   ...over,
@@ -67,6 +71,7 @@ const recurrence = (over: Partial<Recurrence> = {}): Recurrence => ({
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 0,
   updatedAt: 0,
   ...over,
@@ -204,10 +209,52 @@ describe('currentMonthKey', () => {
 });
 
 describe('dateForMonthDay', () => {
-  it('returns the local timestamp for the given month and day', () => {
-    expect(dateForMonthDay('2026-07', 15)).toBe(
-      new Date(2026, 6, 15).getTime(),
-    );
+  it('mantém o dia quando o mês o contém', () => {
+    const result = dateForMonthDay('2026-07', 15);
+    expect(new Date(result).getDate()).toBe(15);
+    expect(new Date(result).getMonth()).toBe(6);
+  });
+
+  it('clampa para 28 em fevereiro comum', () => {
+    const result = dateForMonthDay('2027-02', 31);
+    expect(new Date(result).getDate()).toBe(28);
+    expect(new Date(result).getMonth()).toBe(1);
+  });
+
+  it('clampa para 29 em fevereiro bissexto', () => {
+    const result = dateForMonthDay('2028-02', 31);
+    expect(new Date(result).getDate()).toBe(29);
+    expect(new Date(result).getMonth()).toBe(1);
+  });
+
+  it('clampa para 30 em mês de 30 dias', () => {
+    const result = dateForMonthDay('2026-04', 31);
+    expect(new Date(result).getDate()).toBe(30);
+    expect(new Date(result).getMonth()).toBe(3);
+  });
+
+  it('mantém 31 em mês de 31 dias', () => {
+    const result = dateForMonthDay('2026-01', 31);
+    expect(new Date(result).getDate()).toBe(31);
+    expect(new Date(result).getMonth()).toBe(0);
+  });
+});
+
+describe('lastDayOfMonth', () => {
+  it('devolve 28 para fevereiro comum', () => {
+    expect(lastDayOfMonth(2027, 2)).toBe(28);
+  });
+
+  it('devolve 29 para fevereiro bissexto', () => {
+    expect(lastDayOfMonth(2028, 2)).toBe(29);
+  });
+
+  it('devolve 30 para abril', () => {
+    expect(lastDayOfMonth(2026, 4)).toBe(30);
+  });
+
+  it('devolve 31 para janeiro', () => {
+    expect(lastDayOfMonth(2026, 1)).toBe(31);
   });
 });
 

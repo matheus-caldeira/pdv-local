@@ -13,7 +13,9 @@ export type BackupEntity =
   | 'financeFormulas'
   | 'financeRecurrences'
   | 'financeInstallmentPlans'
-  | 'financeClosings';
+  | 'financeClosings'
+  | 'financePaymentMethods'
+  | 'financeCardInvoices';
 
 export type BackupFormat = 'json' | 'csv';
 

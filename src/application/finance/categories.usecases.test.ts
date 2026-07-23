@@ -43,6 +43,9 @@ const makeEntry = (categoryUid: string): NewFinanceEntry => ({
   installmentNumber: null,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 1,
   updatedAt: 1,
 });
@@ -73,6 +76,7 @@ const makeRecurrence = (categoryUid: string): NewRecurrence => ({
   startMonth: '2026-01',
   endMonth: null,
   active: true,
+  paymentMethodUid: null,
   createdAt: 1,
   updatedAt: 1,
 });
@@ -87,6 +91,7 @@ const makePlan = (categoryUid: string): NewInstallmentPlan => ({
   kind: 'expense',
   categoryUid,
   memberUids: ['member-me'],
+  paymentMethodUid: null,
   createdAt: 1,
 });
 

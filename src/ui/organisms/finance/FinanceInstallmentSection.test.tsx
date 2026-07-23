@@ -14,6 +14,7 @@ import type {
   FinanceCategory,
   InstallmentPlan,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 
 const CATEGORIES: FinanceCategory[] = [
   {
@@ -48,6 +49,29 @@ const MEMBERS: FamilyMember[] = [
   { id: 3, uid: 'member-3', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
+const PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    id: 1,
+    uid: 'method-1',
+    name: 'Cartão Nubank',
+    type: 'credit',
+    closingDay: 3,
+    dueDay: 10,
+    archived: false,
+    createdAt: 1,
+  },
+  {
+    id: 2,
+    uid: 'method-old',
+    name: 'Cartão Antigo',
+    type: 'credit',
+    closingDay: 5,
+    dueDay: 12,
+    archived: true,
+    createdAt: 1,
+  },
+];
+
 const PLAN: InstallmentPlan = {
   id: 1,
   uid: 'plan-1',
@@ -59,6 +83,7 @@ const PLAN: InstallmentPlan = {
   kind: 'expense',
   categoryUid: 'cat-home',
   memberUids: ['member-1'],
+  paymentMethodUid: null,
   createdAt: 1,
 };
 
@@ -72,6 +97,7 @@ function renderSection(plans: InstallmentPlan[] = []) {
       plans={plans}
       categories={CATEGORIES}
       members={MEMBERS}
+      paymentMethods={PAYMENT_METHODS}
       currentMonth="2026-07"
       onPreview={onPreview}
       onCreate={onCreate}
@@ -194,6 +220,10 @@ describe('FinanceInstallmentSection', () => {
     await userEvent.click(
       within(dialog).getByRole('checkbox', { name: 'Ana' }),
     );
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Meio de pagamento'),
+      'method-1',
+    );
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Ver prévia' }),
     );
@@ -212,6 +242,7 @@ describe('FinanceInstallmentSection', () => {
       kind: 'expense',
       categoryUid: 'cat-home',
       memberUids: ['member-1'],
+      paymentMethodUid: 'method-1',
     });
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
@@ -243,7 +274,7 @@ describe('FinanceInstallmentSection', () => {
     renderSection();
     const dialog = await openForm();
     await userEvent.clear(within(dialog).getByLabelText('Número de parcelas'));
-    await userEvent.clear(within(dialog).getByLabelText('Dia do mês (1-28)'));
+    await userEvent.clear(within(dialog).getByLabelText('Dia do mês (1-31)'));
     await userEvent.selectOptions(
       within(dialog).getByLabelText('Categoria'),
       'cat-home',
@@ -264,8 +295,24 @@ describe('FinanceInstallmentSection', () => {
         totalAmount: 0,
         installmentCount: 0,
         dayOfMonth: 0,
+        paymentMethodUid: null,
       }),
     );
+  });
+
+  it('accepts day 31 and keeps an archived payment method selectable', async () => {
+    renderSection();
+    const dialog = await openForm();
+    expect(within(dialog).getByLabelText('Dia do mês (1-31)')).toHaveAttribute(
+      'max',
+      '31',
+    );
+    expect(
+      within(dialog).queryByRole('option', { name: /Cartão Antigo/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByRole('option', { name: 'Cartão Nubank' }),
+    ).toBeInTheDocument();
   });
 
   it('hides the preview when it fails', async () => {

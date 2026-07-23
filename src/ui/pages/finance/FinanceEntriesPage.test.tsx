@@ -22,6 +22,7 @@ const listOverdueFinanceEntries = vi.fn();
 const listFinanceCategories = vi.fn();
 const listFinanceMembers = vi.fn();
 const listFinanceInstallmentPlans = vi.fn();
+const listPaymentMethods = vi.fn();
 const listFinanceClosings = vi.fn();
 const createFinanceEntry = vi.fn();
 const updateFinanceEntry = vi.fn();
@@ -36,6 +37,7 @@ vi.mock('../../../app/container', () => ({
     listFinanceCategories: () => listFinanceCategories(),
     listFinanceMembers: () => listFinanceMembers(),
     listFinanceInstallmentPlans: () => listFinanceInstallmentPlans(),
+    listPaymentMethods: () => listPaymentMethods(),
     listFinanceClosings: () => listFinanceClosings(),
     createFinanceEntry: (input: unknown) => createFinanceEntry(input),
     updateFinanceEntry: (uid: string, input: unknown) =>
@@ -68,6 +70,9 @@ function makeEntry(overrides: Partial<FinanceEntry> = {}): FinanceEntry {
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
+    paymentMethodUid: null,
+    invoiceMonth: null,
+    invoiceUid: null,
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -107,6 +112,17 @@ const MEMBER = {
   createdAt: 1,
 };
 
+const PAYMENT_METHOD = {
+  id: 1,
+  uid: 'method-1',
+  name: 'Cartão Nubank',
+  type: 'credit' as const,
+  closingDay: 3,
+  dueDay: 10,
+  archived: false,
+  createdAt: 1,
+};
+
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/finance/entries?month=2026-07']}>
@@ -134,6 +150,7 @@ describe('FinanceEntriesPage', () => {
     listFinanceCategories.mockResolvedValue(right([CATEGORY]));
     listFinanceMembers.mockResolvedValue(right([MEMBER]));
     listFinanceInstallmentPlans.mockResolvedValue(right([]));
+    listPaymentMethods.mockResolvedValue(right([PAYMENT_METHOD]));
     listFinanceClosings.mockResolvedValue(right([]));
   });
 
@@ -174,6 +191,26 @@ describe('FinanceEntriesPage', () => {
     expect(listFinanceEntries).toHaveBeenCalledWith({ month: '2026-07' });
     expect(
       screen.getByRole('button', { name: 'Atrasadas (1)' }),
+    ).toBeInTheDocument();
+  });
+
+  it('offers the payment method in the filters and the form modal', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('Conta de luz').length).toBeGreaterThan(0),
+    );
+    expect(
+      within(screen.getByLabelText('Filtrar por meio de pagamento')).getByRole(
+        'option',
+        { name: 'Cartão Nubank' },
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: /Novo lançamento/ }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Novo lançamento' });
+    expect(
+      within(dialog).getByLabelText('Meio de pagamento'),
     ).toBeInTheDocument();
   });
 

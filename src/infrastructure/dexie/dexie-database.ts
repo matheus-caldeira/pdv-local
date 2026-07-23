@@ -18,6 +18,10 @@ import type {
   MonthClosing,
   Recurrence,
 } from '../../domain/finance/finance.entity';
+import type {
+  CardInvoice,
+  PaymentMethod,
+} from '../../domain/finance/payment-method.entity';
 
 export type {
   CustomizationGroup,
@@ -55,6 +59,8 @@ export class PDVDatabase extends Dexie {
   financeRecurrences!: Table<Recurrence>;
   financeInstallmentPlans!: Table<InstallmentPlan>;
   financeClosings!: Table<MonthClosing>;
+  financePaymentMethods!: Table<PaymentMethod>;
+  financeCardInvoices!: Table<CardInvoice>;
 
   constructor() {
     super('pdv_v2');
@@ -254,6 +260,28 @@ export class PDVDatabase extends Dexie {
       financeRecurrences: '++id, &uid',
       financeInstallmentPlans: '++id, &uid',
       financeClosings: '++id, &uid, &month',
+    });
+    this.version(7).stores({
+      products: '++id, &uid, name, category, active',
+      orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+      sessions: '++id, &uid, openedAt, closedAt',
+      cashMovements: '++id, &uid, sessionUid, type',
+      config: '++id',
+      customizationGroups: '++id, &uid, name',
+      customizationItems: '++id, &uid, groupUid, active',
+      customers: '++id, &uid, phone, name',
+      financeMembers: '++id, &uid',
+      financeCategories: '++id, &uid, kind',
+      financeEntries:
+        '++id, &uid, month, categoryUid, sourceUid, status, invoiceUid, paymentMethodUid, invoiceMonth',
+      financeBudgetItems: '++id, &uid, categoryUid',
+      financeFormulas: '++id, &uid',
+      financeRecurrences: '++id, &uid',
+      financeInstallmentPlans: '++id, &uid',
+      financeClosings: '++id, &uid, &month',
+      financePaymentMethods: '++id, &uid, type, archived',
+      financeCardInvoices:
+        '++id, &uid, paymentMethodUid, month, [paymentMethodUid+month]',
     });
   }
 }

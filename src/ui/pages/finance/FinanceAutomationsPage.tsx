@@ -17,6 +17,7 @@ export function FinanceAutomationsPage() {
             recurrences={automations.recurrences}
             categories={automations.categories}
             members={automations.members}
+            paymentMethods={automations.paymentMethods}
             currentMonth={automations.currentMonth}
             onSave={automations.saveRecurrence}
             onDelete={automations.deleteRecurrence}
@@ -27,6 +28,7 @@ export function FinanceAutomationsPage() {
             plans={automations.plans}
             categories={automations.categories}
             members={automations.members}
+            paymentMethods={automations.paymentMethods}
             currentMonth={automations.currentMonth}
             onPreview={automations.previewInstallments}
             onCreate={automations.createInstallmentPlan}

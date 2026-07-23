@@ -77,6 +77,9 @@ const MATCH: FinanceEntry = {
   installmentNumber: null,
   sourceEntryUids: [],
   formulaBaseMonth: null,
+  paymentMethodUid: null,
+  invoiceMonth: null,
+  invoiceUid: null,
   createdAt: 1,
   updatedAt: 1,
 };

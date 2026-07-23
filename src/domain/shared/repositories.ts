@@ -7,6 +7,8 @@ import type { CashRepository } from '../cash/cash.repository';
 import type { FinanceEntryRepository } from '../finance/finance-entry.repository';
 import type { FinanceAutomationRepository } from '../finance/finance-automation.repository';
 import type { FinanceClosingRepository } from '../finance/finance-closing.repository';
+import type { PaymentMethodRepository } from '../finance/payment-method.repository';
+import type { CardInvoiceRepository } from '../finance/card-invoice.repository';
 
 export interface Repositories {
   orders: OrderRepository;
@@ -18,4 +20,6 @@ export interface Repositories {
   financeEntries: FinanceEntryRepository;
   financeAutomations: FinanceAutomationRepository;
   financeClosings: FinanceClosingRepository;
+  financePaymentMethods: PaymentMethodRepository;
+  financeCardInvoices: CardInvoiceRepository;
 }

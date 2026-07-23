@@ -17,7 +17,12 @@ como o resto do PDV Local (lembre-se do [Backup](backup)).
 - **Atrasadas:** contas pendentes de meses que já passaram. Elas aparecem em
   destaque no painel, num cartão próprio, até serem marcadas como pagas.
 
-Categorias e membros são cadastrados na aba **Configurações** do Financeiro.
+- **Meios de pagamento** dizem **como** cada conta foi paga (dinheiro, Pix,
+  débito, crédito, transferência). São opcionais em qualquer lançamento e servem
+  para filtrar os gastos e, no caso do cartão de crédito, para montar a fatura.
+
+Categorias, membros e meios de pagamento são cadastrados na aba
+**Configurações** do Financeiro.
 
 ## Lançamentos
 
@@ -63,6 +68,56 @@ Comprou em várias vezes? Cadastre a compra parcelada em **Automações** com o
 valor total, o número de parcelas e o mês da primeira. O sistema divide o valor
 e cria **um lançamento pendente para cada parcela**, já nos meses certos, com a
 numeração (1/10, 2/10...). Antes de confirmar, você vê a prévia das parcelas.
+
+## Meios de pagamento e faturas de cartão
+
+Em **Configurações**, cadastre seus meios de pagamento. Para um **cartão de
+crédito**, informe o **dia de fechamento** e o **dia de vencimento** — os dois
+números que aparecem na fatura do banco. É com eles que o sistema descobre em
+qual fatura cada compra cai.
+
+Ao criar um lançamento, escolher parcelamento ou recorrência, você pode indicar o
+meio de pagamento (é opcional). Quando escolhe um cartão de crédito, o sistema
+mostra ali mesmo em qual **fatura** aquela compra vai entrar e a data de
+vencimento.
+
+### Como a fatura é montada
+
+Uma compra fica na competência do mês em que foi feita — o **orçamento** e o
+**resumo do mês** continuam olhando a data da compra. Separado disso, cada compra
+no crédito é agrupada na fatura que vence depois. Uma compra feita antes do
+fechamento entra na fatura que fecha naquele mês; feita no dia do fechamento ou
+depois, entra na fatura seguinte.
+
+> Se o cartão fecha num dia que aquele mês não tem (dia 31 em fevereiro, por
+> exemplo), o sistema usa o último dia do mês.
+
+### Conciliar a fatura
+
+Na aba **Faturas**, escolha o cartão e o mês do vencimento. Você vê os
+lançamentos que já detalhou naquela fatura e um campo para informar o **valor
+total** que a fatura veio.
+
+Quase ninguém detalha 100% dos gastos do cartão. Então, ao informar o valor da
+fatura, o sistema calcula a diferença entre o total e o que você já lançou e cria
+um lançamento **"Outros gastos da fatura"** com essa diferença. Assim o mês bate
+com a fatura **sem contar o mesmo gasto duas vezes** e sem você fazer a conta na
+mão. Se depois você detalhar mais compras, esse valor de "outros gastos"
+diminui sozinho.
+
+> Se o que você já detalhou for **maior** que o valor da fatura, o sistema avisa
+> a divergência em vez de criar o ajuste — provavelmente há um lançamento errado
+> para corrigir.
+
+Quando pagar a fatura, use **Pagar fatura**: ela fica marcada como paga, com a
+data, e o ajuste de "outros gastos" é congelado. As faturas que vencem no mês
+também aparecem no **Fechamento do mês**.
+
+> Pagar a fatura **não** cria uma despesa nova. Os lançamentos individuais já
+> representam o gasto; a fatura é só uma forma de agrupar e conferir.
+
+A aba **Faturas** ainda mostra o **histórico** dos últimos meses daquele cartão,
+com quanto veio cada fatura e a variação em relação ao mês anterior.
 
 ## Fórmulas
 

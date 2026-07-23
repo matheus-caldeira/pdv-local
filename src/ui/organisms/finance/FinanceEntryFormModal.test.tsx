@@ -7,6 +7,7 @@ import type {
   FinanceCategory,
   FinanceEntry,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 
 const CATEGORIES: FinanceCategory[] = [
   {
@@ -45,6 +46,39 @@ const MANY_MEMBERS: FamilyMember[] = [
   { id: 3, uid: 'member-3', name: 'Carla', archived: true, createdAt: 1 },
 ];
 
+const PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    id: 1,
+    uid: 'method-credit',
+    name: 'Cartão Nubank',
+    type: 'credit',
+    closingDay: 3,
+    dueDay: 5,
+    archived: false,
+    createdAt: 1,
+  },
+  {
+    id: 2,
+    uid: 'method-debit',
+    name: 'Débito Caixa',
+    type: 'debit',
+    closingDay: null,
+    dueDay: null,
+    archived: false,
+    createdAt: 1,
+  },
+  {
+    id: 3,
+    uid: 'method-old',
+    name: 'Cartão Antigo',
+    type: 'credit',
+    closingDay: 10,
+    dueDay: 15,
+    archived: true,
+    createdAt: 1,
+  },
+];
+
 function makeEntry(overrides: Partial<FinanceEntry> = {}): FinanceEntry {
   return {
     id: 1,
@@ -62,6 +96,9 @@ function makeEntry(overrides: Partial<FinanceEntry> = {}): FinanceEntry {
     installmentNumber: null,
     sourceEntryUids: [],
     formulaBaseMonth: null,
+    paymentMethodUid: null,
+    invoiceMonth: null,
+    invoiceUid: null,
     createdAt: 1,
     updatedAt: 1,
     ...overrides,
@@ -78,6 +115,7 @@ function renderModal(overrides: Record<string, unknown> = {}) {
       entry={null}
       categories={CATEGORIES}
       members={SINGLE_MEMBER}
+      paymentMethods={PAYMENT_METHODS}
       onClose={onClose}
       onSave={onSave}
       onDelete={onDelete}
@@ -136,6 +174,10 @@ describe('FinanceEntryFormModal', () => {
       target: { value: '2026-07-20' },
     });
     await userEvent.selectOptions(screen.getByLabelText('Status'), 'paid');
+    await userEvent.selectOptions(
+      screen.getByLabelText('Meio de pagamento'),
+      'method-debit',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     expect(onSave).toHaveBeenCalledWith({
       description: 'Aluguel',
@@ -144,7 +186,50 @@ describe('FinanceEntryFormModal', () => {
       memberUids: ['member-2'],
       date: new Date(2026, 6, 20, 12).getTime(),
       status: 'paid',
+      paymentMethodUid: 'method-debit',
     });
+  });
+
+  it('defaults the payment method to none', async () => {
+    const { onSave } = renderModal();
+    expect(screen.getByLabelText('Meio de pagamento')).toHaveValue('');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentMethodUid: null }),
+    );
+  });
+
+  it('shows the resolved invoice text when a credit card is selected', async () => {
+    renderModal();
+    fireEvent.change(screen.getByLabelText('Data'), {
+      target: { value: '2026-09-10' },
+    });
+    await userEvent.selectOptions(
+      screen.getByLabelText('Meio de pagamento'),
+      'method-credit',
+    );
+    expect(
+      screen.getByText('Fatura de out. de 2026, vence 05/10/2026'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not show invoice text for non-credit methods', async () => {
+    renderModal();
+    await userEvent.selectOptions(
+      screen.getByLabelText('Meio de pagamento'),
+      'method-debit',
+    );
+    expect(screen.queryByText(/Fatura de/)).not.toBeInTheDocument();
+  });
+
+  it('keeps an archived payment method selectable when set on the entry', () => {
+    renderModal({ entry: makeEntry({ paymentMethodUid: 'method-old' }) });
+    expect(screen.getByLabelText('Meio de pagamento')).toHaveValue(
+      'method-old',
+    );
+    expect(
+      screen.getByRole('option', { name: 'Cartão Antigo (arquivado)' }),
+    ).toBeInTheDocument();
   });
 
   it('unchecks a member when clicked twice', async () => {

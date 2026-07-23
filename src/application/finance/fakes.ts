@@ -25,6 +25,14 @@ import type {
 import type { FinanceBudgetRepository } from '../../domain/finance/finance-budget.repository';
 import type { FinanceAutomationRepository } from '../../domain/finance/finance-automation.repository';
 import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
+import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
+import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
+import type {
+  CardInvoice,
+  NewCardInvoice,
+  NewPaymentMethod,
+  PaymentMethod,
+} from '../../domain/finance/payment-method.entity';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 import type { Repositories } from '../../domain/shared/repositories';
 import type { AppError } from '../../domain/shared/errors';
@@ -37,16 +45,26 @@ import {
 } from '../../infrastructure/errors';
 
 export abstract class FakeFinanceRepository {
-  private nextFailure: InfrastructureError | null = null;
+  private failures: InfrastructureError[] = [];
+  private failuresByCall = new Map<number, InfrastructureError>();
+  private callCount = 0;
 
   failNext(error: InfrastructureError): void {
-    this.nextFailure = error;
+    this.failures.push(error);
+  }
+
+  failOnCall(callsAhead: number, error: InfrastructureError): void {
+    this.failuresByCall.set(this.callCount + callsAhead, error);
   }
 
   protected takeFailure(): InfrastructureError | null {
-    const failure = this.nextFailure;
-    this.nextFailure = null;
-    return failure;
+    this.callCount += 1;
+    const indexed = this.failuresByCall.get(this.callCount);
+    if (indexed) {
+      this.failuresByCall.delete(this.callCount);
+      return indexed;
+    }
+    return this.failures.shift() ?? null;
   }
 
   abstract snapshot(): () => void;
@@ -219,7 +237,12 @@ const matchesEntryFilter = (
     entry.description.toLowerCase().includes(filter.text.toLowerCase())) &&
   (filter.sourceUid === undefined || entry.sourceUid === filter.sourceUid) &&
   (filter.source === undefined || entry.source === filter.source) &&
-  (filter.monthBefore === undefined || entry.month < filter.monthBefore);
+  (filter.monthBefore === undefined || entry.month < filter.monthBefore) &&
+  (filter.paymentMethodUid === undefined ||
+    entry.paymentMethodUid === filter.paymentMethodUid) &&
+  (filter.invoiceMonth === undefined ||
+    entry.invoiceMonth === filter.invoiceMonth) &&
+  (filter.invoiceUid === undefined || entry.invoiceUid === filter.invoiceUid);
 
 const byEntryOrder = (a: FinanceEntry, b: FinanceEntry): number =>
   a.date - b.date || a.createdAt - b.createdAt || a.uid.localeCompare(b.uid);
@@ -656,6 +679,144 @@ export class FakeFinanceClosingRepository
     if (failure) return left(failure);
     this.items = this.items.filter((closing) => closing.month !== month);
     return right(undefined);
+  }
+}
+
+export class FakePaymentMethodRepository
+  extends FakeFinanceRepository
+  implements PaymentMethodRepository
+{
+  private items: PaymentMethod[] = [];
+  private nextId = 1;
+
+  snapshot(): () => void {
+    const items = [...this.items];
+    return () => {
+      this.items = [...items];
+    };
+  }
+
+  async list(): Promise<Either<InfrastructureError, PaymentMethod[]>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    return right([...this.items]);
+  }
+
+  async findByUid(
+    uid: string,
+  ): Promise<Either<InfrastructureError, PaymentMethod | undefined>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    return right(this.items.find((method) => method.uid === uid));
+  }
+
+  async create(
+    method: NewPaymentMethod,
+  ): Promise<Either<InfrastructureError, PaymentMethod>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    const created: PaymentMethod = { ...method, id: this.nextId };
+    this.nextId += 1;
+    this.items.push(created);
+    return right(created);
+  }
+
+  async update(
+    uid: string,
+    changes: Partial<Omit<PaymentMethod, 'id' | 'uid' | 'createdAt'>>,
+  ): Promise<Either<InfrastructureError, PaymentMethod>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    const index = this.items.findIndex((method) => method.uid === uid);
+    if (index < 0) {
+      return left(new RecordNotFoundError('Meio de pagamento não encontrado.'));
+    }
+    const updated = { ...this.items[index], ...changes };
+    this.items[index] = updated;
+    return right(updated);
+  }
+
+  async delete(uid: string): Promise<Either<InfrastructureError, void>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    this.items = this.items.filter((method) => method.uid !== uid);
+    return right(undefined);
+  }
+}
+
+export class FakeCardInvoiceRepository
+  extends FakeFinanceRepository
+  implements CardInvoiceRepository
+{
+  private items: CardInvoice[] = [];
+  private nextId = 1;
+
+  snapshot(): () => void {
+    const items = [...this.items];
+    return () => {
+      this.items = [...items];
+    };
+  }
+
+  async findByCardAndMonth(
+    paymentMethodUid: string,
+    month: MonthKey,
+  ): Promise<Either<InfrastructureError, CardInvoice | undefined>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    return right(
+      this.items.find(
+        (invoice) =>
+          invoice.paymentMethodUid === paymentMethodUid &&
+          invoice.month === month,
+      ),
+    );
+  }
+
+  async listByCard(
+    paymentMethodUid: string,
+  ): Promise<Either<InfrastructureError, CardInvoice[]>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    return right(
+      this.items
+        .filter((invoice) => invoice.paymentMethodUid === paymentMethodUid)
+        .sort((a, b) => a.month.localeCompare(b.month)),
+    );
+  }
+
+  async listByMonth(
+    month: MonthKey,
+  ): Promise<Either<InfrastructureError, CardInvoice[]>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    return right(this.items.filter((invoice) => invoice.month === month));
+  }
+
+  async create(
+    invoice: NewCardInvoice,
+  ): Promise<Either<InfrastructureError, CardInvoice>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    const created: CardInvoice = { ...invoice, id: this.nextId };
+    this.nextId += 1;
+    this.items.push(created);
+    return right(created);
+  }
+
+  async update(
+    uid: string,
+    changes: Partial<Omit<CardInvoice, 'id' | 'uid' | 'createdAt'>>,
+  ): Promise<Either<InfrastructureError, CardInvoice>> {
+    const failure = this.takeFailure();
+    if (failure) return left(failure);
+    const index = this.items.findIndex((invoice) => invoice.uid === uid);
+    if (index < 0) {
+      return left(new RecordNotFoundError('Fatura não encontrada.'));
+    }
+    const updated = { ...this.items[index], ...changes };
+    this.items[index] = updated;
+    return right(updated);
   }
 }
 

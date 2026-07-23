@@ -10,6 +10,7 @@ import type { MonthClosing } from '../../domain/finance/finance.entity';
 
 const loadFinanceClosingPreview = vi.fn();
 const listFinanceClosings = vi.fn();
+const listMonthInvoices = vi.fn();
 const closeFinanceMonth = vi.fn();
 const reopenFinanceMonth = vi.fn();
 
@@ -18,6 +19,7 @@ vi.mock('../../app/container', () => ({
     loadFinanceClosingPreview: (month: string) =>
       loadFinanceClosingPreview(month),
     listFinanceClosings: () => listFinanceClosings(),
+    listMonthInvoices: (month: string) => listMonthInvoices(month),
     closeFinanceMonth: (month: string, nowMs: number) =>
       closeFinanceMonth(month, nowMs),
     reopenFinanceMonth: (month: string) => reopenFinanceMonth(month),
@@ -59,13 +61,14 @@ const CLOSING: MonthClosing = {
 };
 
 function Probe() {
-  const { preview, closings, loading, closeMonth, reopenMonth } =
+  const { preview, closings, invoices, loading, closeMonth, reopenMonth } =
     useFinanceClosings('2026-06');
   return (
     <div>
       <span>loading:{loading ? 'yes' : 'no'}</span>
       <span>preview:{preview ? preview.month : 'none'}</span>
       <span>closings:{closings.length}</span>
+      <span>invoices:{invoices.length}</span>
       <button onClick={() => closeMonth()}>close</button>
       <button onClick={() => reopenMonth('2026-05')}>reopen</button>
     </div>
@@ -84,10 +87,22 @@ describe('useFinanceClosings', () => {
   beforeEach(() => {
     loadFinanceClosingPreview.mockReset();
     listFinanceClosings.mockReset();
+    listMonthInvoices.mockReset();
     closeFinanceMonth.mockReset();
     reopenFinanceMonth.mockReset();
     loadFinanceClosingPreview.mockResolvedValue(right(PREVIEW));
     listFinanceClosings.mockResolvedValue(right([CLOSING]));
+    listMonthInvoices.mockResolvedValue(
+      right([
+        {
+          uid: 'inv-1',
+          paymentMethodUid: 'method-1',
+          cardName: 'Cartão Nubank',
+          amount: 1200,
+          status: 'open',
+        },
+      ]),
+    );
   });
   afterEach(cleanup);
 
@@ -98,8 +113,19 @@ describe('useFinanceClosings', () => {
       expect(screen.getByText('loading:no')).toBeInTheDocument(),
     );
     expect(loadFinanceClosingPreview).toHaveBeenCalledWith('2026-06');
+    expect(listMonthInvoices).toHaveBeenCalledWith('2026-06');
     expect(screen.getByText('preview:2026-06')).toBeInTheDocument();
     expect(screen.getByText('closings:1')).toBeInTheDocument();
+    expect(screen.getByText('invoices:1')).toBeInTheDocument();
+  });
+
+  it('toasts when listing the month invoices fails', async () => {
+    listMonthInvoices.mockResolvedValue(left(new FakeError('falha faturas')));
+    renderProbe();
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha faturas'),
+    );
+    expect(screen.getByText('invoices:0')).toBeInTheDocument();
   });
 
   it('toasts and clears the preview when loading the preview fails', async () => {

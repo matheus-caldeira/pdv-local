@@ -21,6 +21,7 @@ export const DEFAULT_CATEGORIES: { name: string; kind: FinanceKind }[] = [
   { name: 'Lazer', kind: 'expense' },
   { name: 'Assinaturas', kind: 'expense' },
   { name: 'Impostos', kind: 'expense' },
+  { name: 'Fatura de cartão', kind: 'expense' },
   { name: 'Salário', kind: 'income' },
   { name: 'PJ', kind: 'income' },
   { name: 'Outras receitas', kind: 'income' },

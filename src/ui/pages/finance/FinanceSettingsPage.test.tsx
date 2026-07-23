@@ -18,6 +18,7 @@ const deleteFinanceCategory = vi.fn();
 const createFinanceMember = vi.fn();
 const updateFinanceMember = vi.fn();
 const deleteFinanceMember = vi.fn();
+const listPaymentMethods = vi.fn();
 
 vi.mock('../../../app/container', () => ({
   container: {
@@ -31,6 +32,7 @@ vi.mock('../../../app/container', () => ({
     updateFinanceMember: (uid: string, changes: unknown) =>
       updateFinanceMember(uid, changes),
     deleteFinanceMember: (uid: string) => deleteFinanceMember(uid),
+    listPaymentMethods: () => listPaymentMethods(),
   },
 }));
 
@@ -95,6 +97,7 @@ describe('FinanceSettingsPage', () => {
     vi.clearAllMocks();
     listFinanceCategories.mockResolvedValue(right(CATEGORIES));
     listFinanceMembers.mockResolvedValue(right(MEMBERS));
+    listPaymentMethods.mockResolvedValue(right([]));
   });
   afterEach(() => {
     cleanup();
@@ -128,6 +131,14 @@ describe('FinanceSettingsPage', () => {
     expect(screen.getByText('Eu')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Mostrar arquivadas (1)' }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders the payment methods section', async () => {
+    renderPage();
+    await waitForLoaded();
+    expect(
+      screen.getByRole('heading', { name: 'Meios de pagamento' }),
     ).toBeInTheDocument();
   });
 

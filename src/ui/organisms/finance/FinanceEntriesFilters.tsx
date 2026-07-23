@@ -6,6 +6,7 @@ import type {
   FamilyMember,
   FinanceCategory,
 } from '../../../domain/finance/finance.entity';
+import type { PaymentMethod } from '../../../domain/finance/payment-method.entity';
 import type { FinanceEntryFiltersState } from '../../hooks/useFinanceEntries';
 
 interface FinanceEntriesFiltersProps {
@@ -13,6 +14,7 @@ interface FinanceEntriesFiltersProps {
   onFiltersChange(filters: FinanceEntryFiltersState): void;
   categories: FinanceCategory[];
   members: FamilyMember[];
+  paymentMethods: PaymentMethod[];
   overdueMode: boolean;
   overdueCount: number;
   onToggleOverdue(): void;
@@ -23,6 +25,7 @@ export function FinanceEntriesFilters({
   onFiltersChange,
   categories,
   members,
+  paymentMethods,
   overdueMode,
   overdueCount,
   onToggleOverdue,
@@ -51,7 +54,7 @@ export function FinanceEntriesFilters({
           <AlarmClock size={16} /> Atrasadas ({overdueCount})
         </Button>
       </div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
         <Select
           aria-label="Filtrar por status"
           value={filters.status}
@@ -103,6 +106,19 @@ export function FinanceEntriesFilters({
           {members.map((member) => (
             <option key={member.uid} value={member.uid}>
               {member.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          aria-label="Filtrar por meio de pagamento"
+          value={filters.paymentMethodUid}
+          disabled={overdueMode}
+          onChange={(event) => patch({ paymentMethodUid: event.target.value })}
+        >
+          <option value="">Todos os meios de pagamento</option>
+          {paymentMethods.map((method) => (
+            <option key={method.uid} value={method.uid}>
+              {method.name}
             </option>
           ))}
         </Select>
