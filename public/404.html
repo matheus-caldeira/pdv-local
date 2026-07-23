@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <script>
       // Roteador de fallback do GitHub Pages.
-      // Servido para qualquer caminho inexistente sob /pdv-local/.
-      //   - /pdv-local/app/<rota>  -> deep link da SPA do app
-      //   - /pdv-local/docs/<rota> -> deep link da SPA da documentação
-      //   - qualquer outro caminho -> manda para a landing em /pdv-local/.
+      // Servido para qualquer caminho inexistente sob /meu-bolso/.
+      //   - /meu-bolso/app/<rota>  -> deep link da SPA do app
+      //   - /meu-bolso/docs/<rota> -> deep link da SPA da documentação
+      //   - qualquer outro caminho -> manda para a landing em /meu-bolso/.
       (function () {
         var l = window.location;
         var origin =
           l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '');
-        var siteBase = '/pdv-local';
+        var siteBase = '/meu-bolso';
         var path = l.pathname;
 
         var areas = [siteBase + '/app', siteBase + '/docs'];
@@ -25,7 +25,7 @@
           return;
         }
 
-        // Mantém os 2 primeiros segmentos: /pdv-local/app ou /pdv-local/docs
+        // Mantém os 2 primeiros segmentos: /meu-bolso/app ou /meu-bolso/docs
         var segmentsToKeep = 2;
         l.replace(
           origin +

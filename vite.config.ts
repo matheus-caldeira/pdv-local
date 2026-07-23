@@ -5,9 +5,9 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-const BASE = '/pdv-local/app/';
+const BASE = '/meu-bolso/app/';
 
-const SITE_BASE = '/pdv-local';
+const SITE_BASE = '/meu-bolso';
 
 // Em dev, serve a landing.html na raiz reescrevendo os caminhos relativos
 // `app/...` e `docs/...` para os caminhos do site, reproduzindo producao
@@ -21,8 +21,8 @@ function serveLandingInDev(): Plugin {
         const url = (req.url || '').split('?')[0];
         if (
           url === '/' ||
-          url === '/pdv-local/' ||
-          url === '/pdv-local/index.html'
+          url === '/meu-bolso/' ||
+          url === '/meu-bolso/index.html'
         ) {
           const html = readFileSync(resolve(__dirname, 'landing.html'), 'utf-8')
             .replace(/(src|href)="app\//g, `$1="${BASE}`)
@@ -38,7 +38,7 @@ function serveLandingInDev(): Plugin {
 }
 
 // Em dev, serve o conteudo markdown da documentacao a partir de docs/guide/,
-// e serve o index.html da SPA para as rotas /pdv-local/docs/* (para o
+// e serve o index.html da SPA para as rotas /meu-bolso/docs/* (para o
 // roteamento client-side funcionar sem 404 do dev server). Nao afeta o build.
 function serveDocsInDev(): Plugin {
   return {
@@ -48,7 +48,7 @@ function serveDocsInDev(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const url = (req.url || '').split('?')[0];
 
-        // Conteudo markdown: /pdv-local/docs-content/<slug>.md -> docs/guide/<slug>.md
+        // Conteudo markdown: /meu-bolso/docs-content/<slug>.md -> docs/guide/<slug>.md
         const contentPrefix = `${SITE_BASE}/docs-content/`;
         if (url.startsWith(contentPrefix) && url.endsWith('.md')) {
           const slug = url.slice(contentPrefix.length, -'.md'.length);
@@ -72,7 +72,7 @@ function serveDocsInDev(): Plugin {
           return;
         }
 
-        // Rotas da SPA da docs: /pdv-local/docs ou /pdv-local/docs/<algo>
+        // Rotas da SPA da docs: /meu-bolso/docs ou /meu-bolso/docs/<algo>
         // (mas NAO /docs-content). Serve o index.html do app, passando pela
         // transformacao do Vite para que os modulos (/src/main.tsx) e o HMR
         // sejam reescritos corretamente em dev.
