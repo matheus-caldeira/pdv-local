@@ -18,6 +18,7 @@ import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.re
 import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.repository';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
+import type { Repositories } from '../../domain/shared/repositories';
 import {
   reconcileInvoice,
   resolveInvoiceMonth,
@@ -250,6 +251,53 @@ async function applyAdjustment(
   const created = await entries.create(adjustment);
   if (isLeft(created)) return created;
   return right(undefined);
+}
+
+export async function reconcileInvoiceAdjustment(
+  repositories: Pick<Repositories, 'financeEntries' | 'financeCardInvoices'>,
+  categories: FinanceCategoryRepository,
+  paymentMethodUid: string,
+  invoiceMonth: MonthKey,
+): Promise<Either<AppError, void>> {
+  const existing = await repositories.financeCardInvoices.findByCardAndMonth(
+    paymentMethodUid,
+    invoiceMonth,
+  );
+  if (isLeft(existing)) return existing;
+
+  const invoice = existing.right;
+  if (!invoice || invoice.status === 'paid' || invoice.statedAmount === null) {
+    return right(undefined);
+  }
+
+  const entriesResult = await invoiceEntries(
+    repositories.financeEntries,
+    paymentMethodUid,
+    invoiceMonth,
+  );
+  if (isLeft(entriesResult)) return entriesResult;
+
+  const detailedTotal = detailedTotalOf(entriesResult.right);
+  const reconciliation = reconcileInvoice(invoice.statedAmount, detailedTotal);
+  const existingAdjustment = entriesResult.right.find(isAdjustment);
+
+  if (reconciliation.kind === 'over') {
+    if (existingAdjustment) {
+      const deleted = await repositories.financeEntries.delete(
+        existingAdjustment.uid,
+      );
+      if (isLeft(deleted)) return deleted;
+    }
+    return right(undefined);
+  }
+
+  return applyAdjustment(
+    repositories.financeEntries,
+    categories,
+    invoice,
+    existingAdjustment,
+    reconciliation,
+  );
 }
 
 export function makeSetInvoiceAmount(

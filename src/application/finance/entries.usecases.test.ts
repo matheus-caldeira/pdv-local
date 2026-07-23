@@ -17,13 +17,17 @@ import type {
   NewMonthClosing,
 } from '../../domain/finance/finance.entity';
 import { dateForMonthDay } from '../../domain/finance/finance.rules';
-import type { NewPaymentMethod } from '../../domain/finance/payment-method.entity';
+import type {
+  NewCardInvoice,
+  NewPaymentMethod,
+} from '../../domain/finance/payment-method.entity';
 import {
   FakeCardInvoiceRepository,
   FakeFinanceCategoryRepository,
   FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
   FakePaymentMethodRepository,
+  makeFakeUnitOfWork,
 } from './fakes';
 import {
   makeCreateEntry,
@@ -34,6 +38,7 @@ import {
   makeUpdateEntry,
   type EntryInput,
 } from './entries.usecases';
+import { INVOICE_ADJUSTMENT_CATEGORY_NAME } from './invoices.usecases';
 
 const unwrap = <E, A>(either: Either<E, A>): A =>
   isRight(either) ? either.right : expect.unreachable('esperava Right');
@@ -95,12 +100,36 @@ const makeCard = (
   ...overrides,
 });
 
+const INVOICE_MONTH: MonthKey = '2026-08';
+
+const makeInvoice = (
+  overrides: Partial<NewCardInvoice> = {},
+): NewCardInvoice => ({
+  uid: createUid(),
+  paymentMethodUid: 'card-credit',
+  month: INVOICE_MONTH,
+  dueDate: dateForMonthDay(INVOICE_MONTH, 5),
+  statedAmount: null,
+  status: 'open',
+  paidAt: null,
+  createdAt: 1,
+  updatedAt: 1,
+  ...overrides,
+});
+
 const setup = async () => {
   const entries = new FakeFinanceEntryRepository();
   const categories = new FakeFinanceCategoryRepository();
   const closings = new FakeFinanceClosingRepository();
   const methods = new FakePaymentMethodRepository();
   const invoices = new FakeCardInvoiceRepository();
+  const uow = makeFakeUnitOfWork({
+    financeEntries: entries,
+    financeCategories: categories,
+    financeClosings: closings,
+    financePaymentMethods: methods,
+    financeCardInvoices: invoices,
+  });
   const expenseCategory = unwrap(
     await categories.create({ name: 'Mercado', kind: 'expense' }),
   );
@@ -123,26 +152,15 @@ const setup = async () => {
     closings,
     methods,
     invoices,
+    uow,
     expenseCategory,
     incomeCategory,
     input,
     listEntries: makeListEntries(entries),
     listOverdueEntries: makeListOverdueEntries(entries),
-    createEntry: makeCreateEntry(
-      entries,
-      categories,
-      closings,
-      methods,
-      invoices,
-    ),
-    updateEntry: makeUpdateEntry(
-      entries,
-      categories,
-      closings,
-      methods,
-      invoices,
-    ),
-    deleteEntry: makeDeleteEntry(entries, closings),
+    createEntry: makeCreateEntry(uow, categories, closings),
+    updateEntry: makeUpdateEntry(uow, categories, closings),
+    deleteEntry: makeDeleteEntry(uow, categories, closings),
     setEntryStatus: makeSetEntryStatus(entries),
   };
 };
@@ -636,6 +654,262 @@ describe('makeDeleteEntry', () => {
     const created = unwrap(await createEntry(input()));
     const error = new ConnectorError('falha simulada');
     closings.failNext(error);
+
+    expect(unwrapLeft(await deleteEntry(created.uid))).toBe(error);
+  });
+});
+
+describe('recálculo automático do ajuste da fatura', () => {
+  const listAdjustments = (entries: FakeFinanceEntryRepository) =>
+    entries.list({ source: 'invoice-adjustment' });
+
+  it('encolhe o ajuste ao criar um lançamento na fatura aberta', async () => {
+    const { createEntry, input, methods, invoices, categories, entries } =
+      await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await categories.create({
+      name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+      kind: 'expense',
+    });
+    await entries.create(
+      makeStoredEntry({
+        month: INVOICE_MONTH,
+        amount: 400,
+        paymentMethodUid: card.uid,
+        invoiceMonth: INVOICE_MONTH,
+        source: 'invoice-adjustment',
+        sourceUid: 'inv',
+        invoiceUid: 'inv',
+      }),
+    );
+
+    unwrap(
+      await createEntry(input({ amount: 300, paymentMethodUid: card.uid })),
+    );
+
+    const adjustments = unwrap(await listAdjustments(entries));
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(700);
+  });
+
+  it('cria o ajuste ao criar o primeiro lançamento da fatura', async () => {
+    const { createEntry, input, methods, invoices, entries } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+
+    unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+
+    const adjustments = unwrap(await listAdjustments(entries));
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(600);
+  });
+
+  it('aumenta o ajuste ao excluir um lançamento detalhado', async () => {
+    const { createEntry, deleteEntry, input, methods, invoices, entries } =
+      await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    const created = unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+    expect(unwrap(await listAdjustments(entries))[0].amount).toBe(600);
+
+    unwrap(await deleteEntry(created.uid));
+
+    const adjustments = unwrap(await listAdjustments(entries));
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(1000);
+  });
+
+  it('recalcula o ajuste ao editar o valor de um lançamento da fatura', async () => {
+    const { createEntry, updateEntry, input, methods, invoices, entries } =
+      await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    const created = unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+
+    unwrap(
+      await updateEntry(
+        created.uid,
+        input({ amount: 250, paymentMethodUid: card.uid }),
+      ),
+    );
+
+    const adjustments = unwrap(await listAdjustments(entries));
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(750);
+  });
+
+  it('recalcula as duas faturas ao mover o lançamento entre cartões', async () => {
+    const { createEntry, updateEntry, input, methods, invoices, entries } =
+      await setup();
+    const source = unwrap(await methods.create(makeCard()));
+    const target = unwrap(
+      await methods.create(makeCard({ uid: 'card-target', name: 'Outro' })),
+    );
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await invoices.create(
+      makeInvoice({ paymentMethodUid: target.uid, statedAmount: 1000 }),
+    );
+    const created = unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: source.uid })),
+    );
+    expect(
+      unwrap(
+        await entries.list({
+          source: 'invoice-adjustment',
+          paymentMethodUid: source.uid,
+        }),
+      )[0].amount,
+    ).toBe(600);
+
+    unwrap(
+      await updateEntry(
+        created.uid,
+        input({ amount: 400, paymentMethodUid: target.uid }),
+      ),
+    );
+
+    const sourceAdjustments = unwrap(
+      await entries.list({
+        source: 'invoice-adjustment',
+        paymentMethodUid: source.uid,
+      }),
+    );
+    expect(sourceAdjustments).toHaveLength(1);
+    expect(sourceAdjustments[0].amount).toBe(1000);
+    const targetAdjustments = unwrap(
+      await entries.list({
+        source: 'invoice-adjustment',
+        paymentMethodUid: target.uid,
+      }),
+    );
+    expect(targetAdjustments).toHaveLength(1);
+    expect(targetAdjustments[0].amount).toBe(600);
+  });
+
+  it('remove o ajuste sem erro quando o detalhado excede o valor informado', async () => {
+    const { createEntry, input, methods, invoices, categories, entries } =
+      await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await categories.create({
+      name: INVOICE_ADJUSTMENT_CATEGORY_NAME,
+      kind: 'expense',
+    });
+    await entries.create(
+      makeStoredEntry({
+        month: INVOICE_MONTH,
+        amount: 200,
+        paymentMethodUid: card.uid,
+        invoiceMonth: INVOICE_MONTH,
+        source: 'invoice-adjustment',
+        sourceUid: 'inv',
+        invoiceUid: 'inv',
+      }),
+    );
+
+    const created = unwrap(
+      await createEntry(input({ amount: 1200, paymentMethodUid: card.uid })),
+    );
+
+    expect(created.amount).toBe(1200);
+    expect(unwrap(await listAdjustments(entries))).toEqual([]);
+  });
+
+  it('não mexe no ajuste congelado de uma fatura paga', async () => {
+    const { createEntry, input, methods, invoices, entries } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(
+      makeInvoice({ status: 'paid', paidAt: 1, statedAmount: 1000 }),
+    );
+
+    unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+
+    expect(unwrap(await listAdjustments(entries))).toEqual([]);
+  });
+
+  it('não cria ajuste quando a fatura não tem valor informado', async () => {
+    const { createEntry, input, methods, invoices, entries } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: null }));
+
+    unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+
+    expect(unwrap(await listAdjustments(entries))).toEqual([]);
+  });
+
+  it('não recalcula quando o lançamento não tem meio de pagamento', async () => {
+    const { createEntry, input, methods, invoices, entries } = await setup();
+    await methods.create(makeCard());
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+
+    unwrap(await createEntry(input({ amount: 400 })));
+
+    expect(unwrap(await listAdjustments(entries))).toEqual([]);
+  });
+
+  it('aborta e faz rollback quando o recálculo falha', async () => {
+    const { createEntry, input, methods, invoices, entries } = await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    const error = new ConnectorError('falha ao recalcular');
+    invoices.failOnCall(2, error);
+
+    expect(
+      unwrapLeft(
+        await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+      ),
+    ).toBe(error);
+    expect(unwrap(await entries.list({}))).toEqual([]);
+  });
+
+  it('propaga falha ao gravar a edição do lançamento', async () => {
+    const { createEntry, updateEntry, input, entries } = await setup();
+    const created = unwrap(await createEntry(input()));
+    const error = new ConnectorError('falha ao gravar');
+    entries.failOnCall(2, error);
+
+    expect(unwrapLeft(await updateEntry(created.uid, input()))).toBe(error);
+  });
+
+  it('aborta a edição quando o recálculo falha', async () => {
+    const { createEntry, updateEntry, input, methods, invoices, entries } =
+      await setup();
+    const card = unwrap(await methods.create(makeCard()));
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    const created = unwrap(
+      await createEntry(input({ amount: 400, paymentMethodUid: card.uid })),
+    );
+    const error = new ConnectorError('falha ao recalcular');
+    invoices.failOnCall(2, error);
+
+    expect(
+      unwrapLeft(
+        await updateEntry(
+          created.uid,
+          input({ amount: 250, paymentMethodUid: card.uid }),
+        ),
+      ),
+    ).toBe(error);
+    const stored = unwrap(await entries.findByUid(created.uid));
+    expect(stored?.amount).toBe(400);
+  });
+
+  it('propaga falha ao excluir o lançamento', async () => {
+    const { createEntry, deleteEntry, input, entries } = await setup();
+    const created = unwrap(await createEntry(input()));
+    const error = new ConnectorError('falha ao excluir');
+    entries.failOnCall(2, error);
 
     expect(unwrapLeft(await deleteEntry(created.uid))).toBe(error);
   });

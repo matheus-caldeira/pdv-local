@@ -30,10 +30,14 @@ import type {
   NewMonthClosing,
 } from '../../domain/finance/finance.entity';
 import { dateForMonthDay } from '../../domain/finance/finance.rules';
-import type { NewPaymentMethod } from '../../domain/finance/payment-method.entity';
+import type {
+  NewCardInvoice,
+  NewPaymentMethod,
+} from '../../domain/finance/payment-method.entity';
 import {
   FakeCardInvoiceRepository,
   FakeFinanceAutomationRepository,
+  FakeFinanceCategoryRepository,
   FakeFinanceClosingRepository,
   FakeFinanceEntryRepository,
   FakePaymentMethodRepository,
@@ -144,6 +148,21 @@ const creditCard = (
   ...overrides,
 });
 
+const creditInvoice = (
+  overrides: Partial<NewCardInvoice> = {},
+): NewCardInvoice => ({
+  uid: createUid(),
+  paymentMethodUid: 'card-credit',
+  month: '2026-08',
+  dueDate: dateForMonthDay('2026-08', 28),
+  statedAmount: null,
+  status: 'open',
+  paidAt: null,
+  createdAt: 1,
+  updatedAt: 1,
+  ...overrides,
+});
+
 const planInput = (
   overrides: Partial<NewInstallmentPlan> = {},
 ): NewInstallmentPlan => ({
@@ -167,12 +186,14 @@ const setup = () => {
   const closings = new FakeFinanceClosingRepository();
   const methods = new FakePaymentMethodRepository();
   const invoices = new FakeCardInvoiceRepository();
+  const categories = new FakeFinanceCategoryRepository();
   const uow = makeFakeUnitOfWork({
     financeEntries: entries,
     financeAutomations: automations,
     financeClosings: closings,
     financePaymentMethods: methods,
     financeCardInvoices: invoices,
+    financeCategories: categories,
   });
   return {
     entries,
@@ -180,6 +201,7 @@ const setup = () => {
     closings,
     methods,
     invoices,
+    categories,
     listFormulas: makeListFormulas(automations),
     saveFormula: makeSaveFormula(automations),
     deleteFormula: makeDeleteFormula(automations),
@@ -193,21 +215,19 @@ const setup = () => {
     saveRecurrence: makeSaveRecurrence(automations),
     deleteRecurrence: makeDeleteRecurrence(automations),
     launchRecurrence: makeLaunchRecurrence(
-      entries,
+      uow,
       automations,
       closings,
-      methods,
-      invoices,
+      categories,
     ),
     launchAllRecurrences: makeLaunchAllRecurrences(
-      entries,
+      uow,
       automations,
       closings,
-      methods,
-      invoices,
+      categories,
     ),
     listPlans: makeListPlans(automations),
-    createInstallmentPlan: makeCreateInstallmentPlan(uow),
+    createInstallmentPlan: makeCreateInstallmentPlan(uow, categories),
     deleteInstallmentPlan: makeDeleteInstallmentPlan(uow),
     previewInstallments: makePreviewInstallments(),
   };
@@ -1070,6 +1090,53 @@ describe('makeLaunchRecurrence', () => {
       error,
     );
   });
+
+  it('recalcula o ajuste da fatura aberta ao lançar a recorrência', async () => {
+    const { methods, invoices, entries, saveRecurrence, launchRecurrence } =
+      setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 2000 }));
+    const recurrence = unwrap(
+      await saveRecurrence(
+        recurrenceInput({
+          dayOfMonth: 25,
+          amount: 1500,
+          paymentMethodUid: 'card-credit',
+        }),
+      ),
+    );
+
+    unwrap(await launchRecurrence(recurrence.uid, '2026-07'));
+
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(500);
+  });
+
+  it('aborta e faz rollback quando o recálculo do ajuste falha', async () => {
+    const { methods, invoices, entries, saveRecurrence, launchRecurrence } =
+      setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 2000 }));
+    const recurrence = unwrap(
+      await saveRecurrence(
+        recurrenceInput({
+          dayOfMonth: 25,
+          amount: 1500,
+          paymentMethodUid: 'card-credit',
+        }),
+      ),
+    );
+    const error = new ConnectorError('falha ao recalcular');
+    invoices.failOnCall(2, error);
+
+    expect(unwrapLeft(await launchRecurrence(recurrence.uid, '2026-07'))).toBe(
+      error,
+    );
+    expect(unwrap(await entries.list({}))).toEqual([]);
+  });
 });
 
 describe('makeLaunchAllRecurrences', () => {
@@ -1172,6 +1239,57 @@ describe('makeLaunchAllRecurrences', () => {
     vi.spyOn(entries, 'create').mockResolvedValue(left(error));
 
     expect(unwrapLeft(await launchAllRecurrences('2026-07'))).toBe(error);
+  });
+
+  it('recalcula uma única vez a fatura afetada por várias recorrências', async () => {
+    const { methods, invoices, entries, saveRecurrence, launchAllRecurrences } =
+      setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 2000 }));
+    await saveRecurrence(
+      recurrenceInput({
+        description: 'Streaming',
+        amount: 500,
+        dayOfMonth: 25,
+        paymentMethodUid: 'card-credit',
+      }),
+    );
+    await saveRecurrence(
+      recurrenceInput({
+        description: 'Academia',
+        amount: 300,
+        dayOfMonth: 25,
+        paymentMethodUid: 'card-credit',
+      }),
+    );
+
+    const result = unwrap(await launchAllRecurrences('2026-07'));
+
+    expect(result).toEqual({ launched: 2, skipped: 0 });
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(1200);
+  });
+
+  it('aborta e faz rollback quando o recálculo do ajuste falha', async () => {
+    const { methods, invoices, entries, saveRecurrence, launchAllRecurrences } =
+      setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 2000 }));
+    await saveRecurrence(
+      recurrenceInput({
+        amount: 500,
+        dayOfMonth: 25,
+        paymentMethodUid: 'card-credit',
+      }),
+    );
+    const error = new ConnectorError('falha ao recalcular');
+    invoices.failOnCall(2, error);
+
+    expect(unwrapLeft(await launchAllRecurrences('2026-07'))).toBe(error);
+    expect(unwrap(await entries.list({}))).toEqual([]);
   });
 });
 
@@ -1319,6 +1437,54 @@ describe('makeCreateInstallmentPlan', () => {
       ),
     ).toBe(error);
     expect(unwrap(await listPlans())).toEqual([]);
+  });
+
+  it('aborta e faz rollback quando o recálculo do ajuste da parcela falha', async () => {
+    const { methods, invoices, entries, createInstallmentPlan, listPlans } =
+      setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 100 }));
+    const error = new ConnectorError('falha ao recalcular');
+    invoices.failOnCall(3, error);
+
+    expect(
+      unwrapLeft(
+        await createInstallmentPlan(
+          planInput({
+            dayOfMonth: 25,
+            firstMonth: '2026-07',
+            installmentCount: 2,
+            paymentMethodUid: 'card-credit',
+          }),
+        ),
+      ),
+    ).toBe(error);
+    expect(unwrap(await listPlans())).toEqual([]);
+    expect(unwrap(await entries.list({}))).toEqual([]);
+  });
+
+  it('recalcula o ajuste da fatura aberta afetada por uma parcela', async () => {
+    const { methods, invoices, entries, createInstallmentPlan } = setup();
+    await methods.create(creditCard());
+    await invoices.create(creditInvoice({ statedAmount: 100 }));
+
+    unwrap(
+      await createInstallmentPlan(
+        planInput({
+          dayOfMonth: 25,
+          firstMonth: '2026-07',
+          installmentCount: 3,
+          paymentMethodUid: 'card-credit',
+        }),
+      ),
+    );
+
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].invoiceMonth).toBe('2026-08');
+    expect(adjustments[0].amount).toBe(66.66);
   });
 
   it('normaliza o total e persiste o valor arredondado no plano', async () => {

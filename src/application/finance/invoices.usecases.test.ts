@@ -32,6 +32,7 @@ import {
   makeListMonthInvoices,
   makePayInvoice,
   makeSetInvoiceAmount,
+  reconcileInvoiceAdjustment,
 } from './invoices.usecases';
 
 const unwrap = <E, A>(either: Either<E, A>): A =>
@@ -222,13 +223,22 @@ describe('makeSetInvoiceAmount', () => {
   });
 
   it('encolhe o ajuste ao detalhar mais gastos', async () => {
-    const { entries, methods, setInvoiceAmount } = setup();
+    const { entries, categories, methods, invoices, setInvoiceAmount } =
+      setup();
     await methods.create(makeCard());
     await entries.create(makeInvoiceEntry({ amount: 400 }));
 
-    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
-    await entries.create(makeInvoiceEntry({ amount: 300 }));
-    await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000);
+    const invoice = unwrap(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000));
+    await entries.create(makeInvoiceEntry({ amount: 300, invoiceUid: null }));
+
+    unwrap(
+      await reconcileInvoiceAdjustment(
+        { financeEntries: entries, financeCardInvoices: invoices },
+        categories,
+        invoice.paymentMethodUid,
+        DUE_MONTH,
+      ),
+    );
 
     const adjustments = unwrap(
       await entries.list({ source: 'invoice-adjustment' }),
@@ -598,6 +608,153 @@ describe('makeSetInvoiceAmount', () => {
     categories.failOnCall(2, error);
 
     expect(unwrapLeft(await setInvoiceAmount(CARD_UID, DUE_MONTH, 1000))).toBe(
+      error,
+    );
+  });
+});
+
+describe('reconcileInvoiceAdjustment', () => {
+  const reconcile = (
+    entries: FakeFinanceEntryRepository,
+    invoices: FakeCardInvoiceRepository,
+    categories: FakeFinanceCategoryRepository,
+    month: MonthKey = DUE_MONTH,
+  ) =>
+    reconcileInvoiceAdjustment(
+      { financeEntries: entries, financeCardInvoices: invoices },
+      categories,
+      CARD_UID,
+      month,
+    );
+
+  it('é no-op quando a fatura não existe', async () => {
+    const { entries, invoices, categories } = setup();
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('é no-op quando a fatura está paga', async () => {
+    const { entries, invoices, categories } = setup();
+    await invoices.create(
+      makeInvoice({ status: 'paid', paidAt: 1, statedAmount: 1000 }),
+    );
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('é no-op quando a fatura não tem valor informado', async () => {
+    const { entries, invoices, categories } = setup();
+    await invoices.create(makeInvoice({ statedAmount: null }));
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('cria o ajuste com a diferença quando a fatura tem valor informado', async () => {
+    const { entries, invoices, categories } = setup();
+    const invoice = unwrap(
+      await invoices.create(makeInvoice({ statedAmount: 1000 })),
+    );
+    await entries.create(makeInvoiceEntry({ amount: 400 }));
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    const adjustments = unwrap(
+      await entries.list({ source: 'invoice-adjustment' }),
+    );
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0].amount).toBe(600);
+    expect(adjustments[0].sourceUid).toBe(invoice.uid);
+  });
+
+  it('remove o ajuste sem erro quando o detalhado excede o valor informado', async () => {
+    const { entries, invoices, categories } = setup();
+    const invoice = unwrap(
+      await invoices.create(makeInvoice({ statedAmount: 1000 })),
+    );
+    await entries.create(
+      makeInvoiceEntry({
+        amount: 300,
+        source: 'invoice-adjustment',
+        sourceUid: invoice.uid,
+        invoiceUid: invoice.uid,
+        month: DUE_MONTH,
+      }),
+    );
+    await entries.create(makeInvoiceEntry({ amount: 1200 }));
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('é no-op quando o detalhado excede o valor e não há ajuste', async () => {
+    const { entries, invoices, categories } = setup();
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    await entries.create(makeInvoiceEntry({ amount: 1200 }));
+
+    unwrap(await reconcile(entries, invoices, categories));
+
+    expect(
+      unwrap(await entries.list({ source: 'invoice-adjustment' })),
+    ).toEqual([]);
+  });
+
+  it('propaga falha ao buscar a fatura', async () => {
+    const { entries, invoices, categories } = setup();
+    const error = new ConnectorError('falha simulada');
+    invoices.failNext(error);
+
+    expect(unwrapLeft(await reconcile(entries, invoices, categories))).toBe(
+      error,
+    );
+  });
+
+  it('propaga falha ao listar os lançamentos da fatura', async () => {
+    const { entries, invoices, categories } = setup();
+    await invoices.create(makeInvoice({ statedAmount: 1000 }));
+    const error = new ConnectorError('falha simulada');
+    entries.failNext(error);
+
+    expect(unwrapLeft(await reconcile(entries, invoices, categories))).toBe(
+      error,
+    );
+  });
+
+  it('propaga falha ao remover o ajuste no caso over', async () => {
+    const { entries, invoices, categories } = setup();
+    const invoice = unwrap(
+      await invoices.create(makeInvoice({ statedAmount: 1000 })),
+    );
+    await entries.create(
+      makeInvoiceEntry({
+        amount: 300,
+        source: 'invoice-adjustment',
+        sourceUid: invoice.uid,
+        invoiceUid: invoice.uid,
+        month: DUE_MONTH,
+      }),
+    );
+    await entries.create(makeInvoiceEntry({ amount: 1200 }));
+    const error = new ConnectorError('falha ao remover ajuste');
+    entries.failOnCall(2, error);
+
+    expect(unwrapLeft(await reconcile(entries, invoices, categories))).toBe(
       error,
     );
   });

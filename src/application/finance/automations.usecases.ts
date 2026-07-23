@@ -37,10 +37,14 @@ import {
 import type { FinanceEntryRepository } from '../../domain/finance/finance-entry.repository';
 import type { FinanceAutomationRepository } from '../../domain/finance/finance-automation.repository';
 import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
+import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
 import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
-import { resolveEntryInvoice } from './invoices.usecases';
+import {
+  reconcileInvoiceAdjustment,
+  resolveEntryInvoice,
+} from './invoices.usecases';
 
 export interface FormulaInput {
   uid?: string;
@@ -195,6 +199,32 @@ const recurrenceEntry = async (
     createdAt: now,
     updatedAt: now,
   });
+};
+
+type ReconcileRepositories = Parameters<typeof reconcileInvoiceAdjustment>[0];
+
+const reconcileGeneratedInvoices = async (
+  repositories: ReconcileRepositories,
+  categories: FinanceCategoryRepository,
+  generated: Pick<FinanceEntry, 'paymentMethodUid' | 'invoiceMonth'>[],
+): Promise<Either<AppError, void>> => {
+  const seen = new Set<string>();
+  for (const entry of generated) {
+    if (entry.paymentMethodUid === null || entry.invoiceMonth === null) {
+      continue;
+    }
+    const key = `${entry.paymentMethodUid}:${entry.invoiceMonth}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const reconciled = await reconcileInvoiceAdjustment(
+      repositories,
+      categories,
+      entry.paymentMethodUid,
+      entry.invoiceMonth,
+    );
+    if (isLeft(reconciled)) return reconciled;
+  }
+  return right(undefined);
 };
 
 export function makeListFormulas(automations: FinanceAutomationRepository) {
@@ -412,11 +442,10 @@ export function makeDeleteRecurrence(automations: FinanceAutomationRepository) {
 }
 
 export function makeLaunchRecurrence(
-  entries: FinanceEntryRepository,
+  uow: UnitOfWork,
   automations: FinanceAutomationRepository,
   closings: FinanceClosingRepository,
-  methods: PaymentMethodRepository,
-  invoices: CardInvoiceRepository,
+  categories: FinanceCategoryRepository,
 ) {
   return async (
     uid: string,
@@ -425,38 +454,53 @@ export function makeLaunchRecurrence(
     const recurrence = await findRecurrence(automations, uid);
     if (isLeft(recurrence)) return recurrence;
 
-    const launched = await alreadyLaunched(entries, uid, month);
-    if (isLeft(launched)) return launched;
-
     const closing = await closings.findByMonth(month);
     if (isLeft(closing)) return closing;
 
-    const allowed = canLaunchRecurrence(
-      recurrence.right,
-      month,
-      launched.right,
-      closing.right !== undefined,
-    );
-    if (isLeft(allowed)) return allowed;
+    return uow.run(async (repositories) => {
+      const launched = await alreadyLaunched(
+        repositories.financeEntries,
+        uid,
+        month,
+      );
+      if (isLeft(launched)) return launched;
 
-    const entry = await recurrenceEntry(
-      recurrence.right,
-      month,
-      methods,
-      invoices,
-    );
-    if (isLeft(entry)) return entry;
+      const allowed = canLaunchRecurrence(
+        recurrence.right,
+        month,
+        launched.right,
+        closing.right !== undefined,
+      );
+      if (isLeft(allowed)) return allowed;
 
-    return entries.create(entry.right);
+      const entry = await recurrenceEntry(
+        recurrence.right,
+        month,
+        repositories.financePaymentMethods,
+        repositories.financeCardInvoices,
+      );
+      if (isLeft(entry)) return entry;
+
+      const created = await repositories.financeEntries.create(entry.right);
+      if (isLeft(created)) return created;
+
+      const reconciled = await reconcileGeneratedInvoices(
+        repositories,
+        categories,
+        [created.right],
+      );
+      if (isLeft(reconciled)) return reconciled;
+
+      return created;
+    });
   };
 }
 
 export function makeLaunchAllRecurrences(
-  entries: FinanceEntryRepository,
+  uow: UnitOfWork,
   automations: FinanceAutomationRepository,
   closings: FinanceClosingRepository,
-  methods: PaymentMethodRepository,
-  invoices: CardInvoiceRepository,
+  categories: FinanceCategoryRepository,
 ) {
   return async (
     month: MonthKey,
@@ -467,31 +511,52 @@ export function makeLaunchAllRecurrences(
     const recurrences = await automations.listRecurrences();
     if (isLeft(recurrences)) return recurrences;
 
-    let launchedCount = 0;
-    let skippedCount = 0;
-    for (const recurrence of recurrences.right) {
-      const launched = await alreadyLaunched(entries, recurrence.uid, month);
-      if (isLeft(launched)) return launched;
+    return uow.run(async (repositories) => {
+      let launchedCount = 0;
+      let skippedCount = 0;
+      const generated: FinanceEntry[] = [];
+      for (const recurrence of recurrences.right) {
+        const launched = await alreadyLaunched(
+          repositories.financeEntries,
+          recurrence.uid,
+          month,
+        );
+        if (isLeft(launched)) return launched;
 
-      const allowed = canLaunchRecurrence(
-        recurrence,
-        month,
-        launched.right,
-        false,
-      );
-      if (isLeft(allowed)) {
-        skippedCount += 1;
-        continue;
+        const allowed = canLaunchRecurrence(
+          recurrence,
+          month,
+          launched.right,
+          false,
+        );
+        if (isLeft(allowed)) {
+          skippedCount += 1;
+          continue;
+        }
+
+        const entry = await recurrenceEntry(
+          recurrence,
+          month,
+          repositories.financePaymentMethods,
+          repositories.financeCardInvoices,
+        );
+        if (isLeft(entry)) return entry;
+
+        const created = await repositories.financeEntries.create(entry.right);
+        if (isLeft(created)) return created;
+        generated.push(created.right);
+        launchedCount += 1;
       }
 
-      const entry = await recurrenceEntry(recurrence, month, methods, invoices);
-      if (isLeft(entry)) return entry;
+      const reconciled = await reconcileGeneratedInvoices(
+        repositories,
+        categories,
+        generated,
+      );
+      if (isLeft(reconciled)) return reconciled;
 
-      const created = await entries.create(entry.right);
-      if (isLeft(created)) return created;
-      launchedCount += 1;
-    }
-    return right({ launched: launchedCount, skipped: skippedCount });
+      return right({ launched: launchedCount, skipped: skippedCount });
+    });
   };
 }
 
@@ -519,7 +584,10 @@ export function makePreviewInstallments() {
   };
 }
 
-export function makeCreateInstallmentPlan(uow: UnitOfWork) {
+export function makeCreateInstallmentPlan(
+  uow: UnitOfWork,
+  categories: FinanceCategoryRepository,
+) {
   return async (
     input: NewInstallmentPlan,
   ): Promise<Either<AppError, InstallmentPlan>> => {
@@ -598,6 +666,13 @@ export function makeCreateInstallmentPlan(uow: UnitOfWork) {
       const created =
         await repositories.financeEntries.createMany(installmentEntries);
       if (isLeft(created)) return created;
+
+      const reconciled = await reconcileGeneratedInvoices(
+        repositories,
+        categories,
+        created.right,
+      );
+      if (isLeft(reconciled)) return reconciled;
 
       return plan;
     });

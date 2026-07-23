@@ -25,9 +25,11 @@ import type {
 } from '../../domain/finance/finance-entry.repository';
 import type { FinanceCategoryRepository } from '../../domain/finance/finance-category.repository';
 import type { FinanceClosingRepository } from '../../domain/finance/finance-closing.repository';
-import type { PaymentMethodRepository } from '../../domain/finance/payment-method.repository';
-import type { CardInvoiceRepository } from '../../domain/finance/card-invoice.repository';
-import { resolveEntryInvoice } from './invoices.usecases';
+import type { UnitOfWork } from '../../domain/shared/unit-of-work';
+import {
+  reconcileInvoiceAdjustment,
+  resolveEntryInvoice,
+} from './invoices.usecases';
 
 export interface EntryInput {
   description: string;
@@ -71,6 +73,35 @@ const findCategory = async (
   return right(category);
 };
 
+type ReconcileRepositories = Parameters<typeof reconcileInvoiceAdjustment>[0];
+
+const reconcileAffectedInvoices = async (
+  repositories: ReconcileRepositories,
+  categories: FinanceCategoryRepository,
+  affected: {
+    paymentMethodUid: string | null;
+    invoiceMonth: MonthKey | null;
+  }[],
+): Promise<Either<AppError, void>> => {
+  const seen = new Set<string>();
+  for (const target of affected) {
+    if (target.paymentMethodUid === null || target.invoiceMonth === null) {
+      continue;
+    }
+    const key = `${target.paymentMethodUid}:${target.invoiceMonth}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const reconciled = await reconcileInvoiceAdjustment(
+      repositories,
+      categories,
+      target.paymentMethodUid,
+      target.invoiceMonth,
+    );
+    if (isLeft(reconciled)) return reconciled;
+  }
+  return right(undefined);
+};
+
 export function makeListEntries(entries: FinanceEntryRepository) {
   return async (
     filter: FinanceEntryFilter,
@@ -86,11 +117,9 @@ export function makeListOverdueEntries(entries: FinanceEntryRepository) {
 }
 
 export function makeCreateEntry(
-  entries: FinanceEntryRepository,
+  uow: UnitOfWork,
   categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
-  methods: PaymentMethodRepository,
-  invoices: CardInvoiceRepository,
 ) {
   return async (input: EntryInput): Promise<Either<AppError, FinanceEntry>> => {
     const amount = validateInput(input);
@@ -103,113 +132,158 @@ export function makeCreateEntry(
     const open = await ensureMonthOpen(closings, month);
     if (isLeft(open)) return open;
 
-    const link = await resolveEntryInvoice(
-      methods,
-      invoices,
-      input.paymentMethodUid,
-      input.date,
-    );
-    if (isLeft(link)) return link;
+    return uow.run(async (repositories) => {
+      const link = await resolveEntryInvoice(
+        repositories.financePaymentMethods,
+        repositories.financeCardInvoices,
+        input.paymentMethodUid,
+        input.date,
+      );
+      if (isLeft(link)) return link;
 
-    const now = Date.now();
-    return entries.create({
-      uid: createUid(),
-      description: input.description.trim(),
-      amount: amount.right,
-      kind: category.right.kind,
-      categoryUid: input.categoryUid,
-      memberUids: [...input.memberUids],
-      date: input.date,
-      month,
-      status: input.status,
-      source: 'manual',
-      sourceUid: null,
-      installmentNumber: null,
-      sourceEntryUids: [],
-      formulaBaseMonth: null,
-      paymentMethodUid: input.paymentMethodUid,
-      invoiceMonth: link.right.invoiceMonth,
-      invoiceUid: link.right.invoiceUid,
-      createdAt: now,
-      updatedAt: now,
+      const now = Date.now();
+      const created = await repositories.financeEntries.create({
+        uid: createUid(),
+        description: input.description.trim(),
+        amount: amount.right,
+        kind: category.right.kind,
+        categoryUid: input.categoryUid,
+        memberUids: [...input.memberUids],
+        date: input.date,
+        month,
+        status: input.status,
+        source: 'manual',
+        sourceUid: null,
+        installmentNumber: null,
+        sourceEntryUids: [],
+        formulaBaseMonth: null,
+        paymentMethodUid: input.paymentMethodUid,
+        invoiceMonth: link.right.invoiceMonth,
+        invoiceUid: link.right.invoiceUid,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (isLeft(created)) return created;
+
+      const reconciled = await reconcileAffectedInvoices(
+        repositories,
+        categories,
+        [
+          {
+            paymentMethodUid: input.paymentMethodUid,
+            invoiceMonth: link.right.invoiceMonth,
+          },
+        ],
+      );
+      if (isLeft(reconciled)) return reconciled;
+
+      return created;
     });
   };
 }
 
 export function makeUpdateEntry(
-  entries: FinanceEntryRepository,
+  uow: UnitOfWork,
   categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
-  methods: PaymentMethodRepository,
-  invoices: CardInvoiceRepository,
 ) {
   return async (
     uid: string,
     input: EntryInput,
   ): Promise<Either<AppError, FinanceEntry>> => {
-    const existing = await entries.findByUid(uid);
-    if (isLeft(existing)) return existing;
-    if (!existing.right) return left(new FinanceEntryNotFoundError());
-
-    if (
-      existing.right.source !== 'manual' &&
-      input.date !== existing.right.date
-    ) {
-      return left(new DerivedEntryDateLockedError());
-    }
-
     const amount = validateInput(input);
     if (isLeft(amount)) return amount;
 
     const category = await findCategory(categories, input.categoryUid);
     if (isLeft(category)) return category;
 
-    const storedOpen = await ensureMonthOpen(closings, existing.right.month);
-    if (isLeft(storedOpen)) return storedOpen;
+    return uow.run(async (repositories) => {
+      const existing = await repositories.financeEntries.findByUid(uid);
+      if (isLeft(existing)) return existing;
+      if (!existing.right) return left(new FinanceEntryNotFoundError());
+      const previous = existing.right;
 
-    const month = monthKeyFromDate(input.date);
-    const targetOpen = await ensureMonthOpen(closings, month);
-    if (isLeft(targetOpen)) return targetOpen;
+      if (previous.source !== 'manual' && input.date !== previous.date) {
+        return left(new DerivedEntryDateLockedError());
+      }
 
-    const link = await resolveEntryInvoice(
-      methods,
-      invoices,
-      input.paymentMethodUid,
-      input.date,
-    );
-    if (isLeft(link)) return link;
+      const storedOpen = await ensureMonthOpen(closings, previous.month);
+      if (isLeft(storedOpen)) return storedOpen;
 
-    return entries.update(uid, {
-      description: input.description.trim(),
-      amount: amount.right,
-      kind: category.right.kind,
-      categoryUid: input.categoryUid,
-      memberUids: [...input.memberUids],
-      date: input.date,
-      month,
-      status: input.status,
-      paymentMethodUid: input.paymentMethodUid,
-      invoiceMonth: link.right.invoiceMonth,
-      invoiceUid: link.right.invoiceUid,
-      updatedAt: Date.now(),
+      const month = monthKeyFromDate(input.date);
+      const targetOpen = await ensureMonthOpen(closings, month);
+      if (isLeft(targetOpen)) return targetOpen;
+
+      const link = await resolveEntryInvoice(
+        repositories.financePaymentMethods,
+        repositories.financeCardInvoices,
+        input.paymentMethodUid,
+        input.date,
+      );
+      if (isLeft(link)) return link;
+
+      const updated = await repositories.financeEntries.update(uid, {
+        description: input.description.trim(),
+        amount: amount.right,
+        kind: category.right.kind,
+        categoryUid: input.categoryUid,
+        memberUids: [...input.memberUids],
+        date: input.date,
+        month,
+        status: input.status,
+        paymentMethodUid: input.paymentMethodUid,
+        invoiceMonth: link.right.invoiceMonth,
+        invoiceUid: link.right.invoiceUid,
+        updatedAt: Date.now(),
+      });
+      if (isLeft(updated)) return updated;
+
+      const reconciled = await reconcileAffectedInvoices(
+        repositories,
+        categories,
+        [
+          {
+            paymentMethodUid: previous.paymentMethodUid,
+            invoiceMonth: previous.invoiceMonth,
+          },
+          {
+            paymentMethodUid: input.paymentMethodUid,
+            invoiceMonth: link.right.invoiceMonth,
+          },
+        ],
+      );
+      if (isLeft(reconciled)) return reconciled;
+
+      return updated;
     });
   };
 }
 
 export function makeDeleteEntry(
-  entries: FinanceEntryRepository,
+  uow: UnitOfWork,
+  categories: FinanceCategoryRepository,
   closings: FinanceClosingRepository,
 ) {
-  return async (uid: string): Promise<Either<AppError, void>> => {
-    const existing = await entries.findByUid(uid);
-    if (isLeft(existing)) return existing;
-    if (!existing.right) return left(new FinanceEntryNotFoundError());
+  return async (uid: string): Promise<Either<AppError, void>> =>
+    uow.run(async (repositories) => {
+      const existing = await repositories.financeEntries.findByUid(uid);
+      if (isLeft(existing)) return existing;
+      if (!existing.right) return left(new FinanceEntryNotFoundError());
+      const previous = existing.right;
 
-    const open = await ensureMonthOpen(closings, existing.right.month);
-    if (isLeft(open)) return open;
+      const open = await ensureMonthOpen(closings, previous.month);
+      if (isLeft(open)) return open;
 
-    return entries.delete(uid);
-  };
+      const deleted = await repositories.financeEntries.delete(uid);
+      if (isLeft(deleted)) return deleted;
+
+      return reconcileAffectedInvoices(repositories, categories, [
+        {
+          paymentMethodUid: previous.paymentMethodUid,
+          invoiceMonth: previous.invoiceMonth,
+        },
+      ]);
+    });
 }
 
 export function makeSetEntryStatus(entries: FinanceEntryRepository) {
