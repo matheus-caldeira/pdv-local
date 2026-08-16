@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '../atoms/Badge';
 import { Money } from '../atoms/Money';
 import { Modal } from '../molecules/Modal';
@@ -6,6 +7,8 @@ import { SearchField } from '../molecules/SearchField';
 import { useToast } from '../molecules/toast-context';
 import { OrderDetail } from '../organisms/OrderDetail';
 import { useOrders } from '../hooks/useOrders';
+import { useSession } from '../hooks/useSession';
+import { useTabs } from '../hooks/useTabs';
 import { formatDateTime } from '../../domain/shared/format';
 import { STAGE_LABELS } from '../../domain/order/order.rules';
 import type { Order, OrderStatus } from '../../domain/order/order.entity';
@@ -45,7 +48,10 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 export function OrdersPage() {
   const toast = useToast();
+  const navigate = useNavigate();
+  const { activeSession } = useSession();
   const { orders, statusControlEnabled, markPaid, cancel } = useOrders();
+  const { closeTab, reopenTab } = useTabs(activeSession?.uid ?? '');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
@@ -75,6 +81,20 @@ export function OrdersPage() {
     if (!window.confirm('Cancelar este pedido?')) return;
     const ok = await cancel(detailOrder!.uid);
     if (ok) setDetailOrder(null);
+  }
+
+  async function handleCloseTab() {
+    const ok = await closeTab(detailOrder!.uid);
+    if (ok) setDetailOrder(null);
+  }
+
+  async function handleReopenTab() {
+    const ok = await reopenTab(detailOrder!.uid);
+    if (ok) setDetailOrder(null);
+  }
+
+  function handleAddItems() {
+    navigate('/pdv?tab=' + detailOrder!.uid);
   }
 
   return (
@@ -180,6 +200,9 @@ export function OrdersPage() {
             onPrint={handlePrint}
             onMarkPaid={handleMarkPaid}
             onCancel={handleCancel}
+            onClose={handleCloseTab}
+            onReopen={handleReopenTab}
+            onAddItems={handleAddItems}
           />
         )}
       </Modal>

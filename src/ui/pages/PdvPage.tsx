@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../atoms/Button';
 import { ProductGrid } from '../organisms/ProductGrid';
 import { Cart } from '../organisms/Cart';
@@ -28,12 +28,15 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const loadCustomizations = useCustomizationLoader();
   const controller = usePdvController(sessionUid);
   const { openTabs, addItems, refresh: refreshTabs } = useTabs(sessionUid);
+  const [searchParams] = useSearchParams();
 
   const [customization, setCustomization] = useState<CustomizationState | null>(
     null,
   );
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [selectedTabUid, setSelectedTabUid] = useState<string | null>(null);
+  const [selectedTabUid, setSelectedTabUid] = useState<string | null>(() =>
+    searchParams.get('tab'),
+  );
   const [openTabModalOpen, setOpenTabModalOpen] = useState(false);
 
   const selectedTab =

@@ -64,10 +64,10 @@ vi.mock('../../app/container', () => ({
   },
 }));
 
-function renderPage() {
+function renderPage(initialEntries = ['/pdv']) {
   return render(
     <ToastProvider>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <PdvPage />
       </MemoryRouter>
     </ToastProvider>,
@@ -407,6 +407,23 @@ describe('PdvPage', () => {
     expect(
       screen.getByRole('button', { name: /lançar na comanda/i }),
     ).toBeInTheDocument();
+  });
+
+  it('pré-seleciona a comanda indicada na query string', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    renderPage(['/pdv?tab=tab-1']);
+
+    await waitFor(() =>
+      expect(
+        (
+          screen.getByRole('option', {
+            name: /007 — Maju/i,
+          }) as HTMLOptionElement
+        ).selected,
+      ).toBe(true),
+    );
   });
 
   it('mantém o fluxo de venda avulsa quando não há comanda selecionada', async () => {

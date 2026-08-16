@@ -165,4 +165,175 @@ describe('OrderDetail', () => {
     );
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it('oferece fechar e adicionar itens numa comanda aberta', () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /adicionar itens/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /reabrir/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('oferece reabrir numa comanda fechada', () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'pending' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /reabrir/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /fechar comanda/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('pede confirmação antes de reabrir', async () => {
+    const onReopen = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'pending', ticket: '042' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={onReopen}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /reabrir/i }));
+
+    expect(screen.getByText(/reabrir a comanda 042/i)).toBeInTheDocument();
+    expect(onReopen).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(
+      within(dialog).getByRole('button', { name: /^reabrir$/i }),
+    );
+
+    expect(onReopen).toHaveBeenCalled();
+  });
+
+  it('cancela a confirmação de reabertura sem chamar onReopen', async () => {
+    const onReopen = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'pending', ticket: '042' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={onReopen}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /reabrir/i }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(onReopen).not.toHaveBeenCalled();
+  });
+
+  it('fecha a confirmação de reabertura pelo backdrop', async () => {
+    const onReopen = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'pending', ticket: '042' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={onReopen}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /reabrir/i }));
+    await user.click(screen.getByRole('presentation'));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(onReopen).not.toHaveBeenCalled();
+  });
+
+  it('não oferece fechar nem reabrir numa comanda paga', () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'paid' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReopen={vi.fn()}
+        onAddItems={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: /fechar comanda/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /reabrir/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('chama onClose e onAddItems numa comanda aberta', async () => {
+    const onClose = vi.fn();
+    const onAddItems = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onClose={onClose}
+        onReopen={vi.fn()}
+        onAddItems={onAddItems}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /adicionar itens/i }));
+    await user.click(screen.getByRole('button', { name: /fechar comanda/i }));
+
+    expect(onAddItems).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('mostra a data de fechamento quando existir', () => {
+    renderDetail(makeOrder({ status: 'pending', closedAt: 1700003600000 }));
+    expect(screen.getByText(/Fechada em/)).toBeInTheDocument();
+  });
 });

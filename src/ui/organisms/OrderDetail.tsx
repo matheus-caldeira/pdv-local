@@ -39,6 +39,9 @@ interface OrderDetailProps {
   onPrint: () => void;
   onMarkPaid: (method: string) => void;
   onCancel: () => void;
+  onClose?: () => void;
+  onReopen?: () => void;
+  onAddItems?: () => void;
 }
 
 export function OrderDetail({
@@ -46,9 +49,15 @@ export function OrderDetail({
   onPrint,
   onMarkPaid,
   onCancel,
+  onClose,
+  onReopen,
+  onAddItems,
 }: OrderDetailProps) {
   const [payMethodOpen, setPayMethodOpen] = useState(false);
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
   const canSettle = order.status === 'open' || order.status === 'pending';
+  const isOpenTab = order.status === 'open';
+  const isClosedTab = order.status === 'pending';
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,6 +80,11 @@ export function OrderDetail({
             ? (PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod)
             : 'Sem pagamento'}
         </div>
+        {order.closedAt && (
+          <div className="text-xs text-ink-muted">
+            Fechada em {formatDateTime(order.closedAt)}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -145,6 +159,25 @@ export function OrderDetail({
         <Button variant="ghost" fullWidth onClick={onPrint}>
           <Printer size={16} /> Imprimir
         </Button>
+        {isOpenTab && (
+          <>
+            <Button variant="ghost" fullWidth onClick={onAddItems}>
+              Adicionar itens
+            </Button>
+            <Button variant="ghost" fullWidth onClick={onClose}>
+              Fechar comanda
+            </Button>
+          </>
+        )}
+        {isClosedTab && (
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={() => setReopenConfirmOpen(true)}
+          >
+            Reabrir
+          </Button>
+        )}
         {canSettle && (
           <>
             <Button fullWidth onClick={() => setPayMethodOpen(true)}>
@@ -175,6 +208,29 @@ export function OrderDetail({
               {PAYMENT_LABELS[method]}
             </Button>
           ))}
+        </div>
+      </Modal>
+
+      <Modal
+        open={reopenConfirmOpen}
+        onClose={() => setReopenConfirmOpen(false)}
+        title="Reabrir comanda"
+      >
+        <p className="text-sm text-ink-secondary">
+          Reabrir a comanda {order.ticket} para incluir mais itens?
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setReopenConfirmOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              setReopenConfirmOpen(false);
+              onReopen?.();
+            }}
+          >
+            Reabrir
+          </Button>
         </div>
       </Modal>
     </div>

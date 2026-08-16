@@ -7,17 +7,31 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { OrdersPage } from './OrdersPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
+import { getBusinessType } from '../../domain/business-type/registry';
 import type { Order } from '../../domain/order/order.entity';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
+const navigate = vi.fn();
 const listOrders = vi.fn();
 const readConfig = vi.fn();
 const markOrderPaid = vi.fn();
 const cancelOrder = vi.fn();
+const getActiveSession = vi.fn();
+const resolveActiveType = vi.fn();
+const openTab = vi.fn();
+const addItemsToTab = vi.fn();
+const closeTab = vi.fn();
+const reopenTab = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return { ...actual, useNavigate: () => navigate };
+});
 
 vi.mock('../../app/container', () => ({
   container: {
@@ -25,6 +39,13 @@ vi.mock('../../app/container', () => ({
     readConfig: () => readConfig(),
     markOrderPaid: (uid: string, method: string) => markOrderPaid(uid, method),
     cancelOrder: (uid: string) => cancelOrder(uid),
+    getActiveSession: () => getActiveSession(),
+    resolveActiveType: () => resolveActiveType(),
+    openTab: (definition: unknown, input: unknown) =>
+      openTab(definition, input),
+    addItemsToTab: (input: unknown) => addItemsToTab(input),
+    closeTab: (input: unknown) => closeTab(input),
+    reopenTab: (input: unknown) => reopenTab(input),
   },
 }));
 
@@ -129,19 +150,32 @@ const CONFIG: BusinessConfig = {
 function renderPage() {
   return render(
     <ToastProvider>
-      <OrdersPage />
+      <MemoryRouter>
+        <OrdersPage />
+      </MemoryRouter>
     </ToastProvider>,
   );
 }
 
 describe('OrdersPage', () => {
   beforeEach(() => {
+    navigate.mockReset();
     listOrders.mockReset();
     readConfig.mockReset();
     markOrderPaid.mockReset();
     cancelOrder.mockReset();
+    getActiveSession.mockReset();
+    resolveActiveType.mockReset();
+    openTab.mockReset();
+    addItemsToTab.mockReset();
+    closeTab.mockReset();
+    reopenTab.mockReset();
     listOrders.mockResolvedValue(right(ORDERS));
     readConfig.mockResolvedValue(right(CONFIG));
+    getActiveSession.mockResolvedValue(
+      right({ id: 1, uid: 'session-1', closedAt: null }),
+    );
+    resolveActiveType.mockResolvedValue(right(getBusinessType('tab')));
   });
   afterEach(() => {
     cleanup();
@@ -312,5 +346,81 @@ describe('OrdersPage', () => {
     expect(
       screen.getByRole('dialog', { name: 'Pedido #001' }),
     ).toBeInTheDocument();
+  });
+
+  it('closes a tab through the order detail', async () => {
+    closeTab.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+    expect(closeTab).toHaveBeenCalledWith({ orderUid: 'order-1' });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('keeps the modal open when closing a tab fails', async () => {
+    closeTab.mockResolvedValue(left(new FakeError('falha fechar')));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha fechar'),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Pedido #001' }),
+    ).toBeInTheDocument();
+  });
+
+  it('reopens a tab through the order detail', async () => {
+    reopenTab.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#004'));
+    await userEvent.click(screen.getByRole('button', { name: /reabrir/i }));
+    const dialog = screen.getByRole('dialog', { name: 'Reabrir comanda' });
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: /^reabrir$/i }),
+    );
+    expect(reopenTab).toHaveBeenCalledWith({ orderUid: 'order-4' });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Pedido #004' }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('keeps the modal open when reopening a tab fails', async () => {
+    reopenTab.mockResolvedValue(left(new FakeError('falha reabrir')));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#004'));
+    await userEvent.click(screen.getByRole('button', { name: /reabrir/i }));
+    const dialog = screen.getByRole('dialog', { name: 'Reabrir comanda' });
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: /^reabrir$/i }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha reabrir'),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Pedido #004' }),
+    ).toBeInTheDocument();
+  });
+
+  it('navigates to the PDV to add items to an open tab', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /adicionar itens/i }),
+    );
+    expect(navigate).toHaveBeenCalledWith('/pdv?tab=order-1');
   });
 });
