@@ -4,14 +4,18 @@ import { Button } from '../atoms/Button';
 import { ProductGrid } from '../organisms/ProductGrid';
 import { Cart } from '../organisms/Cart';
 import { CustomizationModal } from '../organisms/CustomizationModal';
+import { OpenTabModal } from '../organisms/OpenTabModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
+import { TabSelector } from '../organisms/TabSelector';
 import { useSession } from '../hooks/useSession';
 import { useProducts } from '../hooks/useProducts';
 import { usePdvController, type PayOption } from '../hooks/usePdvController';
+import { useTabs } from '../hooks/useTabs';
 import {
   useCustomizationLoader,
   type LoadedCustomizationGroup,
 } from '../hooks/useCustomizationLoader';
+import type { Order } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 
 interface CustomizationState {
@@ -23,11 +27,17 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const products = useProducts();
   const loadCustomizations = useCustomizationLoader();
   const controller = usePdvController(sessionUid);
+  const { openTabs, addItems, refresh: refreshTabs } = useTabs(sessionUid);
 
   const [customization, setCustomization] = useState<CustomizationState | null>(
     null,
   );
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedTabUid, setSelectedTabUid] = useState<string | null>(null);
+  const [openTabModalOpen, setOpenTabModalOpen] = useState(false);
+
+  const selectedTab =
+    openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
 
   async function handleProductClick(product: Product) {
     if (product.customizationGroupIds.length === 0) {
@@ -50,6 +60,16 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     if (ok) setPaymentOpen(false);
   }
 
+  async function handleLaunchToTab(orderUid: string) {
+    const ok = await addItems(orderUid, controller.cart);
+    if (ok) controller.clearCart();
+  }
+
+  function handleTabOpened(order: Order) {
+    setSelectedTabUid(order.uid);
+    void refreshTabs();
+  }
+
   return (
     <div className="flex min-h-[calc(100dvh-3rem)] flex-col gap-4 md:flex-row">
       <ProductGrid
@@ -58,26 +78,39 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         onSelect={handleProductClick}
       />
 
-      <Cart
-        cart={controller.cart}
-        total={controller.total}
-        customerName={controller.customerName}
-        onCustomerNameChange={controller.setCustomerName}
-        phone={controller.phone}
-        onPhoneChange={controller.onPhoneChange}
-        address={controller.address}
-        onAddressChange={controller.setAddress}
-        ticket={controller.ticket}
-        onTicketChange={controller.setTicket}
-        ordering={controller.ordering}
-        matchedCustomer={controller.matchedCustomer}
-        customerSuggestions={controller.customerSuggestions}
-        onSelectCustomer={controller.selectCustomer}
-        onUpdateQty={controller.updateQty}
-        onRemoveItem={controller.removeCartItem}
-        onSetObservation={controller.setObservation}
-        onFinalize={() => setPaymentOpen(true)}
-      />
+      <div className="flex w-full flex-col gap-3 md:w-auto">
+        <TabSelector
+          tabs={openTabs}
+          selectedUid={selectedTabUid}
+          onSelect={setSelectedTabUid}
+          onOpenNew={() => setOpenTabModalOpen(true)}
+        />
+
+        <Cart
+          cart={controller.cart}
+          total={controller.total}
+          customerName={controller.customerName}
+          onCustomerNameChange={controller.setCustomerName}
+          phone={controller.phone}
+          onPhoneChange={controller.onPhoneChange}
+          address={controller.address}
+          onAddressChange={controller.setAddress}
+          ticket={controller.ticket}
+          onTicketChange={controller.setTicket}
+          ordering={controller.ordering}
+          matchedCustomer={controller.matchedCustomer}
+          customerSuggestions={controller.customerSuggestions}
+          onSelectCustomer={controller.selectCustomer}
+          onUpdateQty={controller.updateQty}
+          onRemoveItem={controller.removeCartItem}
+          onSetObservation={controller.setObservation}
+          onFinalize={() => setPaymentOpen(true)}
+          selectedTab={selectedTab}
+          onLaunchToTab={
+            selectedTab ? () => handleLaunchToTab(selectedTab.uid) : undefined
+          }
+        />
+      </div>
 
       {customization && (
         <CustomizationModal
@@ -96,6 +129,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         total={controller.total}
         onClose={() => setPaymentOpen(false)}
         onFinalize={handleFinalize}
+      />
+
+      <OpenTabModal
+        open={openTabModalOpen}
+        sessionUid={sessionUid}
+        onClose={() => setOpenTabModalOpen(false)}
+        onOpened={handleTabOpened}
       />
     </div>
   );

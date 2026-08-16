@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../atoms/Button';
 import { FormField } from '../molecules/FormField';
 import { Modal } from '../molecules/Modal';
@@ -36,8 +36,19 @@ export function OpenTabModal({
   const [name, setName] = useState('');
   const [ticketOverride, setTicketOverride] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [pendingTicket, setPendingTicket] = useState<string | null>(null);
 
   const ticket = ticketOverride ?? suggestion;
+
+  useEffect(() => {
+    if (!pendingTicket) return;
+    const opened = openTabs.find((tab) => tab.ticket === pendingTicket);
+    if (!opened) return;
+    queueMicrotask(() => {
+      setPendingTicket(null);
+      onOpened(opened);
+    });
+  }, [pendingTicket, openTabs, onOpened]);
 
   function handleTicketChange(value: string) {
     setTicketOverride(value);
@@ -66,9 +77,8 @@ export function OpenTabModal({
     const openedTicket = ticket.trim() || suggestion;
     const ok = await openTab(trimmed, openedTicket);
     if (!ok) return;
-    const opened = openTabs.find((tab) => tab.ticket === openedTicket);
+    setPendingTicket(openedTicket);
     handleClose();
-    if (opened) onOpened(opened);
   }
 
   function handleClose() {

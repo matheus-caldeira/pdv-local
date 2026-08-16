@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Cart } from './Cart';
 import type { Customer } from '../../domain/customer/customer.entity';
+import type { Order } from '../../domain/order/order.entity';
 import type { CartItem } from '../hooks/usePdvController';
 
 afterEach(cleanup);
@@ -198,5 +199,29 @@ describe('Cart', () => {
     const props = baseProps();
     render(<Cart {...props} ordering={undefined} />);
     expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
+  });
+
+  it('shows the launch-to-tab button when a tab is selected', async () => {
+    const props = baseProps();
+    const onLaunchToTab = vi.fn();
+    const selectedTab = { ticket: '042' } as Order;
+    render(
+      <Cart
+        {...props}
+        cart={[cartItem]}
+        total={46}
+        selectedTab={selectedTab}
+        onLaunchToTab={onLaunchToTab}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Finalizar Venda' }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: /Lançar na comanda nº 042/ }),
+    );
+    expect(onLaunchToTab).toHaveBeenCalledOnce();
+    expect(props.onFinalize).not.toHaveBeenCalled();
   });
 });

@@ -149,6 +149,10 @@ export function usePdvController(sessionUid: string) {
     );
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
   const resetForm = useCallback(() => {
     setCart([]);
     setCustomerName('');
@@ -249,6 +253,7 @@ export function usePdvController(sessionUid: string) {
     updateQty,
     removeCartItem,
     setObservation,
+    clearCart,
     finalizeSale,
   };
 }

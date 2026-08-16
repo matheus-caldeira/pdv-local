@@ -1,12 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { PdvPage } from './PdvPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { EmptyCartError } from '../../domain/errors';
-import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
+import {
+  getBusinessType,
+  type BusinessTypeDefinition,
+} from '../../domain/business-type/registry';
 import type { RegisterOrderInput } from '../../application/order/register-order.usecase';
 
 const navigate = vi.fn();
@@ -15,8 +24,15 @@ const getActiveSession = vi.fn();
 const listActiveProducts = vi.fn();
 const peekTicketSuggestion = vi.fn();
 const searchCustomersByPhone = vi.fn();
+const searchCustomersByName = vi.fn();
 const loadProductCustomizations = vi.fn();
 const readConfig = vi.fn();
+const resolveActiveType = vi.fn();
+const listOrders = vi.fn();
+const openTab = vi.fn();
+const addItemsToTab = vi.fn();
+const closeTab = vi.fn();
+const reopenTab = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -34,9 +50,17 @@ vi.mock('../../app/container', () => ({
     listActiveProducts: () => listActiveProducts(),
     peekTicketSuggestion: () => peekTicketSuggestion(),
     searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
+    searchCustomersByName: (value: string) => searchCustomersByName(value),
     loadProductCustomizations: (ids: number[]) =>
       loadProductCustomizations(ids),
     readConfig: () => readConfig(),
+    resolveActiveType: () => resolveActiveType(),
+    listOrders: () => listOrders(),
+    openTab: (definition: BusinessTypeDefinition, input: unknown) =>
+      openTab(definition, input),
+    addItemsToTab: (input: unknown) => addItemsToTab(input),
+    closeTab: (input: unknown) => closeTab(input),
+    reopenTab: (input: unknown) => reopenTab(input),
   },
 }));
 
@@ -73,6 +97,23 @@ const customProduct = {
   customizationGroupIds: [10],
 };
 
+const openTabFixture = {
+  id: 9,
+  uid: 'tab-1',
+  businessTypeId: 'tab',
+  sessionUid: 'session-3',
+  items: [],
+  total: 0,
+  paymentMethod: null,
+  customerName: 'Maju',
+  customerPhone: '',
+  ticket: '007',
+  stage: 'aceito' as const,
+  status: 'open' as const,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 describe('PdvPage', () => {
   beforeEach(() => {
     navigate.mockReset();
@@ -81,10 +122,18 @@ describe('PdvPage', () => {
     listActiveProducts.mockReset();
     peekTicketSuggestion.mockReset();
     searchCustomersByPhone.mockReset();
+    searchCustomersByName.mockReset();
     loadProductCustomizations.mockReset();
     readConfig.mockReset();
+    resolveActiveType.mockReset();
+    listOrders.mockReset();
+    openTab.mockReset();
+    addItemsToTab.mockReset();
+    closeTab.mockReset();
+    reopenTab.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
     searchCustomersByPhone.mockResolvedValue(right([]));
+    searchCustomersByName.mockResolvedValue(right([]));
     loadProductCustomizations.mockResolvedValue(right([]));
     listActiveProducts.mockResolvedValue(right([simpleProduct, customProduct]));
     readConfig.mockResolvedValue(
@@ -101,6 +150,9 @@ describe('PdvPage', () => {
         extra: {},
       }),
     );
+    resolveActiveType.mockResolvedValue(right(getBusinessType('tab')));
+    listOrders.mockResolvedValue(right([openTabFixture]));
+    addItemsToTab.mockResolvedValue(right(openTabFixture));
   });
   afterEach(cleanup);
 
@@ -319,5 +371,97 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
+  });
+
+  it('lança o carrinho na comanda selecionada', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /coca/i }));
+    await user.selectOptions(screen.getByLabelText(/comanda/i), 'tab-1');
+    await user.click(
+      screen.getByRole('button', { name: /lançar na comanda/i }),
+    );
+
+    await waitFor(() => expect(addItemsToTab).toHaveBeenCalled());
+  });
+
+  it('mantém o carrinho quando lançar na comanda falha', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    addItemsToTab.mockResolvedValue(left(new EmptyCartError()));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /coca/i }));
+    await user.selectOptions(screen.getByLabelText(/comanda/i), 'tab-1');
+    await user.click(
+      screen.getByRole('button', { name: /lançar na comanda/i }),
+    );
+
+    await waitFor(() => expect(addItemsToTab).toHaveBeenCalled());
+    expect(
+      screen.getByRole('button', { name: /lançar na comanda/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('mantém o fluxo de venda avulsa quando não há comanda selecionada', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /coca/i }));
+
+    expect(
+      screen.getByRole('button', { name: /finalizar/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('abre uma comanda nova e a seleciona automaticamente', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const newTab = { ...openTabFixture, ticket: '0001' };
+    let opened = false;
+    listOrders.mockImplementation(() =>
+      Promise.resolve(right(opened ? [newTab] : [])),
+    );
+    openTab.mockImplementation(() => {
+      opened = true;
+      return Promise.resolve(right(newTab));
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /nova comanda/i }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText(/nome/i), 'Maju');
+    await user.click(
+      within(dialog).getByRole('button', { name: /abrir comanda/i }),
+    );
+
+    await waitFor(() => expect(openTab).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('option', { name: /0001 — Maju/i }),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      (
+        screen.getByRole('option', {
+          name: /0001 — Maju/i,
+        }) as HTMLOptionElement
+      ).selected,
+    ).toBe(true);
   });
 });

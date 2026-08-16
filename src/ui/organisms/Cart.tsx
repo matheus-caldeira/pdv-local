@@ -6,6 +6,7 @@ import { QtyStepper } from '../atoms/QtyStepper';
 import { Modal } from '../molecules/Modal';
 import { TextField } from '../molecules/TextField';
 import type { Customer } from '../../domain/customer/customer.entity';
+import type { Order } from '../../domain/order/order.entity';
 import type { BusinessTypeRules } from '../../domain/business-type/business-type.entity';
 import type { CartItem } from '../hooks/usePdvController';
 
@@ -28,6 +29,8 @@ interface CartProps {
   onRemoveItem: (cartId: string) => void;
   onSetObservation: (cartId: string, observation: string) => void;
   onFinalize: () => void;
+  selectedTab?: Order | null;
+  onLaunchToTab?: () => void;
 }
 
 function itemUnitTotal(item: CartItem): number {
@@ -53,6 +56,8 @@ export function Cart({
   onRemoveItem,
   onSetObservation,
   onFinalize,
+  selectedTab,
+  onLaunchToTab,
 }: CartProps) {
   const [editingObsId, setEditingObsId] = useState<string | null>(null);
   const [obsText, setObsText] = useState('');
@@ -222,9 +227,15 @@ export function Cart({
               className="text-xl font-extrabold text-accent"
             />
           </div>
-          <Button fullWidth onClick={onFinalize}>
-            Finalizar Venda
-          </Button>
+          {selectedTab ? (
+            <Button fullWidth onClick={onLaunchToTab}>
+              Lançar na comanda nº {selectedTab.ticket}
+            </Button>
+          ) : (
+            <Button fullWidth onClick={onFinalize}>
+              Finalizar Venda
+            </Button>
+          )}
         </div>
       )}
 
