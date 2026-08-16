@@ -56,6 +56,9 @@ const CONFIG: BusinessConfig = {
   businessTypeId: 'tab',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 function Probe() {

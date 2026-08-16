@@ -28,6 +28,21 @@ export function makeSearchCustomersByPhone(repository: CustomerRepository) {
   };
 }
 
+const NAME_SEARCH_LIMIT = 6;
+
+export function makeSearchCustomersByName(repository: CustomerRepository) {
+  return async (value: string): Promise<Either<AppError, Customer[]>> => {
+    const query = value.trim().toLowerCase();
+    if (!query) return right([]);
+    const result = await repository.list();
+    if (isLeft(result)) return result;
+    const matches = result.right
+      .filter((customer) => customer.name.toLowerCase().includes(query))
+      .slice(0, NAME_SEARCH_LIMIT);
+    return right(matches);
+  };
+}
+
 export function makeSaveCustomer(repository: CustomerRepository) {
   return async (
     input: CustomerInput,

@@ -1,6 +1,12 @@
 import { left, right, type Either } from '../shared/either';
-import { EmptyCartError, RequiredCustomizationMissingError } from '../errors';
-import type { OrderItem, OrderStage } from './order.entity';
+import {
+  EmptyCartError,
+  EmptyTabError,
+  RequiredCustomizationMissingError,
+  TabNotClosedError,
+  TabNotOpenError,
+} from '../errors';
+import type { Order, OrderItem, OrderStage } from './order.entity';
 
 export const ORDER_STAGES: OrderStage[] = [
   'aceito',
@@ -96,4 +102,59 @@ export function validateCartNotEmpty(
   items: OrderItem[],
 ): Either<EmptyCartError, void> {
   return items.length === 0 ? left(new EmptyCartError()) : right(undefined);
+}
+
+export function canAddItems(order: Order): Either<TabNotOpenError, void> {
+  return order.status === 'open'
+    ? right(undefined)
+    : left(new TabNotOpenError());
+}
+
+export function canClose(
+  order: Order,
+): Either<TabNotOpenError | EmptyTabError, void> {
+  if (order.status !== 'open') return left(new TabNotOpenError());
+  if (order.items.length === 0) return left(new EmptyTabError());
+  return right(undefined);
+}
+
+export function canReopen(order: Order): Either<TabNotClosedError, void> {
+  return order.status === 'pending'
+    ? right(undefined)
+    : left(new TabNotClosedError());
+}
+
+function itemSignature(item: OrderItem): string {
+  const customizations = (item.customizations ?? [])
+    .map(
+      (entry) => `${entry.groupName}:${entry.name}:${entry.qty}:${entry.price}`,
+    )
+    .sort()
+    .join('|');
+  return [
+    item.productUid ?? item.name,
+    item.salePrice,
+    item.costPrice,
+    item.observation ?? '',
+    customizations,
+  ].join('#');
+}
+
+export function mergeOrderItems(
+  current: OrderItem[],
+  incoming: OrderItem[],
+): OrderItem[] {
+  const merged = current.map((item) => ({ ...item }));
+  for (const item of incoming) {
+    const signature = itemSignature(item);
+    const existing = merged.find(
+      (candidate) => itemSignature(candidate) === signature,
+    );
+    if (existing) {
+      existing.qty += item.qty;
+      continue;
+    }
+    merged.push({ ...item });
+  }
+  return merged;
 }

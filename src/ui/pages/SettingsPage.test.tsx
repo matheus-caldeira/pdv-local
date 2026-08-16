@@ -17,6 +17,7 @@ import type { BusinessConfig } from '../../domain/config/config.entity';
 
 const readConfig = vi.fn();
 const saveConfig = vi.fn();
+const savePrinterConfig = vi.fn();
 const resetTicketSequence = vi.fn();
 const exportBackup = vi.fn();
 const exportEntity = vi.fn();
@@ -26,11 +27,13 @@ const loadDemo = vi.fn();
 const wipeData = vi.fn();
 const saveEnabledModules = vi.fn();
 const refresh = vi.fn();
+const printOrder = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
     readConfig: () => readConfig(),
     saveConfig: (input: unknown) => saveConfig(input),
+    savePrinterConfig: (input: unknown) => savePrinterConfig(input),
     resetTicketSequence: (counter: number) => resetTicketSequence(counter),
     exportBackup: (format: string) => exportBackup(format),
     exportEntity: (entity: string, format: string) =>
@@ -41,6 +44,16 @@ vi.mock('../../app/container', () => ({
     wipeData: () => wipeData(),
     saveEnabledModules: (s: string[]) => saveEnabledModules(s),
   },
+}));
+
+vi.mock('../hooks/usePrint', () => ({
+  usePrint: () => ({
+    printOrder: (order: unknown) => printOrder(order),
+    printStock: vi.fn(),
+    printPendingTabs: vi.fn(),
+    printDayReport: vi.fn(),
+    printing: false,
+  }),
 }));
 
 vi.mock('../../app/modules-context', () => ({
@@ -73,6 +86,9 @@ const CONFIG: BusinessConfig = {
   businessTypeId: 'tab',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 function renderPage() {
@@ -87,6 +103,7 @@ describe('SettingsPage', () => {
   beforeEach(() => {
     readConfig.mockReset();
     saveConfig.mockReset();
+    savePrinterConfig.mockReset();
     resetTicketSequence.mockReset();
     exportBackup.mockReset();
     exportEntity.mockReset();
@@ -96,8 +113,10 @@ describe('SettingsPage', () => {
     wipeData.mockReset();
     saveEnabledModules.mockReset();
     refresh.mockReset();
+    printOrder.mockReset();
     readConfig.mockResolvedValue(right(CONFIG));
     saveEnabledModules.mockResolvedValue(right(['pdv', 'finance']));
+    savePrinterConfig.mockResolvedValue(right(CONFIG));
   });
   afterEach(() => {
     cleanup();
@@ -559,16 +578,28 @@ describe('SettingsPage', () => {
     );
   });
 
-  it('shows printer test and save toasts', async () => {
+  it('does not offer a network connection option', async () => {
     renderPage();
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Testar Impressão' }),
-      ).toBeInTheDocument(),
+      expect(screen.getByLabelText('Tipo de Conexão')).toBeInTheDocument(),
+    );
+    const options = within(
+      screen.getByLabelText('Tipo de Conexão') as HTMLSelectElement,
+    ).getAllByRole('option');
+    expect(options.map((option) => option.getAttribute('value'))).toEqual([
+      'browser',
+      'bluetooth',
+    ]);
+  });
+
+  it('persists the printer settings on save', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Conexão')).toBeInTheDocument(),
     );
     await userEvent.selectOptions(
       screen.getByLabelText('Tipo de Conexão'),
-      'usb',
+      'bluetooth',
     );
     await userEvent.selectOptions(
       screen.getByLabelText('Largura do Papel'),
@@ -579,21 +610,55 @@ describe('SettingsPage', () => {
       '1',
     );
     await userEvent.click(
-      screen.getByRole('button', { name: 'Testar Impressão' }),
+      screen.getAllByRole('button', { name: 'Salvar' }).at(-1)!,
     );
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Funcionalidade de teste sera implementada com a lib ESC/POS',
-      ),
-    );
-    await userEvent.click(
-      screen.getAllByRole('button', { name: 'Salvar' }).at(-1)!,
+      expect(savePrinterConfig).toHaveBeenCalledWith({
+        printerDriver: 'bluetooth',
+        printerPaperWidth: 58,
+        printerAutoPrintOnClose: true,
+      }),
     );
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
         'Configurações de impressão salvas',
       ),
     );
+  });
+
+  it('toasts when saving the printer settings fails', async () => {
+    savePrinterConfig.mockResolvedValue(
+      left(new FakeError('falha impressora')),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Testar Impressão' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Salvar' }).at(-1)!,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha impressora'),
+    );
+  });
+
+  it('prints a sample order when testing the printer', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Testar Impressão' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Testar Impressão' }),
+    );
+    await waitFor(() => expect(printOrder).toHaveBeenCalled());
+    const sample = printOrder.mock.calls[0][0];
+    expect(sample.ticket).toBe('000');
+    expect(sample.customerName).toBe('Teste');
+    expect(sample.items).toHaveLength(1);
   });
 
   it('wipes the data after both confirmations', async () => {

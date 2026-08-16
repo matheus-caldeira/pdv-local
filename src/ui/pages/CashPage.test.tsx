@@ -12,11 +12,15 @@ import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
 import type { CashSummary } from '../../application/cash/cash.usecases';
+import type { BusinessConfig } from '../../domain/config/config.entity';
 
 const loadCashSummary = vi.fn();
 const openSession = vi.fn();
 const closeSession = vi.fn();
 const addCashMovement = vi.fn();
+const readConfig = vi.fn();
+const buildBackupSnapshot = vi.fn();
+const saveBackupInfo = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
@@ -25,6 +29,9 @@ vi.mock('../../app/container', () => ({
     closeSession: (cashFinal: number, notes: string) =>
       closeSession(cashFinal, notes),
     addCashMovement: (input: unknown) => addCashMovement(input),
+    readConfig: () => readConfig(),
+    buildBackupSnapshot: () => buildBackupSnapshot(),
+    saveBackupInfo: (input: unknown) => saveBackupInfo(input),
   },
 }));
 
@@ -105,13 +112,41 @@ function renderPage() {
   );
 }
 
+const businessConfig = (
+  over: Partial<BusinessConfig> = {},
+): BusinessConfig => ({
+  id: 1,
+  name: 'Bar',
+  document: '',
+  phone: '',
+  address: '',
+  ticketCounter: 1,
+  ticketLimit: 9999,
+  ticketAutoReset: true,
+  statusControlEnabled: false,
+  businessTypeId: 'tab',
+  enabledModules: [],
+  extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
+  ...over,
+});
+
 describe('CashPage', () => {
   beforeEach(() => {
     loadCashSummary.mockReset();
     openSession.mockReset();
     closeSession.mockReset();
     addCashMovement.mockReset();
+    readConfig.mockReset();
+    buildBackupSnapshot.mockReset();
+    saveBackupInfo.mockReset();
     loadCashSummary.mockResolvedValue(right(EMPTY_SUMMARY));
+    readConfig.mockResolvedValue(
+      right(businessConfig({ lastBackupPromptAt: Date.now() })),
+    );
+    saveBackupInfo.mockResolvedValue(right(businessConfig()));
   });
   afterEach(() => {
     cleanup();
@@ -202,6 +237,113 @@ describe('CashPage', () => {
       screen.queryByText('Vendas por Forma de Pagamento'),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('Movimentações')).not.toBeInTheDocument();
+  });
+
+  it('shows "Nenhum backup enviado" when there is no previous backup', async () => {
+    loadCashSummary.mockResolvedValue(right(EMPTY_SUMMARY));
+    readConfig.mockResolvedValue(
+      right(businessConfig({ lastBackupAt: undefined })),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Abrir Caixa')).toBeInTheDocument(),
+    );
+  });
+
+  it('ignores a failed config read without crashing', async () => {
+    loadCashSummary.mockResolvedValue(right(EMPTY_SUMMARY));
+    readConfig.mockResolvedValue(left(new FakeError('falha config')));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Abrir Caixa')).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(/Último backup:/)).not.toBeInTheDocument();
+  });
+
+  it('shows the formatted last backup date when there is a session open', async () => {
+    loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
+    readConfig.mockResolvedValue(
+      right(
+        businessConfig({
+          lastBackupAt: new Date('2026-08-14T10:00:00').getTime(),
+          lastBackupPromptAt: Date.now(),
+        }),
+      ),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText(/Último backup:/)).toBeInTheDocument(),
+    );
+  });
+
+  it('shows "Nenhum backup enviado" for an active session without a previous backup', async () => {
+    loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Nenhum backup enviado')).toBeInTheDocument(),
+    );
+  });
+
+  it('opens the backup prompt manually through the "Enviar Backup" button', async () => {
+    loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText(/Aberto desde/)).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: /Enviar Backup/ }),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Enviar backup do dia?' }),
+    ).toBeInTheDocument();
+  });
+
+  it('prompts for backup after the first sale of the day', async () => {
+    loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
+    readConfig.mockResolvedValue(right(businessConfig()));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('dialog', { name: 'Enviar backup do dia?' }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('does not prompt again for the same session after the modal is dismissed', async () => {
+    loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
+    readConfig.mockResolvedValue(right(businessConfig()));
+    saveBackupInfo.mockResolvedValue(
+      right(businessConfig({ lastBackupPromptAt: Date.now() })),
+    );
+    renderPage();
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Enviar backup do dia?',
+    });
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Depois' }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Enviar backup do dia?' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(saveBackupInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ lastBackupPromptAt: expect.any(Number) }),
+    );
+  });
+
+  it('does not prompt when there is no session or no sales yet', async () => {
+    loadCashSummary.mockResolvedValue(
+      right({ ...ACTIVE_SUMMARY, salesByMethod: {} }),
+    );
+    readConfig.mockResolvedValue(right(businessConfig()));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText(/Aberto desde/)).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole('dialog', { name: 'Enviar backup do dia?' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders past sessions', async () => {
@@ -302,7 +444,7 @@ describe('CashPage', () => {
     expect(addCashMovement).not.toHaveBeenCalled();
   });
 
-  it('closes the cash through the close modal', async () => {
+  it('closes the cash through the close modal and offers the backup prompt', async () => {
     loadCashSummary.mockResolvedValue(right(ACTIVE_SUMMARY));
     closeSession.mockResolvedValue(right({ id: 1 }));
     renderPage();
@@ -325,7 +467,9 @@ describe('CashPage', () => {
     );
     expect(closeSession).toHaveBeenCalledWith(160, 'tudo certo');
     await waitFor(() =>
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      expect(
+        screen.getByRole('dialog', { name: 'Enviar backup do dia?' }),
+      ).toBeInTheDocument(),
     );
   });
 

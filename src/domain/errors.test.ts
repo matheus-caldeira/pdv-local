@@ -31,10 +31,13 @@ import {
   MonthNotClosedError,
   PaymentMethodInUseError,
   PaymentMethodNotFoundError,
+  PrintFailedError,
+  PrinterUnavailableError,
   RecurrenceAlreadyLaunchedError,
   RecurrenceNotFoundError,
   RecurrenceOutOfRangeError,
   RequiredCustomizationMissingError,
+  TabNotFoundError,
   TicketLimitReachedError,
   UnknownBusinessTypeError,
 } from './errors';
@@ -68,6 +71,27 @@ describe('domain errors', () => {
     const error = new TicketLimitReachedError();
     expect(error.code).toBe('TICKET_LIMIT_REACHED');
     expect(error.message).toContain('limite');
+  });
+
+  it('TabNotFoundError carries its code', () => {
+    const error = new TabNotFoundError();
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('TAB_NOT_FOUND');
+    expect(error.message).toContain('não encontrada');
+  });
+
+  it('PrinterUnavailableError carries its code', () => {
+    const error = new PrinterUnavailableError();
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('PRINTER_UNAVAILABLE');
+    expect(error.message).toContain('impressora');
+  });
+
+  it('PrintFailedError carries its code', () => {
+    const error = new PrintFailedError();
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('PRINT_FAILED');
+    expect(error.message).toContain('imprimir');
   });
 });
 

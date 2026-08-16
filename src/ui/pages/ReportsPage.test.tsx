@@ -3,20 +3,42 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReportsPage } from './ReportsPage';
 import { ToastProvider } from '../molecules/Toast';
-import { right } from '../../domain/shared/either';
+import { left, right } from '../../domain/shared/either';
+import { AppError } from '../../domain/shared/errors';
 import type { SessionReport } from '../../application/report/report.usecases';
 import type { Session } from '../../domain/cash/cash.entity';
 import type { Order, OrderStatus } from '../../domain/order/order.entity';
+import type { Product } from '../../domain/product/product.entity';
 
 const listReportSessions = vi.fn();
 const loadSessionReport = vi.fn();
+const loadStockReport = vi.fn();
+const printDayReport = vi.fn();
+const printStock = vi.fn();
+const printPendingTabs = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
     listReportSessions: () => listReportSessions(),
     loadSessionReport: (uid: string) => loadSessionReport(uid),
+    loadStockReport: () => loadStockReport(),
   },
 }));
+
+vi.mock('../hooks/usePrint', () => ({
+  usePrint: () => ({
+    printOrder: vi.fn(),
+    printStock: (products: unknown) => printStock(products),
+    printPendingTabs: (orders: unknown) => printPendingTabs(orders),
+    printDayReport: (report: unknown) => printDayReport(report),
+    printing: false,
+  }),
+}));
+
+class FakeError extends AppError {
+  readonly code = 'FAKE';
+  readonly layer = 'application' as const;
+}
 
 const SESSIONS: Session[] = [
   {
@@ -83,8 +105,13 @@ describe('ReportsPage', () => {
   beforeEach(() => {
     listReportSessions.mockReset();
     loadSessionReport.mockReset();
+    loadStockReport.mockReset();
+    printDayReport.mockReset();
+    printStock.mockReset();
+    printPendingTabs.mockReset();
     listReportSessions.mockResolvedValue(right(SESSIONS));
     loadSessionReport.mockResolvedValue(right(FULL_REPORT));
+    loadStockReport.mockResolvedValue(right([]));
   });
   afterEach(cleanup);
 
@@ -198,5 +225,78 @@ describe('ReportsPage', () => {
       expect(screen.getAllByText('Nenhuma venda ainda').length).toBe(2),
     );
     expect(screen.queryByText('Pedidos Pendentes')).not.toBeInTheDocument();
+  });
+
+  it('prints the day report when the button is clicked', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Imprimir fechamento do dia' }),
+      ).toBeEnabled(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Imprimir fechamento do dia' }),
+    );
+    expect(printDayReport).toHaveBeenCalledWith(FULL_REPORT);
+  });
+
+  it('loads and prints the stock report when the button is clicked', async () => {
+    const products = [{ uid: 'p1', name: 'Refri', stock: 3 }] as Product[];
+    loadStockReport.mockResolvedValue(right(products));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Imprimir estoque' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Imprimir estoque' }),
+    );
+    await waitFor(() => expect(printStock).toHaveBeenCalledWith(products));
+  });
+
+  it('toasts when loading the stock report fails', async () => {
+    loadStockReport.mockResolvedValue(left(new FakeError('falha estoque')));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Imprimir estoque' }),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Imprimir estoque' }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha estoque'),
+    );
+    expect(printStock).not.toHaveBeenCalled();
+  });
+
+  it('prints the pending tabs when the button is clicked', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Imprimir comandas pendentes' }),
+      ).toBeEnabled(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Imprimir comandas pendentes' }),
+    );
+    expect(printPendingTabs).toHaveBeenCalledWith(FULL_REPORT.pending);
+  });
+
+  it('disables the day report and pending tabs buttons while the report is loading', async () => {
+    let resolve: (value: unknown) => void = () => {};
+    loadSessionReport.mockReturnValue(new Promise((r) => (resolve = r)));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Imprimir fechamento do dia' }),
+      ).toBeDisabled(),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Imprimir comandas pendentes' }),
+    ).toBeDisabled();
+    resolve(right(FULL_REPORT));
   });
 });

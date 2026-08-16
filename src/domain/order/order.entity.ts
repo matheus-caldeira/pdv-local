@@ -36,6 +36,7 @@ export interface Order {
   status: OrderStatus;
   createdAt: number;
   updatedAt: number;
+  closedAt?: number;
 }
 
 export type NewOrder = Omit<Order, 'id'>;

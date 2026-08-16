@@ -26,6 +26,9 @@ function withDefaults(stored?: BusinessConfig): BusinessConfig {
     businessTypeId: '',
     enabledModules: [],
     extra: {},
+    printerDriver: 'browser',
+    printerPaperWidth: 80,
+    printerAutoPrintOnClose: false,
     ...stored,
   };
 }

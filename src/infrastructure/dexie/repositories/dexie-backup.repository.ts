@@ -1,4 +1,9 @@
-import { left, right, type Either } from '../../../domain/shared/either';
+import {
+  isLeft,
+  left,
+  right,
+  type Either,
+} from '../../../domain/shared/either';
 import type {
   BackupEntity,
   BackupFormat,
@@ -70,37 +75,25 @@ export class DexieBackupRepository implements BackupRepository {
     this.saver = saver;
   }
 
+  async buildSnapshot(): Promise<Either<InfrastructureError, string>> {
+    try {
+      const data = await this.collectSnapshotData();
+      return right(JSON.stringify(data, null, 2));
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
   async exportAll(
     format: BackupFormat,
   ): Promise<Either<InfrastructureError, void>> {
     try {
-      const data = {
-        products: await this.db.products.toArray(),
-        orders: await this.db.orders.toArray(),
-        sessions: await this.db.sessions.toArray(),
-        cashMovements: await this.db.cashMovements.toArray(),
-        config: await this.db.config.toArray(),
-        financeMembers: await this.db.financeMembers.toArray(),
-        financeCategories: await this.db.financeCategories.toArray(),
-        financeEntries: await this.db.financeEntries.toArray(),
-        financeBudgetItems: await this.db.financeBudgetItems.toArray(),
-        financeFormulas: await this.db.financeFormulas.toArray(),
-        financeRecurrences: await this.db.financeRecurrences.toArray(),
-        financeInstallmentPlans:
-          await this.db.financeInstallmentPlans.toArray(),
-        financeClosings: await this.db.financeClosings.toArray(),
-        financePaymentMethods: await this.db.financePaymentMethods.toArray(),
-        financeCardInvoices: await this.db.financeCardInvoices.toArray(),
-        exportedAt: Date.now(),
-        version: 1,
-      };
       if (format === 'json') {
-        this.saver.save(
-          JSON.stringify(data, null, 2),
-          'pdv-backup.json',
-          'application/json',
-        );
+        const snapshot = await this.buildSnapshot();
+        if (isLeft(snapshot)) return snapshot;
+        this.saver.save(snapshot.right, 'pdv-backup.json', 'application/json');
       } else {
+        const data = await this.collectSnapshotData();
         for (const entity of CSV_ENTITIES) {
           const items = data[entity] as unknown as Row[];
           if (items.length > 0) {
@@ -112,6 +105,29 @@ export class DexieBackupRepository implements BackupRepository {
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
+  }
+
+  private async collectSnapshotData() {
+    return {
+      products: await this.db.products.toArray(),
+      orders: await this.db.orders.toArray(),
+      sessions: await this.db.sessions.toArray(),
+      cashMovements: await this.db.cashMovements.toArray(),
+      config: await this.db.config.toArray(),
+      customers: await this.db.customers.toArray(),
+      financeMembers: await this.db.financeMembers.toArray(),
+      financeCategories: await this.db.financeCategories.toArray(),
+      financeEntries: await this.db.financeEntries.toArray(),
+      financeBudgetItems: await this.db.financeBudgetItems.toArray(),
+      financeFormulas: await this.db.financeFormulas.toArray(),
+      financeRecurrences: await this.db.financeRecurrences.toArray(),
+      financeInstallmentPlans: await this.db.financeInstallmentPlans.toArray(),
+      financeClosings: await this.db.financeClosings.toArray(),
+      financePaymentMethods: await this.db.financePaymentMethods.toArray(),
+      financeCardInvoices: await this.db.financeCardInvoices.toArray(),
+      exportedAt: Date.now(),
+      version: 1,
+    };
   }
 
   async exportEntity(

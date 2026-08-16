@@ -160,6 +160,18 @@ class FakeOrderRepository implements OrderRepository {
   async setStage(): Promise<Either<InfrastructureError, void>> {
     return right(undefined);
   }
+
+  async findByUid(): Promise<Either<InfrastructureError, Order | undefined>> {
+    return right(undefined);
+  }
+
+  async replaceItems(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
+
+  async setStatus(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
 }
 
 const order = (over: Partial<Order> = {}): Order => ({

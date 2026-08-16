@@ -283,5 +283,8 @@ export class PDVDatabase extends Dexie {
       financeCardInvoices:
         '++id, &uid, paymentMethodUid, month, [paymentMethodUid+month]',
     });
+    this.version(8).stores({
+      orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+    });
   }
 }

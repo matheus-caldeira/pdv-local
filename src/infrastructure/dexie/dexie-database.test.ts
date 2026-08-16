@@ -241,7 +241,7 @@ describe('migração v6', () => {
     const db = new PDVDatabase();
     await db.open();
 
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
 
     const products = await db.products.toArray();
     expect(products).toHaveLength(1);

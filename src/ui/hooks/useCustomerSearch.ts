@@ -5,6 +5,7 @@ import type { Customer } from '../../domain/customer/customer.entity';
 
 export function useCustomerSearch() {
   const [suggestions, setSuggestions] = useState<Customer[]>([]);
+  const [nameSuggestions, setNameSuggestions] = useState<Customer[]>([]);
 
   const search = useCallback(async (value: string) => {
     const result = await container.searchCustomersByPhone(value);
@@ -15,7 +16,25 @@ export function useCustomerSearch() {
     );
   }, []);
 
+  const searchByName = useCallback(async (value: string) => {
+    const result = await container.searchCustomersByName(value);
+    fold(
+      result,
+      () => setNameSuggestions([]),
+      (matches) => setNameSuggestions(matches),
+    );
+  }, []);
+
   const clear = useCallback(() => setSuggestions([]), []);
 
-  return { suggestions, search, clear };
+  const clearByName = useCallback(() => setNameSuggestions([]), []);
+
+  return {
+    suggestions,
+    search,
+    clear,
+    nameSuggestions,
+    searchByName,
+    clearByName,
+  };
 }

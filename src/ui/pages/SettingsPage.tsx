@@ -16,6 +16,7 @@ import { Select } from '../molecules/Select';
 import { ExtraFields } from '../molecules/ExtraFields';
 import { useToast } from '../molecules/toast-context';
 import { useSettings } from '../hooks/useSettings';
+import { usePrint } from '../hooks/usePrint';
 import { formatTicket } from '../../domain/config/config.rules';
 import { businessTypeIds } from '../../domain/business-type/registry';
 import { t } from '../i18n/t';
@@ -49,6 +50,12 @@ interface FormState {
   extra: Record<string, string>;
 }
 
+interface PrinterFormState {
+  printerDriver: 'browser' | 'bluetooth';
+  printerPaperWidth: 58 | 80;
+  printerAutoPrintOnClose: boolean;
+}
+
 const ENTITIES: { key: BackupEntity; label: string }[] = [
   { key: 'products', label: 'Produtos' },
   { key: 'orders', label: 'Pedidos' },
@@ -76,6 +83,14 @@ function toFormState(config: BusinessConfig): FormState {
     statusControlEnabled: config.statusControlEnabled,
     businessTypeId: config.businessTypeId,
     extra: config.extra,
+  };
+}
+
+function toPrinterFormState(config: BusinessConfig): PrinterFormState {
+  return {
+    printerDriver: config.printerDriver,
+    printerPaperWidth: config.printerPaperWidth,
+    printerAutoPrintOnClose: config.printerAutoPrintOnClose,
   };
 }
 
@@ -123,6 +138,7 @@ export function SettingsPage() {
     wipe,
   } = useSettings();
   const [form, setForm] = useState<FormState | null>(null);
+  const [printerForm, setPrinterForm] = useState<PrinterFormState | null>(null);
   const [importTarget, setImportTarget] = useState<BackupEntity>('products');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState(0);
@@ -131,13 +147,15 @@ export function SettingsPage() {
   const [demoConfirmStep, setDemoConfirmStep] = useState<0 | 1 | 2>(0);
   const [seenConfig, setSeenConfig] = useState<BusinessConfig | null>(null);
   const { modules, refresh } = useModules();
+  const { printOrder } = usePrint();
 
   if (config && config !== seenConfig) {
     setSeenConfig(config);
     setForm(toFormState(config));
+    setPrinterForm(toPrinterFormState(config));
   }
 
-  if (!form) {
+  if (!form || !printerForm) {
     return (
       <div className="max-w-3xl">
         <h1 className="text-2xl font-extrabold tracking-tight">
@@ -148,6 +166,7 @@ export function SettingsPage() {
   }
 
   const current = form;
+  const currentPrinter = printerForm;
 
   function buildInput(state: FormState) {
     return {
@@ -165,6 +184,40 @@ export function SettingsPage() {
 
   function handleSave() {
     save(buildInput(current));
+  }
+
+  async function handleSavePrinter() {
+    const result = await container.savePrinterConfig(currentPrinter);
+    await fold(
+      result,
+      async (error) => toast(error.message, 'error'),
+      async () => toast('Configurações de impressão salvas'),
+    );
+  }
+
+  async function handleTestPrint() {
+    await printOrder({
+      uid: 'test',
+      businessTypeId: current.businessTypeId,
+      sessionUid: 'test-session',
+      items: [
+        {
+          name: 'Item de teste',
+          qty: 1,
+          costPrice: 0,
+          salePrice: 0,
+        },
+      ],
+      total: 0,
+      paymentMethod: null,
+      customerName: 'Teste',
+      customerPhone: '',
+      ticket: '000',
+      stage: 'finalizado',
+      status: 'open',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   }
 
   async function handleReset() {
@@ -481,40 +534,61 @@ export function SettingsPage() {
           maioria das impressoras térmicas (Epson, Elgin, Bematech, etc).
         </p>
         <FormField label="Tipo de Conexão">
-          <Select defaultValue="none">
-            <option value="none">Nenhuma (desabilitado)</option>
-            <option value="usb">USB (WebUSB)</option>
+          <Select
+            value={printerForm.printerDriver}
+            onChange={(e) =>
+              setPrinterForm(
+                (p) =>
+                  p && {
+                    ...p,
+                    printerDriver: e.target.value as 'browser' | 'bluetooth',
+                  },
+              )
+            }
+          >
+            <option value="browser">Navegador (cupom na tela)</option>
             <option value="bluetooth">Bluetooth (Web Bluetooth)</option>
-            <option value="network">Rede (IP:Porta)</option>
           </Select>
         </FormField>
         <FormField label="Largura do Papel">
-          <Select defaultValue="80">
+          <Select
+            value={String(printerForm.printerPaperWidth)}
+            onChange={(e) =>
+              setPrinterForm(
+                (p) =>
+                  p && {
+                    ...p,
+                    printerPaperWidth: Number(e.target.value) as 58 | 80,
+                  },
+              )
+            }
+          >
             <option value="58">58mm</option>
             <option value="80">80mm</option>
           </Select>
         </FormField>
         <FormField label="Imprimir Automaticamente">
-          <Select defaultValue="0">
+          <Select
+            value={printerForm.printerAutoPrintOnClose ? '1' : '0'}
+            onChange={(e) =>
+              setPrinterForm(
+                (p) =>
+                  p && {
+                    ...p,
+                    printerAutoPrintOnClose: e.target.value === '1',
+                  },
+              )
+            }
+          >
             <option value="0">Não - apenas manual</option>
             <option value="1">Sim - ao fechar pedido</option>
           </Select>
         </FormField>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="ghost"
-            onClick={() =>
-              toast(
-                'Funcionalidade de teste sera implementada com a lib ESC/POS',
-                'info',
-              )
-            }
-          >
+          <Button variant="ghost" onClick={handleTestPrint}>
             Testar Impressão
           </Button>
-          <Button onClick={() => toast('Configurações de impressão salvas')}>
-            Salvar
-          </Button>
+          <Button onClick={handleSavePrinter}>Salvar</Button>
         </div>
       </Section>
 

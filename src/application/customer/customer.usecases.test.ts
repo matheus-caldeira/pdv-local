@@ -9,6 +9,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
+  makeSearchCustomersByName,
   makeSearchCustomersByPhone,
 } from './customer.usecases';
 
@@ -155,6 +156,55 @@ describe('customer use cases', () => {
       list: vi.fn(async () => left(new ConnectorError('x'))),
     });
     const result = await makeSearchCustomersByPhone(repo)('4199');
+    expect(isLeft(result)).toBe(true);
+  });
+
+  it('returns no name suggestions for an empty query', async () => {
+    const repo = fakeRepo();
+    const result = await makeSearchCustomersByName(repo)('');
+    expect(isRight(result) && result.right).toEqual([]);
+    expect(repo.list).not.toHaveBeenCalled();
+  });
+
+  it('returns no name suggestions for a query with only spaces', async () => {
+    const repo = fakeRepo();
+    const result = await makeSearchCustomersByName(repo)('   ');
+    expect(isRight(result) && result.right).toEqual([]);
+    expect(repo.list).not.toHaveBeenCalled();
+  });
+
+  it('matches names case-insensitively by substring', async () => {
+    const maju = customer({ id: 1, uid: 'customer-1', name: 'Maju' });
+    const marcos = customer({ id: 2, uid: 'customer-2', name: 'Marcos' });
+    const repo = fakeRepo({
+      list: vi.fn(async () => right([maju, marcos])),
+    });
+    const result = await makeSearchCustomersByName(repo)('ma');
+    expect(isRight(result) && result.right).toEqual([maju, marcos]);
+  });
+
+  it('returns no results when no name matches', async () => {
+    const repo = fakeRepo({
+      list: vi.fn(async () => right([customer({ name: 'Maju' })])),
+    });
+    const result = await makeSearchCustomersByName(repo)('zzz');
+    expect(isRight(result) && result.right).toEqual([]);
+  });
+
+  it('returns up to six name matches', async () => {
+    const many = Array.from({ length: 8 }, (_, i) =>
+      customer({ id: i + 1, uid: `customer-${i + 1}`, name: `Maju ${i}` }),
+    );
+    const repo = fakeRepo({ list: vi.fn(async () => right(many)) });
+    const result = await makeSearchCustomersByName(repo)('maju');
+    expect(isRight(result) && result.right).toHaveLength(6);
+  });
+
+  it('propagates a failure when listing for name search', async () => {
+    const repo = fakeRepo({
+      list: vi.fn(async () => left(new ConnectorError('x'))),
+    });
+    const result = await makeSearchCustomersByName(repo)('maju');
     expect(isLeft(result)).toBe(true);
   });
 });

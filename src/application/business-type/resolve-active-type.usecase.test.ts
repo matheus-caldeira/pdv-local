@@ -26,6 +26,9 @@ function configRepoWith(businessTypeId: string) {
     businessTypeId,
     enabledModules: [],
     extra: {},
+    printerDriver: 'browser',
+    printerPaperWidth: 80,
+    printerAutoPrintOnClose: false,
   };
   return {
     read: async (): Promise<Either<InfrastructureError, BusinessConfig>> =>

@@ -1,8 +1,13 @@
 import { Badge } from '../atoms/Badge';
+import { Button } from '../atoms/Button';
 import { Money } from '../atoms/Money';
 import { SalesSummaryCards } from '../organisms/SalesSummaryCards';
 import { ProductRankingList } from '../organisms/ProductRankingList';
 import { useReports } from '../hooks/useReports';
+import { usePrint } from '../hooks/usePrint';
+import { useToast } from '../molecules/toast-context';
+import { container } from '../../app/container';
+import { fold } from '../../domain/shared/either';
 import { formatDate, formatTime } from '../../domain/shared/format';
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -20,6 +25,8 @@ function paymentLabel(method: string): string {
 
 export function ReportsPage() {
   const { sessions, selectedSessionUid, select, report } = useReports();
+  const { printDayReport, printStock, printPendingTabs } = usePrint();
+  const toast = useToast();
 
   const currentSession = sessions.find((s) => s.uid === selectedSessionUid);
   const summary = report?.summary ?? null;
@@ -27,6 +34,25 @@ export function ReportsPage() {
   const products = report?.products ?? [];
   const pending = report?.pending ?? [];
   const totalSales = summary?.totalSales ?? 0;
+
+  function handlePrintDayReport() {
+    printDayReport(report!);
+  }
+
+  async function handlePrintStock() {
+    const result = await container.loadStockReport();
+    await fold(
+      result,
+      async (error) => toast(error.message, 'error'),
+      async (stock) => {
+        await printStock(stock);
+      },
+    );
+  }
+
+  function handlePrintPendingTabs() {
+    printPendingTabs(pending);
+  }
 
   return (
     <div className="max-w-3xl">
@@ -72,6 +98,28 @@ export function ReportsPage() {
                 ` — ${formatTime(currentSession.closedAt)}`}
             </div>
           )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!report}
+              onClick={handlePrintDayReport}
+            >
+              Imprimir fechamento do dia
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handlePrintStock}>
+              Imprimir estoque
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!report}
+              onClick={handlePrintPendingTabs}
+            >
+              Imprimir comandas pendentes
+            </Button>
+          </div>
 
           <SalesSummaryCards
             cards={[

@@ -382,3 +382,69 @@ export class InvoiceNotFoundError extends DomainError {
     super('Fatura não encontrada.');
   }
 }
+
+export class TabNotOpenError extends DomainError {
+  readonly code = 'TAB_NOT_OPEN';
+
+  constructor() {
+    super('A comanda não está aberta.');
+  }
+}
+
+export class EmptyTabError extends DomainError {
+  readonly code = 'EMPTY_TAB';
+
+  constructor() {
+    super('A comanda não tem itens para fechar.');
+  }
+}
+
+export class TabNotClosedError extends DomainError {
+  readonly code = 'TAB_NOT_CLOSED';
+
+  constructor() {
+    super('Só é possível reabrir uma comanda fechada.');
+  }
+}
+
+export class TabNotFoundError extends DomainError {
+  readonly code = 'TAB_NOT_FOUND';
+
+  constructor() {
+    super('Comanda não encontrada.');
+  }
+}
+
+export class PrinterUnavailableError extends DomainError {
+  readonly code = 'PRINTER_UNAVAILABLE';
+
+  constructor() {
+    super('A impressora não está disponível neste dispositivo.');
+  }
+}
+
+export class PrintFailedError extends DomainError {
+  readonly code = 'PRINT_FAILED';
+
+  constructor() {
+    super('Não foi possível imprimir. Tente novamente.');
+  }
+}
+
+export class BackupTransportUnavailableError extends DomainError {
+  readonly code = 'BACKUP_TRANSPORT_UNAVAILABLE';
+
+  constructor() {
+    super(
+      'Este dispositivo não permite compartilhar o backup. O arquivo será baixado.',
+    );
+  }
+}
+
+export class BackupFailedError extends DomainError {
+  readonly code = 'BACKUP_FAILED';
+
+  constructor() {
+    super('Não foi possível enviar o backup.');
+  }
+}

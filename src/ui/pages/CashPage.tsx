@@ -1,12 +1,20 @@
-import { useState } from 'react';
-import { DoorClosed, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { DoorClosed, ArrowDownCircle, ArrowUpCircle, Send } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Money } from '../atoms/Money';
 import { Modal } from '../molecules/Modal';
 import { FormField } from '../molecules/FormField';
 import { TextField } from '../molecules/TextField';
+import { BackupPrompt } from '../organisms/BackupPrompt';
 import { useCash } from '../hooks/useCash';
-import { formatTime, formatDate } from '../../domain/shared/format';
+import { container } from '../../app/container';
+import { isRight } from '../../domain/shared/either';
+import { shouldPromptBackup } from '../../domain/backup/backup.rules';
+import {
+  formatTime,
+  formatDate,
+  formatDateTime,
+} from '../../domain/shared/format';
 import type { CashMovementType } from '../../domain/cash/cash.entity';
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -34,6 +42,9 @@ export function CashPage() {
   const [movementAmount, setMovementAmount] = useState('');
   const [movementReason, setMovementReason] = useState('');
   const [closeModal, setCloseModal] = useState(false);
+  const [backupPrompt, setBackupPrompt] = useState(false);
+  const [lastBackupAt, setLastBackupAt] = useState<number | undefined>();
+  const promptedSessionRef = useRef<string | null>(null);
 
   const session = summary?.session ?? null;
   const movements = summary?.movements ?? [];
@@ -41,6 +52,36 @@ export function CashPage() {
   const cashSales = summary?.cashSales ?? 0;
   const expectedCash = summary?.expectedCash ?? 0;
   const pastSessions = summary?.pastSessions ?? [];
+  const hasSales = Object.values(salesByMethod).some((total) => total > 0);
+
+  const [backupInfoVersion, setBackupInfoVersion] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    container.readConfig().then((result) => {
+      if (cancelled || !isRight(result)) return;
+      setLastBackupAt(result.right.lastBackupAt);
+
+      const sessionUid = session?.uid;
+      if (
+        sessionUid &&
+        hasSales &&
+        promptedSessionRef.current !== sessionUid &&
+        shouldPromptBackup(result.right.lastBackupPromptAt, Date.now())
+      ) {
+        promptedSessionRef.current = sessionUid;
+        setBackupPrompt(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.uid, hasSales, backupInfoVersion]);
+
+  function handleBackupPromptClose() {
+    setBackupPrompt(false);
+    setBackupInfoVersion((version) => version + 1);
+  }
 
   const totalSangrias = movements
     .filter((m) => m.type === 'sangria')
@@ -60,6 +101,7 @@ export function CashPage() {
       setCashFinal('');
       setCloseNotes('');
       setCloseModal(false);
+      setBackupPrompt(true);
     }
   }
 
@@ -115,6 +157,21 @@ export function CashPage() {
               onClick={() => setCloseModal(true)}
             >
               <DoorClosed size={16} /> Fechar Caixa
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-3">
+            <span className="text-sm text-ink-tertiary">
+              {lastBackupAt
+                ? `Último backup: ${formatDateTime(lastBackupAt)}`
+                : 'Nenhum backup enviado'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setBackupPrompt(true)}
+            >
+              <Send size={16} /> Enviar Backup
             </Button>
           </div>
 
@@ -334,6 +391,8 @@ export function CashPage() {
           </Button>
         </div>
       </Modal>
+
+      <BackupPrompt open={backupPrompt} onClose={handleBackupPromptClose} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import type {
 } from '../../domain/backup/backup.repository';
 import type { InfrastructureError } from '../../infrastructure/errors';
 import {
+  makeBuildBackupSnapshot,
   makeExportBackup,
   makeExportEntity,
   makeHasData,
@@ -23,6 +24,9 @@ class FakeBackupRepository implements BackupRepository {
   importedDemo: BackupSnapshot | null = null;
   wiped = false;
 
+  async buildSnapshot(): Promise<Either<InfrastructureError, string>> {
+    return right('{"products":[]}');
+  }
   async exportAll(
     format: BackupFormat,
   ): Promise<Either<InfrastructureError, void>> {
@@ -59,6 +63,12 @@ class FakeBackupRepository implements BackupRepository {
 }
 
 describe('backup use cases', () => {
+  it('builds the full database snapshot', async () => {
+    const repo = new FakeBackupRepository();
+    const result = await makeBuildBackupSnapshot(repo)();
+    expect(isRight(result) && result.right).toBe('{"products":[]}');
+  });
+
   it('exports all data in the given format', async () => {
     const repo = new FakeBackupRepository();
     await makeExportBackup(repo)('csv');

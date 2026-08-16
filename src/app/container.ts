@@ -38,6 +38,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
+  makeSearchCustomersByName,
   makeSearchCustomersByPhone,
 } from '../application/customer/customer.usecases';
 import {
@@ -59,14 +60,18 @@ import {
   makePeekTicketSuggestion,
   makeReadConfig,
   makeResetTicketSequence,
+  makeSaveBackupInfo,
   makeSaveConfig,
+  makeSavePrinterConfig,
 } from '../application/config/config.usecases';
 import {
   makeListReportSessions,
   makeLoadDashboard,
   makeLoadSessionReport,
 } from '../application/report/report.usecases';
+import { makeLoadStockReport } from '../application/report/stock.usecases';
 import {
+  makeBuildBackupSnapshot,
   makeExportBackup,
   makeExportEntity,
   makeHasData,
@@ -147,6 +152,22 @@ import {
 import { resolveRegisterOrder } from '../application/use-case-registry';
 import type { BusinessTypeDefinition } from '../domain/business-type/registry';
 import type { RegisterOrderInput } from '../application/order/register-order.usecase';
+import {
+  OpenTabUseCase,
+  type OpenTabInput,
+} from '../application/order/open-tab.usecase';
+import {
+  AddItemsToTabUseCase,
+  type AddItemsToTabInput,
+} from '../application/order/add-items-to-tab.usecase';
+import {
+  CloseTabUseCase,
+  type CloseTabInput,
+} from '../application/order/close-tab.usecase';
+import {
+  ReopenTabUseCase,
+  type ReopenTabInput,
+} from '../application/order/reopen-tab.usecase';
 
 export function createContainer() {
   const db = getDatabase();
@@ -184,6 +205,7 @@ export function createContainer() {
     removeItem: makeRemoveItem(customizations),
     listCustomers: makeListCustomers(customers),
     searchCustomersByPhone: makeSearchCustomersByPhone(customers),
+    searchCustomersByName: makeSearchCustomersByName(customers),
     saveCustomer: makeSaveCustomer(customers),
     removeCustomer: makeRemoveCustomer(customers),
     loadCashSummary: makeLoadCashSummary(cash, orders),
@@ -200,10 +222,14 @@ export function createContainer() {
     readConfig: makeReadConfig(config),
     peekTicketSuggestion: makePeekTicketSuggestion(config),
     saveConfig: makeSaveConfig(config),
+    savePrinterConfig: makeSavePrinterConfig(config),
+    saveBackupInfo: makeSaveBackupInfo(config),
     resetTicketSequence: makeResetTicketSequence(config),
     listReportSessions: makeListReportSessions(cash),
     loadSessionReport: makeLoadSessionReport(orders),
     loadDashboard: makeLoadDashboard(orders),
+    loadStockReport: makeLoadStockReport(products),
+    buildBackupSnapshot: makeBuildBackupSnapshot(backup),
     exportBackup: makeExportBackup(backup),
     exportEntity: makeExportEntity(backup),
     importBackup: makeImportBackup(backup),
@@ -357,6 +383,12 @@ export function createContainer() {
       definition: BusinessTypeDefinition,
       input: RegisterOrderInput,
     ) => resolveRegisterOrder(businessTypeId, uow, definition).run(input),
+    openTab: (definition: BusinessTypeDefinition, input: OpenTabInput) =>
+      new OpenTabUseCase(uow, definition).run(input),
+    addItemsToTab: (input: AddItemsToTabInput) =>
+      new AddItemsToTabUseCase(uow).run(input),
+    closeTab: (input: CloseTabInput) => new CloseTabUseCase(uow).run(input),
+    reopenTab: (input: ReopenTabInput) => new ReopenTabUseCase(uow).run(input),
   };
 }
 

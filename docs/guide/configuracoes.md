@@ -56,11 +56,17 @@ O passo a passo completo de backup está em [Backup dos dados](backup).
 
 ## Impressora (ESC/POS)
 
-Esta seção é para conectar uma impressora térmica (USB, Bluetooth ou rede) e
-imprimir recibos e comandas.
+Esta seção conecta uma impressora térmica e configura como os cupons são
+impressos:
 
-> A impressão ainda está **em preparação**. Os botões de testar e salvar
-> impressão são demonstrativos por enquanto. Acompanhe as próximas versões.
+- **Tipo de Conexão:** **Navegador** (o cupom abre na tela para imprimir ou
+  salvar) ou **Bluetooth** (impressora térmica pareada via Web Bluetooth).
+- **Largura do Papel:** 58mm ou 80mm, conforme sua impressora.
+- **Imprimir Automaticamente:** liga a impressão do cupom assim que uma
+  comanda é fechada, sem precisar tocar em Imprimir. Veja [Comandas](comandas).
+- **Testar Impressão:** imprime um cupom de teste para conferir a conexão.
+
+Toque em **Salvar** para gravar as alterações.
 
 ## Zona de Perigo
 
@@ -71,5 +77,6 @@ confirmações por segurança.
 ## Veja também
 
 - [Financeiro](financeiro)
+- [Comandas](comandas)
 - [Backup dos dados](backup)
 - [Primeiros passos](primeiros-passos)
