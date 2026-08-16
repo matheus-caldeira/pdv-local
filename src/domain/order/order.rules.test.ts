@@ -26,6 +26,23 @@ const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   ...over,
 });
 
+const makeOrder = (over: Partial<Order> = {}): Order => ({
+  uid: 'order-1',
+  businessTypeId: 'quick_sale',
+  sessionUid: 'session-1',
+  items: [],
+  total: 0,
+  paymentMethod: null,
+  customerName: '',
+  customerPhone: '',
+  ticket: '',
+  stage: 'aceito',
+  status: 'open',
+  createdAt: 0,
+  updatedAt: 0,
+  ...over,
+});
+
 describe('order stages', () => {
   it('exposes the four stages in order', () => {
     expect(ORDER_STAGES).toEqual([
@@ -184,51 +201,51 @@ describe('validateCartNotEmpty', () => {
 
 describe('canAddItems', () => {
   it('permite lançar itens em comanda aberta', () => {
-    const order = { status: 'open', items: [] } as Order;
+    const order = makeOrder({ status: 'open', items: [] });
     expect(isRight(canAddItems(order))).toBe(true);
   });
 
   it('recusa lançar itens em comanda fechada', () => {
-    const order = { status: 'pending', items: [] } as Order;
+    const order = makeOrder({ status: 'pending', items: [] });
     const result = canAddItems(order);
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
   });
 
   it('recusa lançar itens em comanda paga', () => {
-    const order = { status: 'paid', items: [] } as Order;
+    const order = makeOrder({ status: 'paid', items: [] });
     const result = canAddItems(order);
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
   });
 
   it('recusa lançar itens em comanda cancelada', () => {
-    const order = { status: 'cancelled', items: [] } as Order;
+    const order = makeOrder({ status: 'cancelled', items: [] });
     expect(isLeft(canAddItems(order))).toBe(true);
   });
 });
 
 describe('canClose', () => {
   it('permite fechar comanda aberta com itens', () => {
-    const order = {
+    const order = makeOrder({
       status: 'open',
-      items: [{ name: 'Refri', qty: 1 } as OrderItem],
-    } as Order;
+      items: [item({ name: 'Refri', qty: 1 })],
+    });
     expect(isRight(canClose(order))).toBe(true);
   });
 
   it('recusa fechar comanda sem itens', () => {
-    const order = { status: 'open', items: [] } as Order;
+    const order = makeOrder({ status: 'open', items: [] });
     const result = canClose(order);
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('EMPTY_TAB');
   });
 
   it('recusa fechar comanda já fechada', () => {
-    const order = {
+    const order = makeOrder({
       status: 'pending',
-      items: [{ name: 'Refri', qty: 1 } as OrderItem],
-    } as Order;
+      items: [item({ name: 'Refri', qty: 1 })],
+    });
     const result = canClose(order);
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
@@ -237,24 +254,24 @@ describe('canClose', () => {
 
 describe('canReopen', () => {
   it('permite reabrir comanda fechada', () => {
-    const order = { status: 'pending' } as Order;
+    const order = makeOrder({ status: 'pending' });
     expect(isRight(canReopen(order))).toBe(true);
   });
 
   it('recusa reabrir comanda paga', () => {
-    const order = { status: 'paid' } as Order;
+    const order = makeOrder({ status: 'paid' });
     const result = canReopen(order);
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_CLOSED');
   });
 
   it('recusa reabrir comanda aberta', () => {
-    const order = { status: 'open' } as Order;
+    const order = makeOrder({ status: 'open' });
     expect(isLeft(canReopen(order))).toBe(true);
   });
 
   it('recusa reabrir comanda cancelada', () => {
-    const order = { status: 'cancelled' } as Order;
+    const order = makeOrder({ status: 'cancelled' });
     expect(isLeft(canReopen(order))).toBe(true);
   });
 });
