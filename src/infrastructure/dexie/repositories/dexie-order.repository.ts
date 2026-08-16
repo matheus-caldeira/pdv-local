@@ -4,7 +4,9 @@ import type { Observable } from '../../../domain/shared/observable';
 import type {
   NewOrder,
   Order,
+  OrderItem,
   OrderStage,
+  OrderStatus,
 } from '../../../domain/order/order.entity';
 import type { OrderRepository } from '../../../domain/order/order.repository';
 import type { InfrastructureError } from '../../errors';
@@ -110,6 +112,53 @@ export class DexieOrderRepository implements OrderRepository {
       await this.db.orders
         .filter((order) => order.uid === uid)
         .modify({ stage, updatedAt: Date.now() });
+      return right(undefined);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async findByUid(
+    uid: string,
+  ): Promise<Either<InfrastructureError, Order | undefined>> {
+    try {
+      const order = await this.db.orders.where('uid').equals(uid).first();
+      return right(order);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async replaceItems(
+    uid: string,
+    items: OrderItem[],
+    total: number,
+  ): Promise<Either<InfrastructureError, void>> {
+    try {
+      await this.db.orders
+        .where('uid')
+        .equals(uid)
+        .modify({ items, total, updatedAt: Date.now() });
+      return right(undefined);
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async setStatus(
+    uid: string,
+    status: OrderStatus,
+    closedAt?: number,
+  ): Promise<Either<InfrastructureError, void>> {
+    try {
+      await this.db.orders
+        .where('uid')
+        .equals(uid)
+        .modify((order) => {
+          order.status = status;
+          order.closedAt = closedAt;
+          order.updatedAt = Date.now();
+        });
       return right(undefined);
     } catch (cause) {
       return left(toInfrastructureError(cause));

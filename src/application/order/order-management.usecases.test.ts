@@ -69,6 +69,18 @@ class FakeOrderRepository implements OrderRepository {
     this.staged = { uid, stage };
     return right(undefined);
   }
+
+  async findByUid(): Promise<Either<InfrastructureError, Order | undefined>> {
+    return right(undefined);
+  }
+
+  async replaceItems(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
+
+  async setStatus(): Promise<Either<InfrastructureError, void>> {
+    return right(undefined);
+  }
 }
 
 describe('order management use cases', () => {

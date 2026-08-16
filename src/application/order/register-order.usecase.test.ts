@@ -91,6 +91,9 @@ class FakeRepositories implements Repositories {
     markAsPaid: async () => right(undefined),
     cancel: async () => right(undefined),
     setStage: async () => right(undefined),
+    findByUid: async () => right(undefined),
+    replaceItems: async () => right(undefined),
+    setStatus: async () => right(undefined),
   };
 
   cash = {

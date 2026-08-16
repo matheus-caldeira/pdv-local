@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { PDVDatabase } from '../dexie-database';
 import { DexieOrderRepository } from './dexie-order.repository';
-import { isRight } from '../../../domain/shared/either';
+import { isLeft, isRight, type Either } from '../../../domain/shared/either';
 import { createUid } from '../../../domain/shared/uid';
-import type { NewOrder } from '../../../domain/order/order.entity';
+import type { NewOrder, OrderItem } from '../../../domain/order/order.entity';
 
 function baseOrder(sessionUid: string): NewOrder {
   return {
@@ -94,5 +94,80 @@ describe('DexieOrderRepository refs por uid', () => {
       });
     });
     expect(snapshot).toHaveLength(1);
+  });
+
+  describe('findByUid', () => {
+    it('encontra o pedido pelo uid', async () => {
+      const order = baseOrder('s1');
+      const created = await repo.create(order);
+      expect(isRight(created)).toBe(true);
+
+      const found = await repo.findByUid(order.uid);
+      expect(isRight(found)).toBe(true);
+      if (isRight(found)) expect(found.right?.uid).toBe(order.uid);
+    });
+
+    it('devolve undefined quando não existe', async () => {
+      const found = await repo.findByUid('inexistente');
+      expect(isRight(found)).toBe(true);
+      if (isRight(found)) expect(found.right).toBeUndefined();
+    });
+  });
+
+  describe('replaceItems', () => {
+    it('substitui os itens e o total', async () => {
+      const order = baseOrder('s1');
+      await repo.create(order);
+
+      const items: OrderItem[] = [
+        { name: 'Refri', salePrice: 5, costPrice: 2, qty: 2 },
+      ];
+      const result = await repo.replaceItems(order.uid, items, 10);
+      expect(isRight(result)).toBe(true);
+
+      const found = await repo.findByUid(order.uid);
+      if (isRight(found)) {
+        expect(found.right?.items).toHaveLength(1);
+        expect(found.right?.total).toBe(10);
+      }
+    });
+  });
+
+  describe('setStatus', () => {
+    it('grava o status e o closedAt', async () => {
+      const order = baseOrder('s1');
+      await repo.create(order);
+
+      const result = await repo.setStatus(order.uid, 'pending', 1_700_000);
+      expect(isRight(result)).toBe(true);
+
+      const found = await repo.findByUid(order.uid);
+      if (isRight(found)) {
+        expect(found.right?.status).toBe('pending');
+        expect(found.right?.closedAt).toBe(1_700_000);
+      }
+    });
+
+    it('limpa o closedAt quando não informado', async () => {
+      const order = { ...baseOrder('s1'), closedAt: 1_700_000 };
+      await repo.create(order);
+
+      await repo.setStatus(order.uid, 'open');
+
+      const found = await repo.findByUid(order.uid);
+      if (isRight(found)) expect(found.right?.closedAt).toBeUndefined();
+    });
+  });
+
+  it('findByUid, replaceItems e setStatus retornam Left com o banco fechado', async () => {
+    db.close();
+    const results: Either<unknown, unknown>[] = await Promise.all([
+      repo.findByUid('tab-1'),
+      repo.replaceItems('tab-1', [], 0),
+      repo.setStatus('tab-1', 'open'),
+    ]);
+    for (const result of results) {
+      expect(isLeft(result)).toBe(true);
+    }
   });
 });
