@@ -126,12 +126,15 @@ export function canReopen(order: Order): Either<TabNotClosedError, void> {
 
 function itemSignature(item: OrderItem): string {
   const customizations = (item.customizations ?? [])
-    .map((entry) => `${entry.groupName}:${entry.name}:${entry.qty}`)
+    .map(
+      (entry) => `${entry.groupName}:${entry.name}:${entry.qty}:${entry.price}`,
+    )
     .sort()
     .join('|');
   return [
     item.productUid ?? item.name,
     item.salePrice,
+    item.costPrice,
     item.observation ?? '',
     customizations,
   ].join('#');

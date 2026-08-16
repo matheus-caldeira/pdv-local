@@ -333,6 +333,52 @@ describe('mergeOrderItems', () => {
     expect(mergeOrderItems(current, incoming)).toHaveLength(2);
   });
 
+  it('não agrupa itens com preço de adicional diferente', () => {
+    const current: OrderItem[] = [
+      {
+        name: 'Cachorro',
+        salePrice: 10,
+        costPrice: 4,
+        qty: 1,
+        customizations: [
+          { groupName: 'Extras', name: 'Bacon', qty: 1, price: 2 },
+        ],
+        customizationTotal: 2,
+      },
+    ];
+    const incoming: OrderItem[] = [
+      {
+        name: 'Cachorro',
+        salePrice: 10,
+        costPrice: 4,
+        qty: 1,
+        customizations: [
+          { groupName: 'Extras', name: 'Bacon', qty: 1, price: 3 },
+        ],
+        customizationTotal: 3,
+      },
+    ];
+    const merged = mergeOrderItems(current, incoming);
+    expect(merged).toHaveLength(2);
+    expect(merged[0].customizations?.[0].price).toBe(2);
+    expect(merged[0].customizationTotal).toBe(2);
+    expect(merged[1].customizations?.[0].price).toBe(3);
+    expect(merged[1].customizationTotal).toBe(3);
+  });
+
+  it('não agrupa itens com custo diferente', () => {
+    const current: OrderItem[] = [
+      { name: 'Cachorro', salePrice: 10, costPrice: 4, qty: 1 },
+    ];
+    const incoming: OrderItem[] = [
+      { name: 'Cachorro', salePrice: 10, costPrice: 5, qty: 1 },
+    ];
+    const merged = mergeOrderItems(current, incoming);
+    expect(merged).toHaveLength(2);
+    expect(merged[0].costPrice).toBe(4);
+    expect(merged[1].costPrice).toBe(5);
+  });
+
   it('preserva a lista atual quando não há itens novos', () => {
     const current: OrderItem[] = [
       { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
