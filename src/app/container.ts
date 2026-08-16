@@ -68,6 +68,7 @@ import {
   makeLoadDashboard,
   makeLoadSessionReport,
 } from '../application/report/report.usecases';
+import { makeLoadStockReport } from '../application/report/stock.usecases';
 import {
   makeExportBackup,
   makeExportEntity,
@@ -224,6 +225,7 @@ export function createContainer() {
     listReportSessions: makeListReportSessions(cash),
     loadSessionReport: makeLoadSessionReport(orders),
     loadDashboard: makeLoadDashboard(orders),
+    loadStockReport: makeLoadStockReport(products),
     exportBackup: makeExportBackup(backup),
     exportEntity: makeExportEntity(backup),
     importBackup: makeImportBackup(backup),
