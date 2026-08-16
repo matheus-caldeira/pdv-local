@@ -60,6 +60,7 @@ import {
   makePeekTicketSuggestion,
   makeReadConfig,
   makeResetTicketSequence,
+  makeSaveBackupInfo,
   makeSaveConfig,
   makeSavePrinterConfig,
 } from '../application/config/config.usecases';
@@ -70,6 +71,7 @@ import {
 } from '../application/report/report.usecases';
 import { makeLoadStockReport } from '../application/report/stock.usecases';
 import {
+  makeBuildBackupSnapshot,
   makeExportBackup,
   makeExportEntity,
   makeHasData,
@@ -221,11 +223,13 @@ export function createContainer() {
     peekTicketSuggestion: makePeekTicketSuggestion(config),
     saveConfig: makeSaveConfig(config),
     savePrinterConfig: makeSavePrinterConfig(config),
+    saveBackupInfo: makeSaveBackupInfo(config),
     resetTicketSequence: makeResetTicketSequence(config),
     listReportSessions: makeListReportSessions(cash),
     loadSessionReport: makeLoadSessionReport(orders),
     loadDashboard: makeLoadDashboard(orders),
     loadStockReport: makeLoadStockReport(products),
+    buildBackupSnapshot: makeBuildBackupSnapshot(backup),
     exportBackup: makeExportBackup(backup),
     exportEntity: makeExportEntity(backup),
     importBackup: makeImportBackup(backup),

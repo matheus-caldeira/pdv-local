@@ -16,6 +16,7 @@ import {
   makePeekTicketSuggestion,
   makeReadConfig,
   makeResetTicketSequence,
+  makeSaveBackupInfo,
   makeSaveConfig,
   makeSavePrinterConfig,
   type ConfigInput,
@@ -108,6 +109,21 @@ describe('makeSavePrinterConfig', () => {
       printerDriver: 'bluetooth',
       printerPaperWidth: 58,
       printerAutoPrintOnClose: true,
+    });
+  });
+});
+
+describe('makeSaveBackupInfo', () => {
+  it('saves the backup fields as-is', async () => {
+    const repo = new FakeConfigRepository();
+    const result = await makeSaveBackupInfo(repo)({
+      lastBackupAt: 1000,
+      lastBackupPromptAt: 2000,
+    });
+    expect(isRight(result)).toBe(true);
+    expect(repo.saved).toEqual({
+      lastBackupAt: 1000,
+      lastBackupPromptAt: 2000,
     });
   });
 });

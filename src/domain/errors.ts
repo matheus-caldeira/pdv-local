@@ -430,3 +430,21 @@ export class PrintFailedError extends DomainError {
     super('Não foi possível imprimir. Tente novamente.');
   }
 }
+
+export class BackupTransportUnavailableError extends DomainError {
+  readonly code = 'BACKUP_TRANSPORT_UNAVAILABLE';
+
+  constructor() {
+    super(
+      'Este dispositivo não permite compartilhar o backup. O arquivo será baixado.',
+    );
+  }
+}
+
+export class BackupFailedError extends DomainError {
+  readonly code = 'BACKUP_FAILED';
+
+  constructor() {
+    super('Não foi possível enviar o backup.');
+  }
+}

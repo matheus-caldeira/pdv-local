@@ -65,3 +65,13 @@ export function makeSavePrinterConfig(repository: ConfigRepository) {
     input: PrinterConfigInput,
   ): Promise<Either<AppError, BusinessConfig>> => repository.save(input);
 }
+
+export interface BackupInfoInput {
+  lastBackupAt?: number;
+  lastBackupPromptAt?: number;
+}
+
+export function makeSaveBackupInfo(repository: ConfigRepository) {
+  return (input: BackupInfoInput): Promise<Either<AppError, BusinessConfig>> =>
+    repository.save(input);
+}
