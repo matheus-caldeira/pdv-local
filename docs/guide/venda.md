@@ -69,12 +69,14 @@ automaticamente, pronto para a próxima venda.
 
 ## E a comanda? Posso imprimir?
 
-A numeração da comanda é gerada automaticamente a cada venda. A **impressão em
-impressora térmica** está em preparação — por enquanto, o botão de imprimir
-apenas avisa que a impressora precisa ser configurada. Acompanhe as novidades.
+A numeração da comanda é gerada automaticamente a cada venda. Para lançar
+itens aos poucos numa mesma comanda e fechar só no final, veja
+[Comandas](comandas). O cupom pode ser impresso pelo navegador ou por uma
+impressora térmica Bluetooth, configurada em [Configurações](configuracoes).
 
 ## Veja também
 
 - [Caixa](caixa)
 - [Produtos](produtos)
 - [Pedidos](pedidos)
+- [Comandas](comandas)

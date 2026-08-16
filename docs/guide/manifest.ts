@@ -10,6 +10,7 @@ export const DOCS_PAGES: DocPage[] = [
   { slug: 'primeiros-passos', title: 'Primeiros passos', section: 'Começar' },
   { slug: 'venda', title: 'Venda rápida', section: 'No dia a dia' },
   { slug: 'pedidos', title: 'Pedidos', section: 'No dia a dia' },
+  { slug: 'comandas', title: 'Comandas', section: 'No dia a dia' },
   { slug: 'caixa', title: 'Caixa', section: 'No dia a dia' },
   { slug: 'kds', title: 'Tela da cozinha (KDS)', section: 'No dia a dia' },
   { slug: 'painel', title: 'Painel do cliente', section: 'No dia a dia' },

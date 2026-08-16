@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '../atoms/Badge';
 import { Money } from '../atoms/Money';
@@ -9,6 +9,8 @@ import { useOrders } from '../hooks/useOrders';
 import { usePrint } from '../hooks/usePrint';
 import { useSession } from '../hooks/useSession';
 import { useTabs } from '../hooks/useTabs';
+import { container } from '../../app/container';
+import { isLeft } from '../../domain/shared/either';
 import { formatDateTime } from '../../domain/shared/format';
 import { STAGE_LABELS } from '../../domain/order/order.rules';
 import type { Order, OrderStatus } from '../../domain/order/order.entity';
@@ -55,6 +57,16 @@ export function OrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const autoPrintOnCloseRef = useRef(false);
+
+  useEffect(() => {
+    async function load() {
+      const result = await container.readConfig();
+      if (isLeft(result)) return;
+      autoPrintOnCloseRef.current = result.right.printerAutoPrintOnClose;
+    }
+    load();
+  }, []);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -80,8 +92,11 @@ export function OrdersPage() {
   }
 
   async function handleCloseTab() {
-    const ok = await closeTab(detailOrder!.uid);
-    if (ok) setDetailOrder(null);
+    const order = detailOrder!;
+    const ok = await closeTab(order.uid);
+    if (!ok) return;
+    if (autoPrintOnCloseRef.current) await printOrder(order);
+    setDetailOrder(null);
   }
 
   async function handleReopenTab() {

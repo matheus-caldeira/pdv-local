@@ -438,4 +438,73 @@ describe('OrdersPage', () => {
     );
     expect(navigate).toHaveBeenCalledWith('/pdv?tab=order-1');
   });
+
+  it('imprime automaticamente ao fechar quando a config está ligada', async () => {
+    readConfig.mockResolvedValue(
+      right({ ...CONFIG, printerAutoPrintOnClose: true }),
+    );
+    closeTab.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+
+    await waitFor(() => expect(printOrder).toHaveBeenCalled());
+  });
+
+  it('não imprime automaticamente ao fechar quando a config está desligada', async () => {
+    readConfig.mockResolvedValue(
+      right({ ...CONFIG, printerAutoPrintOnClose: false }),
+    );
+    closeTab.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(printOrder).not.toHaveBeenCalled();
+  });
+
+  it('não imprime automaticamente quando a leitura da config falha', async () => {
+    readConfig.mockResolvedValue(left(new FakeError('falha config')));
+    closeTab.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(printOrder).not.toHaveBeenCalled();
+  });
+
+  it('mantém a comanda fechada quando a impressão falha', async () => {
+    readConfig.mockResolvedValue(
+      right({ ...CONFIG, printerAutoPrintOnClose: true }),
+    );
+    closeTab.mockResolvedValue(right(undefined));
+    printOrder.mockResolvedValue(false);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('#001'));
+    await userEvent.click(
+      screen.getByRole('button', { name: /fechar comanda/i }),
+    );
+
+    await waitFor(() => expect(closeTab).toHaveBeenCalled());
+    expect(printOrder).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+  });
 });

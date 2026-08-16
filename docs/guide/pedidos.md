@@ -27,7 +27,7 @@ observações, o detalhamento de preço (produto + adicionais) e o total.
 
 A partir dos detalhes você pode:
 
-- **Imprimir** (em preparação — veja a observação no fim desta página).
+- **Imprimir:** gera o cupom do pedido (veja [Comandas](comandas)).
 - **Marcar como Pago:** disponível para pedidos abertos ou pendentes. Escolha a
   forma de pagamento (PIX, Crédito, Débito ou Dinheiro) e confirme.
 - **Cancelar Pedido:** marca o pedido como cancelado. Ele deixa de contar nas
@@ -43,11 +43,9 @@ Essas etapas são movimentadas pela [Tela da cozinha (KDS)](kds) e refletem no
 [Painel do cliente](painel). Com o controle de status desligado, as etapas não
 aparecem.
 
-> A **impressão em impressora térmica** ainda está em preparação. Por enquanto,
-> o botão **Imprimir** apenas mostra um aviso para configurar a impressora.
-
 ## Veja também
 
 - [Venda rápida](venda)
+- [Comandas](comandas)
 - [Caixa](caixa)
 - [Clientes](clientes)
