@@ -35,6 +35,7 @@ import {
   RecurrenceNotFoundError,
   RecurrenceOutOfRangeError,
   RequiredCustomizationMissingError,
+  TabNotFoundError,
   TicketLimitReachedError,
   UnknownBusinessTypeError,
 } from './errors';
@@ -68,6 +69,13 @@ describe('domain errors', () => {
     const error = new TicketLimitReachedError();
     expect(error.code).toBe('TICKET_LIMIT_REACHED');
     expect(error.message).toContain('limite');
+  });
+
+  it('TabNotFoundError carries its code', () => {
+    const error = new TabNotFoundError();
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error.code).toBe('TAB_NOT_FOUND');
+    expect(error.message).toContain('não encontrada');
   });
 });
 

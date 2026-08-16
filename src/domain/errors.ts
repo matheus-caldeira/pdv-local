@@ -382,3 +382,35 @@ export class InvoiceNotFoundError extends DomainError {
     super('Fatura não encontrada.');
   }
 }
+
+export class TabNotOpenError extends DomainError {
+  readonly code = 'TAB_NOT_OPEN';
+
+  constructor() {
+    super('A comanda não está aberta.');
+  }
+}
+
+export class EmptyTabError extends DomainError {
+  readonly code = 'EMPTY_TAB';
+
+  constructor() {
+    super('A comanda não tem itens para fechar.');
+  }
+}
+
+export class TabNotClosedError extends DomainError {
+  readonly code = 'TAB_NOT_CLOSED';
+
+  constructor() {
+    super('Só é possível reabrir uma comanda fechada.');
+  }
+}
+
+export class TabNotFoundError extends DomainError {
+  readonly code = 'TAB_NOT_FOUND';
+
+  constructor() {
+    super('Comanda não encontrada.');
+  }
+}

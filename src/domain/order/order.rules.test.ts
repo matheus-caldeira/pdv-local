@@ -6,12 +6,16 @@ import {
   STAGE_LABELS,
   calculateCustomizationTotal,
   calculateOrderTotal,
+  canAddItems,
+  canClose,
+  canReopen,
+  mergeOrderItems,
   nextStage,
   prevStage,
   validateCartNotEmpty,
   validateRequiredCustomizations,
 } from './order.rules';
-import type { OrderItem } from './order.entity';
+import type { Order, OrderItem } from './order.entity';
 
 const item = (over: Partial<OrderItem> = {}): OrderItem => ({
   productUid: 'product-1',
@@ -175,5 +179,154 @@ describe('validateCartNotEmpty', () => {
     if (isLeft(result)) {
       expect(result.left).toBeInstanceOf(EmptyCartError);
     }
+  });
+});
+
+describe('canAddItems', () => {
+  it('permite lançar itens em comanda aberta', () => {
+    const order = { status: 'open', items: [] } as Order;
+    expect(isRight(canAddItems(order))).toBe(true);
+  });
+
+  it('recusa lançar itens em comanda fechada', () => {
+    const order = { status: 'pending', items: [] } as Order;
+    const result = canAddItems(order);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
+  });
+
+  it('recusa lançar itens em comanda paga', () => {
+    const order = { status: 'paid', items: [] } as Order;
+    const result = canAddItems(order);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
+  });
+
+  it('recusa lançar itens em comanda cancelada', () => {
+    const order = { status: 'cancelled', items: [] } as Order;
+    expect(isLeft(canAddItems(order))).toBe(true);
+  });
+});
+
+describe('canClose', () => {
+  it('permite fechar comanda aberta com itens', () => {
+    const order = {
+      status: 'open',
+      items: [{ name: 'Refri', qty: 1 } as OrderItem],
+    } as Order;
+    expect(isRight(canClose(order))).toBe(true);
+  });
+
+  it('recusa fechar comanda sem itens', () => {
+    const order = { status: 'open', items: [] } as Order;
+    const result = canClose(order);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('EMPTY_TAB');
+  });
+
+  it('recusa fechar comanda já fechada', () => {
+    const order = {
+      status: 'pending',
+      items: [{ name: 'Refri', qty: 1 } as OrderItem],
+    } as Order;
+    const result = canClose(order);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_OPEN');
+  });
+});
+
+describe('canReopen', () => {
+  it('permite reabrir comanda fechada', () => {
+    const order = { status: 'pending' } as Order;
+    expect(isRight(canReopen(order))).toBe(true);
+  });
+
+  it('recusa reabrir comanda paga', () => {
+    const order = { status: 'paid' } as Order;
+    const result = canReopen(order);
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('TAB_NOT_CLOSED');
+  });
+
+  it('recusa reabrir comanda aberta', () => {
+    const order = { status: 'open' } as Order;
+    expect(isLeft(canReopen(order))).toBe(true);
+  });
+
+  it('recusa reabrir comanda cancelada', () => {
+    const order = { status: 'cancelled' } as Order;
+    expect(isLeft(canReopen(order))).toBe(true);
+  });
+});
+
+describe('mergeOrderItems', () => {
+  it('soma a quantidade de itens iguais', () => {
+    const current: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    const incoming: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 2 },
+    ];
+    const merged = mergeOrderItems(current, incoming);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].qty).toBe(3);
+  });
+
+  it('mantém itens diferentes separados', () => {
+    const current: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    const incoming: OrderItem[] = [
+      { name: 'Cachorro', salePrice: 10, costPrice: 4, qty: 1 },
+    ];
+    expect(mergeOrderItems(current, incoming)).toHaveLength(2);
+  });
+
+  it('não agrupa itens com observação diferente', () => {
+    const current: OrderItem[] = [
+      {
+        name: 'Refri',
+        salePrice: 5,
+        costPrice: 2,
+        qty: 1,
+        observation: 'gelado',
+      },
+    ];
+    const incoming: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    expect(mergeOrderItems(current, incoming)).toHaveLength(2);
+  });
+
+  it('não agrupa itens com adicionais diferentes', () => {
+    const current: OrderItem[] = [
+      {
+        name: 'Cachorro',
+        salePrice: 10,
+        costPrice: 4,
+        qty: 1,
+        customizations: [
+          { groupName: 'Extras', name: 'Bacon', qty: 1, price: 2 },
+        ],
+      },
+    ];
+    const incoming: OrderItem[] = [
+      { name: 'Cachorro', salePrice: 10, costPrice: 4, qty: 1 },
+    ];
+    expect(mergeOrderItems(current, incoming)).toHaveLength(2);
+  });
+
+  it('preserva a lista atual quando não há itens novos', () => {
+    const current: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    expect(mergeOrderItems(current, [])).toEqual(current);
+  });
+
+  it('devolve os itens novos quando a comanda está vazia', () => {
+    const incoming: OrderItem[] = [
+      { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    expect(mergeOrderItems([], incoming)).toEqual(incoming);
   });
 });
