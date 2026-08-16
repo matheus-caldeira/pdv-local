@@ -126,6 +126,7 @@ export default defineConfig({
         short_name: 'Meu Bolso',
         description:
           'Controle do seu negócio e do seu dinheiro, offline, no seu aparelho.',
+        lang: 'pt-BR',
         start_url: '/meu-bolso/app/',
         scope: '/meu-bolso/app/',
         display: 'standalone',
