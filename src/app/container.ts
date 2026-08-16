@@ -38,6 +38,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
+  makeSearchCustomersByName,
   makeSearchCustomersByPhone,
 } from '../application/customer/customer.usecases';
 import {
@@ -147,6 +148,22 @@ import {
 import { resolveRegisterOrder } from '../application/use-case-registry';
 import type { BusinessTypeDefinition } from '../domain/business-type/registry';
 import type { RegisterOrderInput } from '../application/order/register-order.usecase';
+import {
+  OpenTabUseCase,
+  type OpenTabInput,
+} from '../application/order/open-tab.usecase';
+import {
+  AddItemsToTabUseCase,
+  type AddItemsToTabInput,
+} from '../application/order/add-items-to-tab.usecase';
+import {
+  CloseTabUseCase,
+  type CloseTabInput,
+} from '../application/order/close-tab.usecase';
+import {
+  ReopenTabUseCase,
+  type ReopenTabInput,
+} from '../application/order/reopen-tab.usecase';
 
 export function createContainer() {
   const db = getDatabase();
@@ -184,6 +201,7 @@ export function createContainer() {
     removeItem: makeRemoveItem(customizations),
     listCustomers: makeListCustomers(customers),
     searchCustomersByPhone: makeSearchCustomersByPhone(customers),
+    searchCustomersByName: makeSearchCustomersByName(customers),
     saveCustomer: makeSaveCustomer(customers),
     removeCustomer: makeRemoveCustomer(customers),
     loadCashSummary: makeLoadCashSummary(cash, orders),
@@ -357,6 +375,12 @@ export function createContainer() {
       definition: BusinessTypeDefinition,
       input: RegisterOrderInput,
     ) => resolveRegisterOrder(businessTypeId, uow, definition).run(input),
+    openTab: (definition: BusinessTypeDefinition, input: OpenTabInput) =>
+      new OpenTabUseCase(uow, definition).run(input),
+    addItemsToTab: (input: AddItemsToTabInput) =>
+      new AddItemsToTabUseCase(uow).run(input),
+    closeTab: (input: CloseTabInput) => new CloseTabUseCase(uow).run(input),
+    reopenTab: (input: ReopenTabInput) => new ReopenTabUseCase(uow).run(input),
   };
 }
 
