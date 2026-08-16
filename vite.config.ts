@@ -4,6 +4,7 @@ import { type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const BASE = '/meu-bolso/app/';
 
@@ -110,7 +111,38 @@ function serveDocsInDev(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), serveLandingInDev(), serveDocsInDev()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    serveLandingInDev(),
+    serveDocsInDev(),
+    VitePWA({
+      registerType: 'prompt',
+      base: '/meu-bolso/app/',
+      scope: '/meu-bolso/app/',
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.png'],
+      manifest: {
+        name: 'Meu Bolso',
+        short_name: 'Meu Bolso',
+        description:
+          'Controle do seu negócio e do seu dinheiro, offline, no seu aparelho.',
+        start_url: '/meu-bolso/app/',
+        scope: '/meu-bolso/app/',
+        display: 'standalone',
+        background_color: '#2c2c2e',
+        theme_color: '#e8722a',
+        icons: [
+          { src: 'logo.png', sizes: '512x512', type: 'image/png' },
+          { src: 'apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        navigateFallback: '/meu-bolso/app/index.html',
+        navigateFallbackDenylist: [/^\/meu-bolso\/docs/, /^\/$/],
+      },
+    }),
+  ],
   base: BASE,
   resolve: {
     alias: {
