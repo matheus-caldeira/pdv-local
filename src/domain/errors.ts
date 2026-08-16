@@ -414,3 +414,19 @@ export class TabNotFoundError extends DomainError {
     super('Comanda não encontrada.');
   }
 }
+
+export class PrinterUnavailableError extends DomainError {
+  readonly code = 'PRINTER_UNAVAILABLE';
+
+  constructor() {
+    super('A impressora não está disponível neste dispositivo.');
+  }
+}
+
+export class PrintFailedError extends DomainError {
+  readonly code = 'PRINT_FAILED';
+
+  constructor() {
+    super('Não foi possível imprimir. Tente novamente.');
+  }
+}
