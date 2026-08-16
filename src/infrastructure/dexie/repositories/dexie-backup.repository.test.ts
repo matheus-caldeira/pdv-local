@@ -239,6 +239,21 @@ describe('DexieBackupRepository — tabelas finance', () => {
     expect(result.right).toBe(true);
   });
 
+  describe('buildSnapshot', () => {
+    it('devolve o banco completo serializado', async () => {
+      const result = await repo.buildSnapshot();
+
+      expect(isRight(result)).toBe(true);
+      if (isRight(result)) {
+        const parsed = JSON.parse(result.right);
+        expect(parsed).toHaveProperty('products');
+        expect(parsed).toHaveProperty('orders');
+        expect(parsed).toHaveProperty('customers');
+        expect(parsed).toHaveProperty('config');
+      }
+    });
+  });
+
   it('exportAll inclui as tabelas finance no JSON', async () => {
     await db.products.add(product('pro-1'));
     await db.config.put(businessConfig('Bar do Zé'));
@@ -253,6 +268,18 @@ describe('DexieBackupRepository — tabelas finance', () => {
     }
     expect(data.products).toHaveLength(1);
     expect(data.config).toHaveLength(1);
+  });
+
+  it('exportAll em CSV retorna erro quando a gravação falha', async () => {
+    await db.products.add(product('pro-1'));
+    const failingSaver: FileSaver = {
+      save() {
+        throw new Error('disco cheio');
+      },
+    };
+    const failingRepo = new DexieBackupRepository(db, failingSaver);
+    const result = await failingRepo.exportAll('csv');
+    expect(isRight(result)).toBe(false);
   });
 
   it('exportAll em CSV gera arquivo para entidade finance com dados', async () => {

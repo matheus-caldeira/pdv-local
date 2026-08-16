@@ -31,6 +31,7 @@ export interface BackupSnapshot {
 }
 
 export interface BackupRepository {
+  buildSnapshot(): Promise<Either<InfrastructureError, string>>;
   exportAll(format: BackupFormat): Promise<Either<InfrastructureError, void>>;
   exportEntity(
     entity: BackupEntity,

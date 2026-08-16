@@ -7,6 +7,10 @@ import type {
 } from '../../domain/backup/backup.repository';
 import { generateDemoSeed } from '../../domain/demo/demo-seed';
 
+export function makeBuildBackupSnapshot(repository: BackupRepository) {
+  return (): Promise<Either<AppError, string>> => repository.buildSnapshot();
+}
+
 export function makeExportBackup(repository: BackupRepository) {
   return (format: BackupFormat): Promise<Either<AppError, void>> =>
     repository.exportAll(format);
