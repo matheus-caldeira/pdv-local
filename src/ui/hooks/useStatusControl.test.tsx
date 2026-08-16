@@ -32,6 +32,9 @@ const CONFIG: BusinessConfig = {
   businessTypeId: '',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 function Probe({ dependencyKey }: { dependencyKey: string }) {

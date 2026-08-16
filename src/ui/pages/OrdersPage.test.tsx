@@ -27,11 +27,22 @@ const openTab = vi.fn();
 const addItemsToTab = vi.fn();
 const closeTab = vi.fn();
 const reopenTab = vi.fn();
+const printOrder = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return { ...actual, useNavigate: () => navigate };
 });
+
+vi.mock('../hooks/usePrint', () => ({
+  usePrint: () => ({
+    printOrder: (order: unknown) => printOrder(order),
+    printStock: vi.fn(),
+    printPendingTabs: vi.fn(),
+    printDayReport: vi.fn(),
+    printing: false,
+  }),
+}));
 
 vi.mock('../../app/container', () => ({
   container: {
@@ -145,6 +156,9 @@ const CONFIG: BusinessConfig = {
   businessTypeId: 'tab',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 function renderPage() {
@@ -170,6 +184,7 @@ describe('OrdersPage', () => {
     addItemsToTab.mockReset();
     closeTab.mockReset();
     reopenTab.mockReset();
+    printOrder.mockReset();
     listOrders.mockResolvedValue(right(ORDERS));
     readConfig.mockResolvedValue(right(CONFIG));
     getActiveSession.mockResolvedValue(
@@ -256,8 +271,8 @@ describe('OrdersPage', () => {
       within(dialog).getByRole('button', { name: /Imprimir/ }),
     );
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Configure a impressora',
+      expect(printOrder).toHaveBeenCalledWith(
+        expect.objectContaining({ ticket: '001' }),
       ),
     );
   });

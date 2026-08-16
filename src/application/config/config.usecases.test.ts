@@ -17,6 +17,7 @@ import {
   makeReadConfig,
   makeResetTicketSequence,
   makeSaveConfig,
+  makeSavePrinterConfig,
   type ConfigInput,
 } from './config.usecases';
 
@@ -33,6 +34,9 @@ const config: BusinessConfig = {
   businessTypeId: 'tab',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 class FakeConfigRepository implements ConfigRepository {
@@ -87,6 +91,23 @@ describe('makeSaveConfig', () => {
       statusControlEnabled: true,
       businessTypeId: 'scout',
       extra: { group: 'Alcatéia' },
+    });
+  });
+});
+
+describe('makeSavePrinterConfig', () => {
+  it('saves the printer fields as-is', async () => {
+    const repo = new FakeConfigRepository();
+    const result = await makeSavePrinterConfig(repo)({
+      printerDriver: 'bluetooth',
+      printerPaperWidth: 58,
+      printerAutoPrintOnClose: true,
+    });
+    expect(isRight(result)).toBe(true);
+    expect(repo.saved).toEqual({
+      printerDriver: 'bluetooth',
+      printerPaperWidth: 58,
+      printerAutoPrintOnClose: true,
     });
   });
 });

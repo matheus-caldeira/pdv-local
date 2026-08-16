@@ -35,6 +35,9 @@ const baseConfig: BusinessConfig = {
   businessTypeId: '',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 };
 
 class FakeConfigRepo {

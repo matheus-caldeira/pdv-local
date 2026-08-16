@@ -61,6 +61,7 @@ import {
   makeReadConfig,
   makeResetTicketSequence,
   makeSaveConfig,
+  makeSavePrinterConfig,
 } from '../application/config/config.usecases';
 import {
   makeListReportSessions,
@@ -218,6 +219,7 @@ export function createContainer() {
     readConfig: makeReadConfig(config),
     peekTicketSuggestion: makePeekTicketSuggestion(config),
     saveConfig: makeSaveConfig(config),
+    savePrinterConfig: makeSavePrinterConfig(config),
     resetTicketSequence: makeResetTicketSequence(config),
     listReportSessions: makeListReportSessions(cash),
     loadSessionReport: makeLoadSessionReport(orders),

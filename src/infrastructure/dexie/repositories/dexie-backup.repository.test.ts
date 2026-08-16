@@ -63,6 +63,9 @@ const businessConfig = (name: string): BusinessConfig => ({
   businessTypeId: '',
   enabledModules: [],
   extra: {},
+  printerDriver: 'browser',
+  printerPaperWidth: 80,
+  printerAutoPrintOnClose: false,
 });
 
 const familyMember = (uid: string, name = 'Ana'): NewFamilyMember => ({

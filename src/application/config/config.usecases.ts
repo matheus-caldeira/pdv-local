@@ -21,6 +21,12 @@ export interface ConfigInput {
   extra: Record<string, string>;
 }
 
+export interface PrinterConfigInput {
+  printerDriver: 'browser' | 'bluetooth';
+  printerPaperWidth: 58 | 80;
+  printerAutoPrintOnClose: boolean;
+}
+
 export function makeReadConfig(repository: ConfigRepository) {
   return (): Promise<Either<AppError, BusinessConfig>> => repository.read();
 }
@@ -52,4 +58,10 @@ export function makeSaveConfig(repository: ConfigRepository) {
 export function makeResetTicketSequence(repository: ConfigRepository) {
   return (counter: number): Promise<Either<AppError, BusinessConfig>> =>
     repository.save({ ticketCounter: normalizeTicketCounter(counter) });
+}
+
+export function makeSavePrinterConfig(repository: ConfigRepository) {
+  return (
+    input: PrinterConfigInput,
+  ): Promise<Either<AppError, BusinessConfig>> => repository.save(input);
 }

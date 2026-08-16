@@ -11,4 +11,9 @@ export interface BusinessConfig {
   businessTypeId: string;
   enabledModules: string[];
   extra: Record<string, string>;
+  printerDriver: 'browser' | 'bluetooth';
+  printerPaperWidth: 58 | 80;
+  printerAutoPrintOnClose: boolean;
+  lastBackupAt?: number;
+  lastBackupPromptAt?: number;
 }
