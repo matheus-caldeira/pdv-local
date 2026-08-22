@@ -40,10 +40,30 @@ describe('buildNavModel', () => {
     expect(labels(model.groups[0].items)).toEqual([
       'Vender',
       'Pedidos',
-      'Caixa',
       'KDS',
+      'Caixa',
       'Painel',
       'Relatórios',
+    ]);
+  });
+
+  it('puts kds in place of cash on the bottom bar when status control is on', () => {
+    const model = buildNavModel(['pdv'], true);
+    expect(labels(model.groups[0].bar)).toEqual([
+      'Início',
+      'Vender',
+      'Pedidos',
+      'KDS',
+    ]);
+  });
+
+  it('keeps cash on the bottom bar when status control is off', () => {
+    const model = buildNavModel(['pdv'], false);
+    expect(labels(model.groups[0].bar)).toEqual([
+      'Início',
+      'Vender',
+      'Pedidos',
+      'Caixa',
     ]);
   });
 

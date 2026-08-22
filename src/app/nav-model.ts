@@ -110,11 +110,12 @@ export function buildNavModel(
       items: [
         SELL,
         ORDERS,
+        ...(statusControlEnabled ? [KDS] : []),
         CASH,
-        ...(statusControlEnabled ? [KDS, PANEL] : []),
+        ...(statusControlEnabled ? [PANEL] : []),
         REPORTS,
       ],
-      bar: [HOME, SELL, ORDERS, CASH],
+      bar: [HOME, SELL, ORDERS, statusControlEnabled ? KDS : CASH],
     });
     groups.push({
       id: 'products',
