@@ -6,6 +6,7 @@ import { Cart } from '../organisms/Cart';
 import { CustomizationModal } from '../organisms/CustomizationModal';
 import { OpenTabModal } from '../organisms/OpenTabModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
+import { QuickCustomerModal } from '../organisms/QuickCustomerModal';
 import { TabSelector } from '../organisms/TabSelector';
 import { useSession } from '../hooks/useSession';
 import { useProducts } from '../hooks/useProducts';
@@ -16,6 +17,7 @@ import {
   type LoadedCustomizationGroup,
 } from '../hooks/useCustomizationLoader';
 import { useToast } from '../molecules/toast-context';
+import type { Customer } from '../../domain/customer/customer.entity';
 import type { Order } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
 
@@ -40,9 +42,14 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     searchParams.get('tab'),
   );
   const [openTabModalOpen, setOpenTabModalOpen] = useState(false);
+  const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
+  function handleCustomerCreated(customer: Customer) {
+    controller.selectCustomer(customer);
+    setQuickCustomerOpen(false);
+  }
 
   async function handleProductClick(product: Product) {
     if (product.customizationGroupIds.length === 0) {
@@ -99,17 +106,17 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           cart={controller.cart}
           total={controller.total}
           customerName={controller.customerName}
-          onCustomerNameChange={controller.setCustomerName}
-          phone={controller.phone}
-          onPhoneChange={controller.onPhoneChange}
+          onCustomerNameChange={controller.onCustomerNameChange}
+          customerSuggestions={controller.customerSuggestions}
+          onSelectCustomer={controller.selectCustomer}
+          onCreateCustomer={() => setQuickCustomerOpen(true)}
           address={controller.address}
           onAddressChange={controller.setAddress}
+          showAddress={false}
+          matchedCustomer={controller.matchedCustomer}
           ticket={controller.ticket}
           onTicketChange={controller.setTicket}
           ordering={controller.ordering}
-          matchedCustomer={controller.matchedCustomer}
-          customerSuggestions={controller.customerSuggestions}
-          onSelectCustomer={controller.selectCustomer}
           onUpdateQty={controller.updateQty}
           onRemoveItem={controller.removeCartItem}
           onSetObservation={controller.setObservation}
@@ -118,6 +125,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           onLaunchToTab={
             selectedTab ? () => handleLaunchToTab(selectedTab.uid) : undefined
           }
+          onOpenNewTab={() => setOpenTabModalOpen(true)}
         />
       </div>
 
@@ -145,6 +153,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         sessionUid={sessionUid}
         onClose={() => setOpenTabModalOpen(false)}
         onOpened={handleTabOpened}
+      />
+
+      <QuickCustomerModal
+        open={quickCustomerOpen}
+        initialName={controller.customerName}
+        onClose={() => setQuickCustomerOpen(false)}
+        onCreated={handleCustomerCreated}
       />
     </div>
   );

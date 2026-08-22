@@ -25,20 +25,21 @@ function baseProps() {
     total: 0,
     customerName: '',
     onCustomerNameChange: vi.fn(),
-    phone: '',
-    onPhoneChange: vi.fn(),
+    customerSuggestions: [] as Customer[],
+    onSelectCustomer: vi.fn(),
+    onCreateCustomer: vi.fn(),
     address: '',
     onAddressChange: vi.fn(),
+    showAddress: false,
+    matchedCustomer: null as Customer | null,
     ticket: '0001',
     onTicketChange: vi.fn(),
     ordering: 'required' as const,
-    matchedCustomer: null as Customer | null,
-    customerSuggestions: [] as Customer[],
-    onSelectCustomer: vi.fn(),
     onUpdateQty: vi.fn(),
     onRemoveItem: vi.fn(),
     onSetObservation: vi.fn(),
     onFinalize: vi.fn(),
+    onOpenNewTab: vi.fn(),
   };
 }
 
@@ -55,6 +56,8 @@ const cartItem: CartItem = {
     { groupName: 'Adicionais', name: 'Bacon', qty: 2, price: 3 },
   ],
 };
+
+const selectedTab = { uid: 'tab-1', ticket: '0012' } as Order;
 
 describe('Cart', () => {
   it('shows the empty state and hides the footer', () => {
@@ -137,47 +140,53 @@ describe('Cart', () => {
     expect(props.onSetObservation).not.toHaveBeenCalled();
   });
 
-  it('shows phone suggestions and selects a customer', async () => {
+  it('busca o cliente pelo campo único e seleciona uma sugestão', async () => {
     const props = baseProps();
     render(<Cart {...props} customerSuggestions={[customer]} />);
-    expect(screen.getByText('Joao')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Joao'));
+    await userEvent.type(
+      screen.getByRole('combobox', { name: 'Cliente' }),
+      'Jo',
+    );
+    expect(props.onCustomerNameChange).toHaveBeenCalledWith('J');
+    await userEvent.click(screen.getByRole('option', { name: /Joao/ }));
     expect(props.onSelectCustomer).toHaveBeenCalledWith(customer);
   });
 
-  it('renders the address select for a matched customer with addresses', async () => {
+  it('abre o cadastro de cliente pelo botão +', async () => {
     const props = baseProps();
-    render(<Cart {...props} matchedCustomer={customer} address="Rua A, 10" />);
-    const select = screen.getByLabelText('Endereço do cliente');
-    expect(select).toBeInTheDocument();
-    await userEvent.selectOptions(select, '__new__');
-    expect(props.onAddressChange).toHaveBeenCalledWith('__new__');
+    render(<Cart {...props} />);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Cadastrar cliente' }),
+    );
+    expect(props.onCreateCustomer).toHaveBeenCalledTimes(1);
+  });
+
+  it('esconde o endereço quando o negócio não é delivery', () => {
+    render(<Cart {...baseProps()} showAddress={false} />);
+    expect(screen.queryByLabelText('Endereço')).not.toBeInTheDocument();
+  });
+
+  it('mostra e edita o endereço quando o negócio é delivery', async () => {
+    const props = baseProps();
+    render(<Cart {...props} showAddress address="Rua A, 10" />);
+    const field = screen.getByLabelText('Endereço');
+    expect(field).toHaveValue('Rua A, 10');
+    await userEvent.type(field, '0');
+    expect(props.onAddressChange).toHaveBeenCalledWith('Rua A, 100');
+  });
+
+  it('não mostra mais o telefone no carrinho', () => {
+    render(<Cart {...baseProps()} />);
     expect(
-      screen.queryByLabelText('Endereço (opcional)'),
+      screen.queryByLabelText('Telefone do cliente'),
     ).not.toBeInTheDocument();
   });
 
-  it('shows the new-address input when address is __new__', () => {
-    render(
-      <Cart {...baseProps()} matchedCustomer={customer} address="__new__" />,
-    );
-    expect(screen.getByLabelText('Endereço (opcional)')).toHaveValue('');
-  });
-
-  it('forwards typing in the form fields', async () => {
+  it('encaminha a digitação da comanda', async () => {
     const props = baseProps();
     render(<Cart {...props} />);
-    await userEvent.type(screen.getByLabelText('Telefone do cliente'), '9');
-    await userEvent.type(
-      screen.getByLabelText('Nome do cliente (opcional)'),
-      'A',
-    );
     await userEvent.type(screen.getByLabelText('Comanda / Mesa'), '5');
-    await userEvent.type(screen.getByLabelText('Endereço (opcional)'), 'R');
-    expect(props.onPhoneChange).toHaveBeenCalled();
-    expect(props.onCustomerNameChange).toHaveBeenCalled();
     expect(props.onTicketChange).toHaveBeenCalled();
-    expect(props.onAddressChange).toHaveBeenCalled();
   });
 
   it('shows the ticket field when ordering is required', () => {
@@ -201,10 +210,9 @@ describe('Cart', () => {
     expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
   });
 
-  it('shows the launch-to-tab button when a tab is selected', async () => {
+  it('mostra os dois botões quando há comanda selecionada', async () => {
     const props = baseProps();
     const onLaunchToTab = vi.fn();
-    const selectedTab = { ticket: '042' } as Order;
     render(
       <Cart
         {...props}
@@ -215,13 +223,38 @@ describe('Cart', () => {
       />,
     );
 
-    expect(
-      screen.queryByRole('button', { name: 'Finalizar Venda' }),
-    ).not.toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: /Lançar na comanda nº 042/ }),
+      screen.getByRole('button', { name: 'Lançar na comanda nº 0012' }),
     );
     expect(onLaunchToTab).toHaveBeenCalledOnce();
-    expect(props.onFinalize).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Finalizar Venda' }),
+    );
+    expect(props.onFinalize).toHaveBeenCalledOnce();
+  });
+
+  it('mostra só finalizar quando não há comanda selecionada', () => {
+    render(<Cart {...baseProps()} cart={[cartItem]} total={46} />);
+    expect(
+      screen.getByRole('button', { name: 'Finalizar Venda' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Lançar na comanda/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('abre uma comanda nova pelo rodapé quando o negócio usa comandas', async () => {
+    const props = baseProps();
+    render(<Cart {...props} ordering="optional" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Nova comanda' }));
+    expect(props.onOpenNewTab).toHaveBeenCalledTimes(1);
+  });
+
+  it('esconde a nova comanda quando o negócio não usa comandas', () => {
+    render(<Cart {...baseProps()} ordering="none" />);
+    expect(
+      screen.queryByRole('button', { name: 'Nova comanda' }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { MessageSquare, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../atoms/Button';
+import { IconButton } from '../atoms/IconButton';
 import { Money } from '../atoms/Money';
 import { QtyStepper } from '../atoms/QtyStepper';
+import { Autocomplete } from '../molecules/Autocomplete';
 import { Modal } from '../molecules/Modal';
 import { TextField } from '../molecules/TextField';
 import type { Customer } from '../../domain/customer/customer.entity';
@@ -15,22 +17,23 @@ interface CartProps {
   total: number;
   customerName: string;
   onCustomerNameChange: (value: string) => void;
-  phone: string;
-  onPhoneChange: (value: string) => void;
+  customerSuggestions: Customer[];
+  onSelectCustomer: (customer: Customer) => void;
+  onCreateCustomer: () => void;
   address: string;
   onAddressChange: (value: string) => void;
+  showAddress: boolean;
+  matchedCustomer: Customer | null;
   ticket: string;
   onTicketChange: (value: string) => void;
   ordering?: BusinessTypeRules['ordering'];
-  matchedCustomer: Customer | null;
-  customerSuggestions: Customer[];
-  onSelectCustomer: (customer: Customer) => void;
   onUpdateQty: (cartId: string, delta: number) => void;
   onRemoveItem: (cartId: string) => void;
   onSetObservation: (cartId: string, observation: string) => void;
   onFinalize: () => void;
   selectedTab?: Order | null;
   onLaunchToTab?: () => void;
+  onOpenNewTab: () => void;
 }
 
 function itemUnitTotal(item: CartItem): number {
@@ -42,25 +45,29 @@ export function Cart({
   total,
   customerName,
   onCustomerNameChange,
-  phone,
-  onPhoneChange,
+  customerSuggestions,
+  onSelectCustomer,
+  onCreateCustomer,
   address,
   onAddressChange,
+  showAddress,
   ticket,
   onTicketChange,
   ordering = 'optional',
-  matchedCustomer,
-  customerSuggestions,
-  onSelectCustomer,
   onUpdateQty,
   onRemoveItem,
   onSetObservation,
   onFinalize,
   selectedTab,
   onLaunchToTab,
+  onOpenNewTab,
 }: CartProps) {
   const [editingObsId, setEditingObsId] = useState<string | null>(null);
   const [obsText, setObsText] = useState('');
+
+  const suggestionByUid = new Map(
+    customerSuggestions.map((entry) => [entry.uid, entry]),
+  );
 
   function openObsEdit(cartId: string) {
     const item = cart.find((entry) => entry.cartId === cartId);
@@ -81,61 +88,33 @@ export function Cart({
       </div>
 
       <div className="flex flex-col gap-2 border-b border-border px-5 py-3">
-        <div className="relative">
-          <TextField
-            type="tel"
-            aria-label="Telefone do cliente"
-            placeholder="Telefone do cliente"
-            value={phone}
-            onChange={(event) => onPhoneChange(event.target.value)}
-          />
-          {customerSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-20 mt-0.5 overflow-hidden rounded-md border border-border bg-surface-2 shadow-lg">
-              {customerSuggestions.map((customer) => (
-                <button
-                  key={customer.id}
-                  type="button"
-                  className="flex w-full justify-between px-3 py-2 text-left hover:bg-surface-inset"
-                  onClick={() => onSelectCustomer(customer)}
-                >
-                  <span>{customer.name}</span>
-                  <span className="text-sm text-ink-tertiary">
-                    {customer.phone}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <Autocomplete
+              label="Cliente"
+              placeholder="Nome, telefone ou responsável"
+              value={customerName}
+              options={customerSuggestions.map((entry) => ({
+                value: entry.uid,
+                label: entry.name,
+                hint: entry.phone,
+              }))}
+              onChange={onCustomerNameChange}
+              onSelect={(option) =>
+                onSelectCustomer(suggestionByUid.get(option.value)!)
+              }
+            />
+          </div>
+          <IconButton aria-label="Cadastrar cliente" onClick={onCreateCustomer}>
+            <Plus size={16} />
+          </IconButton>
         </div>
-        <TextField
-          type="text"
-          aria-label="Nome do cliente (opcional)"
-          placeholder="Nome do cliente (opcional)"
-          value={customerName}
-          onChange={(event) => onCustomerNameChange(event.target.value)}
-        />
-        {matchedCustomer && matchedCustomer.addresses.length > 0 ? (
-          <select
-            aria-label="Endereço do cliente"
-            className="min-h-[38px] w-full rounded-sm border border-border-emphasis bg-surface-inset px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
-            value={address}
-            onChange={(event) => onAddressChange(event.target.value)}
-          >
-            <option value="">Sem endereço</option>
-            {matchedCustomer.addresses.map((entry, index) => (
-              <option key={index} value={entry}>
-                {entry}
-              </option>
-            ))}
-            <option value="__new__">+ Novo endereço</option>
-          </select>
-        ) : null}
-        {(!matchedCustomer || address === '__new__') && (
+        {showAddress && (
           <TextField
             type="text"
-            aria-label="Endereço (opcional)"
-            placeholder="Endereço (opcional)"
-            value={address === '__new__' ? '' : address}
+            aria-label="Endereço"
+            placeholder="Endereço"
+            value={address}
             onChange={(event) => onAddressChange(event.target.value)}
           />
         )}
@@ -218,22 +197,42 @@ export function Cart({
         )}
       </div>
 
-      {cart.length > 0 && (
+      {(cart.length > 0 || ordering !== 'none') && (
         <div className="border-t border-border-emphasis px-5 py-4">
-          <div className="mb-3 flex items-center justify-between text-base font-bold">
-            <span>Total</span>
-            <Money
-              value={total}
-              className="text-xl font-extrabold text-accent"
-            />
-          </div>
-          {selectedTab ? (
-            <Button fullWidth onClick={onLaunchToTab}>
-              Lançar na comanda nº {selectedTab.ticket}
-            </Button>
-          ) : (
-            <Button fullWidth onClick={onFinalize}>
-              Finalizar Venda
+          {cart.length > 0 && (
+            <>
+              <div className="mb-3 flex items-center justify-between text-base font-bold">
+                <span>Total</span>
+                <Money
+                  value={total}
+                  className="text-xl font-extrabold text-accent"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                {selectedTab && (
+                  <Button fullWidth onClick={onLaunchToTab}>
+                    Lançar na comanda nº {selectedTab.ticket}
+                  </Button>
+                )}
+                <Button
+                  variant={selectedTab ? 'ghost' : 'accent'}
+                  fullWidth
+                  onClick={onFinalize}
+                >
+                  Finalizar Venda
+                </Button>
+              </div>
+            </>
+          )}
+          {ordering !== 'none' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              className={cart.length > 0 ? 'mt-2' : undefined}
+              onClick={onOpenNewTab}
+            >
+              <Plus size={14} /> Nova comanda
             </Button>
           )}
         </div>

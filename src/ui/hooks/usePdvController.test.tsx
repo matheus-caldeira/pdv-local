@@ -154,6 +154,45 @@ describe('usePdvController', () => {
     expect(result.current.customerSuggestions).toHaveLength(0);
   });
 
+  it('busca clientes pelo nome digitado e limpa o vínculo anterior', async () => {
+    searchCustomers.mockResolvedValue(
+      right([
+        {
+          id: 1,
+          uid: 'customer-1',
+          name: 'Maju',
+          phone: '99887766',
+          addresses: [],
+          extra: {},
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      ]),
+    );
+    const { result } = await setup();
+    act(() =>
+      result.current.selectCustomer({
+        id: 9,
+        uid: 'customer-9',
+        name: 'Antigo',
+        addresses: [],
+        extra: {},
+        createdAt: 0,
+        updatedAt: 0,
+      }),
+    );
+    expect(result.current.matchedCustomer).not.toBeNull();
+
+    await act(async () => result.current.onCustomerNameChange('Maj'));
+
+    expect(result.current.customerName).toBe('Maj');
+    expect(result.current.matchedCustomer).toBeNull();
+    expect(searchCustomers).toHaveBeenCalledWith('Maj');
+    await waitFor(() =>
+      expect(result.current.customerSuggestions).toHaveLength(1),
+    );
+  });
+
   it('selects a named customer with an address', async () => {
     const { result } = await setup();
     act(() =>

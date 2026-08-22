@@ -15,11 +15,7 @@ function tabLabel(tab: Order): string {
   return `${tab.ticket} — ${tab.customerName}`;
 }
 
-export function TabSelector({
-  tabs,
-  selectedUid,
-  onSelect,
-}: TabSelectorProps) {
+export function TabSelector({ tabs, selectedUid, onSelect }: TabSelectorProps) {
   const selected = tabs.find((tab) => tab.uid === selectedUid) ?? null;
   const [term, setTerm] = useState(() => (selected ? tabLabel(selected) : ''));
   const [lastSelected, setLastSelected] = useState(selected);

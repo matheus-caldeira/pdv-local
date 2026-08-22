@@ -32,6 +32,7 @@ const openTab = vi.fn();
 const addItemsToTab = vi.fn();
 const closeTab = vi.fn();
 const reopenTab = vi.fn();
+const saveCustomer = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -59,6 +60,8 @@ vi.mock('../../app/container', () => ({
     addItemsToTab: (input: unknown) => addItemsToTab(input),
     closeTab: (input: unknown) => closeTab(input),
     reopenTab: (input: unknown) => reopenTab(input),
+    saveCustomer: (input: unknown, definition: BusinessTypeDefinition) =>
+      saveCustomer(input, definition),
   },
 }));
 
@@ -136,6 +139,7 @@ describe('PdvPage', () => {
     addItemsToTab.mockReset();
     closeTab.mockReset();
     reopenTab.mockReset();
+    saveCustomer.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
     searchCustomers.mockResolvedValue(right([]));
     loadProductCustomizations.mockResolvedValue(right([]));
@@ -462,7 +466,58 @@ describe('PdvPage', () => {
     ).not.toBeInTheDocument();
   });
 
-  it.skip('abre uma comanda nova e a seleciona automaticamente', async () => {
+  it('cadastra um cliente pelo + e o vincula ao carrinho', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    saveCustomer.mockResolvedValue(
+      right({
+        uid: 'customer-9',
+        name: 'Bento',
+        phone: '99887766',
+        addresses: [],
+        extra: {},
+        createdAt: 1,
+        updatedAt: 1,
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Cadastrar cliente' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Novo cliente' });
+    await user.type(within(dialog).getByLabelText('Nome'), 'Bento');
+    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('combobox', { name: 'Cliente' })).toHaveValue(
+      'Bento',
+    );
+  });
+
+  it('fecha o cadastro rápido de cliente sem vincular', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Cadastrar cliente' }));
+    await screen.findByRole('dialog', { name: 'Novo cliente' });
+    await user.keyboard('{Escape}');
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(saveCustomer).not.toHaveBeenCalled();
+  });
+
+  it('abre uma comanda nova pelo carrinho e a seleciona automaticamente', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
@@ -480,7 +535,7 @@ describe('PdvPage', () => {
 
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: /nova comanda/i }));
-    const dialog = screen.getByRole('dialog');
+    const dialog = screen.getByRole('dialog', { name: 'Abrir comanda' });
     await user.type(within(dialog).getByLabelText(/nome/i), 'Maju');
     await user.click(
       within(dialog).getByRole('button', { name: /abrir comanda/i }),
@@ -491,16 +546,9 @@ describe('PdvPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     await waitFor(() =>
-      expect(
-        screen.getByRole('option', { name: /0001 — Maju/i }),
-      ).toBeInTheDocument(),
+      expect(screen.getByRole('combobox', { name: 'Comanda' })).toHaveValue(
+        '0001 — Maju',
+      ),
     );
-    expect(
-      (
-        screen.getByRole('option', {
-          name: /0001 — Maju/i,
-        }) as HTMLOptionElement
-      ).selected,
-    ).toBe(true);
   });
 });

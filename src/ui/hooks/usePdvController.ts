@@ -83,6 +83,15 @@ export function usePdvController(sessionUid: string) {
     [customerSearch],
   );
 
+  const onCustomerNameChange = useCallback(
+    (value: string) => {
+      setCustomerName(value);
+      setMatchedCustomer(null);
+      void customerSearch.search(value);
+    },
+    [customerSearch],
+  );
+
   const selectCustomer = useCallback(
     (customer: Customer) => {
       setMatchedCustomer(customer);
@@ -239,6 +248,7 @@ export function usePdvController(sessionUid: string) {
     ordering,
     customerName,
     setCustomerName,
+    onCustomerNameChange,
     phone,
     onPhoneChange,
     address,
