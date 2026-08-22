@@ -161,6 +161,10 @@ import {
   type AddItemsToTabInput,
 } from '../application/order/add-items-to-tab.usecase';
 import {
+  UpdateTabItemsUseCase,
+  type UpdateTabItemsInput,
+} from '../application/order/update-tab-items.usecase';
+import {
   CloseTabUseCase,
   type CloseTabInput,
 } from '../application/order/close-tab.usecase';
@@ -387,6 +391,8 @@ export function createContainer() {
       new OpenTabUseCase(uow, definition).run(input),
     addItemsToTab: (input: AddItemsToTabInput) =>
       new AddItemsToTabUseCase(uow).run(input),
+    updateTabItems: (input: UpdateTabItemsInput) =>
+      new UpdateTabItemsUseCase(uow).run(input),
     closeTab: (input: CloseTabInput) => new CloseTabUseCase(uow).run(input),
     reopenTab: (input: ReopenTabInput) => new ReopenTabUseCase(uow).run(input),
   };
