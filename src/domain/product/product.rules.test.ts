@@ -9,6 +9,7 @@ const input = (over: Partial<ProductInput> = {}): ProductInput => ({
   costPrice: 5,
   salePrice: 20,
   stock: 10,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
   ...over,
@@ -23,6 +24,14 @@ describe('buildProduct', () => {
       expect(result.right.category).toBe('L');
       expect(result.right.createdAt).toBeGreaterThan(0);
       expect(result.right.updatedAt).toBe(result.right.createdAt);
+    }
+  });
+
+  it('preserves tracksStock as false when the product is not stock-tracked', () => {
+    const result = buildProduct(input({ tracksStock: false }));
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) {
+      expect(result.right.tracksStock).toBe(false);
     }
   });
 

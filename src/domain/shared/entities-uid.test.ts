@@ -16,6 +16,7 @@ describe('entities carry a stable uid', () => {
       costPrice: 0,
       salePrice: 1,
       stock: 0,
+      tracksStock: true,
       active: true,
       customizationGroupIds: [],
       createdAt: 0,

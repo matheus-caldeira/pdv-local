@@ -40,6 +40,7 @@ function product(partial: Partial<Product> & { id: number }): Product {
     costPrice: 5,
     salePrice: 10,
     stock: 3,
+    tracksStock: true,
     active: true,
     customizationGroupIds: [],
     createdAt: 0,

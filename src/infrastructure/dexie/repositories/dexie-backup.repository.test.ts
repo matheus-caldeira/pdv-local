@@ -44,6 +44,7 @@ const product = (uid: string, name = 'Suco'): NewProduct => ({
   costPrice: 2,
   salePrice: 5,
   stock: 10,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
   createdAt: 1,

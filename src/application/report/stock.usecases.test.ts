@@ -46,6 +46,20 @@ describe('makeLoadStockReport', () => {
     }
   });
 
+  it('não inclui produtos que não controlam estoque', async () => {
+    const products = [
+      { uid: 'a', name: 'Refri', stock: 12, tracksStock: true },
+      { uid: 'b', name: 'Servico', stock: 0, tracksStock: false },
+    ] as Product[];
+
+    const result = await makeLoadStockReport(makeRepository(products))();
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) {
+      expect(result.right.map((product) => product.name)).toEqual(['Refri']);
+    }
+  });
+
   it('devolve lista vazia quando não há produtos', async () => {
     const result = await makeLoadStockReport(makeRepository([]))();
 

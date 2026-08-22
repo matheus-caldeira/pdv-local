@@ -456,7 +456,7 @@ describe('PdvPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('avisa e não adiciona ao carrinho quando o produto está sem estoque', async () => {
+  it('adiciona ao carrinho normalmente mesmo quando o produto está sem estoque', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
@@ -469,11 +469,8 @@ describe('PdvPage', () => {
     await user.click(await screen.findByRole('button', { name: /Guaraná/ }));
 
     expect(
-      await screen.findByText('Guaraná está sem estoque'),
+      await screen.findByRole('button', { name: /finalizar/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Finalizar Venda' }),
-    ).not.toBeInTheDocument();
   });
 
   it('cadastra um cliente pelo + e o vincula ao carrinho', async () => {

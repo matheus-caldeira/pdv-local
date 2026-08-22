@@ -21,6 +21,7 @@ interface FormState {
   costPrice: number;
   salePrice: number;
   stock: number;
+  tracksStock: boolean;
   active: boolean;
   customizationGroupIds: number[];
 }
@@ -31,6 +32,7 @@ const EMPTY_PRODUCT: FormState = {
   costPrice: 0,
   salePrice: 0,
   stock: 0,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
 };
@@ -75,6 +77,7 @@ export function ProductsPage() {
       costPrice: p.costPrice,
       salePrice: p.salePrice,
       stock: p.stock,
+      tracksStock: p.tracksStock,
       active: p.active,
       customizationGroupIds: [...p.customizationGroupIds],
     });
@@ -88,6 +91,7 @@ export function ProductsPage() {
       costPrice: editing.costPrice,
       salePrice: editing.salePrice,
       stock: editing.stock,
+      tracksStock: editing.tracksStock,
       active: editing.active,
       customizationGroupIds: editing.customizationGroupIds,
     };
@@ -161,9 +165,11 @@ export function ProductsPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Badge tone={stockTone(p.stock)}>
-                  {p.stock <= 0 ? 'Sem estoque' : p.stock + ' un.'}
-                </Badge>
+                {p.tracksStock && (
+                  <Badge tone={stockTone(p.stock)}>
+                    {p.stock <= 0 ? 'Sem estoque' : p.stock + ' un.'}
+                  </Badge>
+                )}
                 {p.customizationGroupIds.length > 0 && (
                   <Badge tone="info" size="xs">
                     <Settings2 size={10} /> {p.customizationGroupIds.length}
@@ -220,50 +226,64 @@ export function ProductsPage() {
               ))}
             </datalist>
           </FormField>
-          <FormField label="Preço de Custo (R$)">
-            <TextField
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={editing.costPrice || ''}
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+            <FormField label="Preço de Custo (R$)">
+              <TextField
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={editing.costPrice || ''}
+                onChange={(e) =>
+                  setEditing((p) => ({
+                    ...p,
+                    costPrice: parseFloat(e.target.value) || 0,
+                  }))
+                }
+                placeholder="0,00"
+              />
+            </FormField>
+            <FormField label="Preço de Venda (R$)">
+              <TextField
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={editing.salePrice || ''}
+                onChange={(e) =>
+                  setEditing((p) => ({
+                    ...p,
+                    salePrice: parseFloat(e.target.value) || 0,
+                  }))
+                }
+                placeholder="0,00"
+              />
+            </FormField>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-ink-secondary sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={editing.tracksStock}
               onChange={(e) =>
-                setEditing((p) => ({
-                  ...p,
-                  costPrice: parseFloat(e.target.value) || 0,
-                }))
+                setEditing((p) => ({ ...p, tracksStock: e.target.checked }))
               }
-              placeholder="0,00"
             />
-          </FormField>
-          <FormField label="Preço de Venda (R$)">
-            <TextField
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              value={editing.salePrice || ''}
-              onChange={(e) =>
-                setEditing((p) => ({
-                  ...p,
-                  salePrice: parseFloat(e.target.value) || 0,
-                }))
-              }
-              placeholder="0,00"
-            />
-          </FormField>
-          <FormField label="Estoque">
-            <TextField
-              type="number"
-              inputMode="numeric"
-              value={editing.stock || ''}
-              onChange={(e) =>
-                setEditing((p) => ({
-                  ...p,
-                  stock: parseInt(e.target.value) || 0,
-                }))
-              }
-              placeholder="0"
-            />
-          </FormField>
+            Controlar estoque
+          </label>
+          {editing.tracksStock && (
+            <FormField label="Estoque">
+              <TextField
+                type="number"
+                inputMode="numeric"
+                value={editing.stock || ''}
+                onChange={(e) =>
+                  setEditing((p) => ({
+                    ...p,
+                    stock: parseInt(e.target.value) || 0,
+                  }))
+                }
+                placeholder="0"
+              />
+            </FormField>
+          )}
           <FormField label="Status">
             <Select
               value={editing.active ? '1' : '0'}

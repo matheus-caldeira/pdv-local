@@ -286,5 +286,17 @@ export class PDVDatabase extends Dexie {
     this.version(8).stores({
       orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
     });
+    this.version(9)
+      .stores({
+        products: '++id, &uid, name, category, active',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('products')
+          .toCollection()
+          .modify((product) => {
+            if (product.tracksStock == null) product.tracksStock = true;
+          });
+      });
   }
 }

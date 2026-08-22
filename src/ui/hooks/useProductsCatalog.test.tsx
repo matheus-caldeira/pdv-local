@@ -35,6 +35,7 @@ const INPUT: ProductInput = {
   costPrice: 2,
   salePrice: 5,
   stock: 10,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
 };

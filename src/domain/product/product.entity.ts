@@ -6,6 +6,7 @@ export interface Product {
   costPrice: number;
   salePrice: number;
   stock: number;
+  tracksStock: boolean;
   active: boolean;
   customizationGroupIds: number[];
   createdAt: number;

@@ -23,6 +23,7 @@ function product(ids: number[]): Product {
     costPrice: 1,
     salePrice: 2,
     stock: 5,
+    tracksStock: true,
     active: true,
     customizationGroupIds: ids,
     createdAt: 0,

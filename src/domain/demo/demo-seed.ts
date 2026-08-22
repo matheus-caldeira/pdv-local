@@ -62,6 +62,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 16,
     stock: 40,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1, 2, 3],
   },
   {
@@ -71,6 +72,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 18,
     stock: 35,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1, 2, 3],
   },
   {
@@ -80,6 +82,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 22,
     stock: 30,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1, 2, 3],
   },
   {
@@ -89,6 +92,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 28,
     stock: 25,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1, 2, 3],
   },
   {
@@ -98,6 +102,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 10,
     stock: 50,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1],
   },
   {
@@ -107,6 +112,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 6,
     stock: 80,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [],
   },
   {
@@ -116,6 +122,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 9,
     stock: 25,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [],
   },
   {
@@ -125,6 +132,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 14,
     stock: 20,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [],
   },
   {
@@ -134,6 +142,7 @@ const PRODUCT_SEED: ProductSeed[] = [
     salePrice: 32,
     stock: 0,
     active: true,
+    tracksStock: true,
     customizationGroupIds: [1, 2, 3],
   },
 ];

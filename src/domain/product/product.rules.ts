@@ -9,6 +9,7 @@ export interface ProductInput {
   costPrice: number;
   salePrice: number;
   stock: number;
+  tracksStock: boolean;
   active: boolean;
   customizationGroupIds: number[];
 }
@@ -31,6 +32,7 @@ export function buildProduct(
     costPrice: input.costPrice,
     salePrice: input.salePrice,
     stock: input.stock,
+    tracksStock: input.tracksStock,
     active: input.active,
     customizationGroupIds: input.customizationGroupIds,
     createdAt: now,

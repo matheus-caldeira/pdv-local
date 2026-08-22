@@ -16,6 +16,7 @@ const product: Product = {
   costPrice: 5,
   salePrice: 20,
   stock: 10,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [1],
   createdAt: 0,

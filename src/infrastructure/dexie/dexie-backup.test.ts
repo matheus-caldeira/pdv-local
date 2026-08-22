@@ -40,6 +40,7 @@ const product = (over: Record<string, unknown> = {}) => ({
   costPrice: 8,
   salePrice: 20,
   stock: 0,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [] as number[],
   createdAt: 1,

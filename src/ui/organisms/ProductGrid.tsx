@@ -9,15 +9,9 @@ interface ProductGridProps {
   products: Product[];
   cart: CartItem[];
   onSelect: (product: Product) => void;
-  onOutOfStock: (product: Product) => void;
 }
 
-export function ProductGrid({
-  products,
-  cart,
-  onSelect,
-  onOutOfStock,
-}: ProductGridProps) {
+export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const categories = useMemo(() => {
@@ -80,7 +74,7 @@ export function ProductGrid({
               .filter((item) => item.productUid === product.uid)
               .reduce((sum, item) => sum + item.qty, 0);
             const hasCustom = (product.customizationGroupIds?.length || 0) > 0;
-            const outOfStock = product.stock <= 0;
+            const outOfStock = product.tracksStock && product.stock <= 0;
             return (
               <button
                 key={product.id}
@@ -88,11 +82,8 @@ export function ProductGrid({
                 className={cn(
                   'relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-md border-2 border-transparent bg-cardapio-bg px-3 py-4 text-center transition-colors hover:bg-cardapio-surface active:scale-[0.97]',
                   inCartQty > 0 && 'border-accent',
-                  outOfStock && 'opacity-50',
                 )}
-                onClick={() =>
-                  outOfStock ? onOutOfStock(product) : onSelect(product)
-                }
+                onClick={() => onSelect(product)}
               >
                 <span className="text-sm font-semibold text-cardapio-text">
                   {product.name}
@@ -101,12 +92,21 @@ export function ProductGrid({
                   value={product.salePrice}
                   className="text-base font-bold text-accent"
                 />
-                <span className="font-mono text-xs tabular-nums text-cardapio-muted">
-                  {product.stock} un.
-                </span>
+                {product.tracksStock && (
+                  <span
+                    className={cn(
+                      'font-mono text-xs tabular-nums text-cardapio-muted',
+                      outOfStock && 'text-danger',
+                    )}
+                  >
+                    {product.stock} un.
+                  </span>
+                )}
                 {outOfStock && (
                   <span
-                    aria-label="Sem estoque"
+                    aria-label={
+                      product.stock < 0 ? 'Estoque negativo' : 'Sem estoque'
+                    }
                     className="absolute left-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-danger text-accent-text"
                   >
                     <AlertTriangle size={11} />

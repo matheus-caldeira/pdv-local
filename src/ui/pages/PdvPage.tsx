@@ -17,7 +17,6 @@ import {
   useCustomizationLoader,
   type LoadedCustomizationGroup,
 } from '../hooks/useCustomizationLoader';
-import { useToast } from '../molecules/toast-context';
 import { findOpenTabForCustomer } from '../../domain/order/order.rules';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { Order } from '../../domain/order/order.entity';
@@ -35,7 +34,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const { openTabs, addItems, refresh: refreshTabs } = useTabs(sessionUid);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const toast = useToast();
 
   const [customization, setCustomization] = useState<CustomizationState | null>(
     null,
@@ -74,10 +72,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     setCustomization({ product, groups });
   }
 
-  function handleOutOfStock(product: Product) {
-    toast(`${product.name} está sem estoque`, 'error');
-  }
-
   async function handleFinalize(
     option: PayOption,
     paymentMethod: string | null,
@@ -105,7 +99,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         products={products}
         cart={controller.cart}
         onSelect={handleProductClick}
-        onOutOfStock={handleOutOfStock}
       />
 
       <div className="flex w-full flex-col gap-3 md:w-auto">

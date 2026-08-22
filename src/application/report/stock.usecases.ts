@@ -7,6 +7,10 @@ export function makeLoadStockReport(products: ProductRepository) {
   return async (): Promise<Either<AppError, Product[]>> => {
     const result = await products.list();
     if (isLeft(result)) return result;
-    return right([...result.right].sort((a, b) => a.stock - b.stock));
+    return right(
+      result.right
+        .filter((product) => product.tracksStock !== false)
+        .sort((a, b) => a.stock - b.stock),
+    );
   };
 }

@@ -42,6 +42,7 @@ const coca = {
   costPrice: 2,
   salePrice: 5,
   stock: 10,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
   createdAt: 0,
@@ -55,6 +56,7 @@ const burger = {
   costPrice: 8,
   salePrice: 20,
   stock: 3,
+  tracksStock: true,
   active: false,
   customizationGroupIds: [10],
   createdAt: 0,
@@ -68,6 +70,17 @@ const semEstoque = {
   category: '',
   costPrice: 0,
   stock: 0,
+  customizationGroupIds: [],
+};
+
+const naoEstocavel = {
+  ...coca,
+  id: 4,
+  name: 'Servico de Entrega',
+  category: '',
+  costPrice: 0,
+  stock: 0,
+  tracksStock: false,
   customizationGroupIds: [],
 };
 
@@ -187,9 +200,68 @@ describe('ProductsPage', () => {
       costPrice: 1,
       salePrice: 4,
       stock: 5,
+      tracksStock: true,
       active: true,
       customizationGroupIds: [10],
     });
+  });
+
+  it('marca "Controlar estoque" por padrão em um produto novo', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /Novo Produto/ }));
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('checkbox', { name: 'Controlar estoque' }),
+    ).toBeChecked();
+    expect(within(dialog).getByLabelText('Estoque')).toBeInTheDocument();
+  });
+
+  it('esconde o campo Estoque quando "Controlar estoque" é desmarcado, e cria sem controle de estoque', async () => {
+    createProduct.mockResolvedValue(right({ id: 99 }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /Novo Produto/ }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(
+      within(dialog).getByLabelText('Nome do Produto'),
+      'Entrega',
+    );
+    await userEvent.type(
+      within(dialog).getByLabelText('Preço de Venda (R$)'),
+      '4',
+    );
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Controlar estoque' }),
+    );
+    expect(within(dialog).queryByLabelText('Estoque')).not.toBeInTheDocument();
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Salvar' }),
+    );
+    await waitFor(() => expect(createProduct).toHaveBeenCalled());
+    expect(createProduct).toHaveBeenCalledWith(
+      expect.objectContaining({ tracksStock: false, stock: 0 }),
+    );
+  });
+
+  it('não exibe o badge de estoque para produtos que não controlam estoque', async () => {
+    listProducts.mockResolvedValue(
+      right([coca, burger, semEstoque, naoEstocavel]),
+    );
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Servico de Entrega')).toBeInTheDocument(),
+    );
+    const card = screen
+      .getByRole('button', { name: 'Editar Servico de Entrega' })
+      .closest('div.flex.flex-wrap');
+    expect(card).not.toBeNull();
+    expect(
+      within(card as HTMLElement).queryByText(/un\./),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card as HTMLElement).queryByText('Sem estoque'),
+    ).not.toBeInTheDocument();
   });
 
   it('falls back to zero when the number fields are cleared', async () => {

@@ -28,6 +28,7 @@ const newProduct = (over: Partial<NewProduct> = {}): NewProduct => ({
   costPrice: 1,
   salePrice: 2,
   stock: 5,
+  tracksStock: true,
   active: true,
   customizationGroupIds: [],
   createdAt: 1,
