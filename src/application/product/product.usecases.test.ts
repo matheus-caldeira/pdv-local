@@ -45,7 +45,7 @@ function fakeRepo(): ProductRepository {
     create: vi.fn(async (p) => right({ ...p, id: 1 } as Product)),
     update: vi.fn(async (id, p) => right({ ...p, id } as Product)),
     remove: vi.fn(async () => right(undefined)),
-    decrementStock: vi.fn(async () => right(undefined)),
+    adjustStock: vi.fn(async () => right(undefined)),
     removeCustomizationGroup: vi.fn(async () => right(undefined)),
   };
 }

@@ -52,7 +52,7 @@ function makeUow(): { uow: UnitOfWork; created: NewOrder[] } {
       },
     },
     products: {
-      decrementStock: async () => right(undefined),
+      adjustStock: async () => right(undefined),
     },
     config: {
       claimTicket: async () => right('0001'),
@@ -67,14 +67,14 @@ function makeUow(): { uow: UnitOfWork; created: NewOrder[] } {
 class FakeRepositories implements Repositories {
   claimedTicket = false;
   createdOrder: NewOrder | null = null;
-  decrements: { productUid: string; qty: number }[] = [];
+  adjustments: { productUid: string; qty: number }[] = [];
   findOrCreateInput: { phone: string; name: string; address: string } | null =
     null;
 
   claimTicketResult: Either<InfrastructureError, string> = right('0001');
   findOrCreateResult: Either<InfrastructureError, string | undefined> =
     right('cust-uid');
-  decrementResult: Either<InfrastructureError, void> = right(undefined);
+  adjustResult: Either<InfrastructureError, void> = right(undefined);
   createResult: Either<InfrastructureError, Order> | null = null;
 
   orders = {
@@ -127,11 +127,9 @@ class FakeRepositories implements Repositories {
     update: async () => right(null as never),
     remove: async () => right(undefined),
     removeCustomizationGroup: async () => right(undefined),
-    decrementStock: async (
-      decrements: { productUid: string; qty: number }[],
-    ) => {
-      this.decrements = decrements;
-      return this.decrementResult;
+    adjustStock: async (adjustments: { productUid: string; qty: number }[]) => {
+      this.adjustments = adjustments;
+      return this.adjustResult;
     },
   };
 
@@ -316,7 +314,7 @@ describe('RegisterOrderUseCase', () => {
           { name: 'Sem estoque', salePrice: 3, costPrice: 1, qty: 1 },
         ],
       });
-      expect(repositories.decrements).toEqual([
+      expect(repositories.adjustments).toEqual([
         { productUid: 'prod-uid-1', qty: 2 },
       ]);
     });
@@ -385,7 +383,7 @@ describe('RegisterOrderUseCase', () => {
 
     it('aborta quando decrementar o estoque falha', async () => {
       const { repositories, uow } = setup();
-      repositories.decrementResult = left(new ConnectorError('down'));
+      repositories.adjustResult = left(new ConnectorError('down'));
       const result = await new RegisterOrderUseCase(
         uow,
         definitionWith('none'),

@@ -2,7 +2,7 @@ import type { Either } from '../shared/either';
 import type { InfrastructureError } from '../../infrastructure/errors';
 import type { NewProduct, Product } from './product.entity';
 
-export interface StockDecrement {
+export interface StockAdjustment {
   productUid: string;
   qty: number;
 }
@@ -15,8 +15,8 @@ export interface ProductRepository {
     product: NewProduct,
   ): Promise<Either<InfrastructureError, Product>>;
   remove(id: number): Promise<Either<InfrastructureError, void>>;
-  decrementStock(
-    decrements: StockDecrement[],
+  adjustStock(
+    adjustments: StockAdjustment[],
   ): Promise<Either<InfrastructureError, void>>;
   removeCustomizationGroup(
     groupId: number,

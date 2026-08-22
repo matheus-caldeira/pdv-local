@@ -34,7 +34,7 @@ function makeUow(): UnitOfWork {
         right({ ...order, id: 1 }),
     },
     products: {
-      decrementStock: async () => right(undefined),
+      adjustStock: async () => right(undefined),
     },
     config: {
       claimTicket: async () => right('0001'),

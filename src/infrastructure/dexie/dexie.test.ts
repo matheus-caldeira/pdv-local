@@ -199,7 +199,7 @@ describe('DexieProductRepository', () => {
       createdAt: 1,
       updatedAt: 1,
     });
-    const result = await repo.decrementStock([
+    const result = await repo.adjustStock([
       { productUid: 'prod-uid-p', qty: 2 },
       { productUid: 'prod-uid-q', qty: 3 },
       { productUid: 'prod-uid-r', qty: 1 },
@@ -209,6 +209,27 @@ describe('DexieProductRepository', () => {
     expect((await db.products.get(id))?.stock).toBe(3);
     expect((await db.products.get(scarce))?.stock).toBe(-2);
     expect((await db.products.get(empty))?.stock).toBe(-1);
+  });
+
+  it('devolve ao estoque quando a quantidade é negativa', async () => {
+    const repo = new DexieProductRepository(db);
+    const id = await db.products.add({
+      uid: 'prod-uid-s',
+      name: 'S',
+      category: 'C',
+      costPrice: 1,
+      salePrice: 2,
+      stock: 10,
+      active: true,
+      customizationGroupIds: [],
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const result = await repo.adjustStock([
+      { productUid: 'prod-uid-s', qty: -3 },
+    ]);
+    expect(isRight(result)).toBe(true);
+    expect((await db.products.get(id))?.stock).toBe(13);
   });
 });
 
@@ -385,9 +406,7 @@ describe('repository error paths', () => {
   it('DexieProductRepository returns Left when the table fails', async () => {
     const repo = new DexieProductRepository(db);
     db.close();
-    const result = await repo.decrementStock([
-      { productUid: 'prod-x', qty: 1 },
-    ]);
+    const result = await repo.adjustStock([{ productUid: 'prod-x', qty: 1 }]);
     expect(isLeft(result)).toBe(true);
   });
 

@@ -92,7 +92,7 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
   ): Promise<Either<AppError, Order>> {
     const draft = this.context.get<NewOrder>(DRAFT_KEY) as NewOrder;
 
-    const stockResult = await repositories.products.decrementStock(
+    const stockResult = await repositories.products.adjustStock(
       draft.items
         .filter((item) => item.productUid !== undefined)
         .map((item) => ({

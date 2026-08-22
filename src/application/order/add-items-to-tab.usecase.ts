@@ -50,7 +50,7 @@ export class AddItemsToTabUseCase extends UseCase<AddItemsToTabInput, Order> {
     input: AddItemsToTabInput,
     repositories: Repositories,
   ): Promise<Either<AppError, Order>> {
-    const stock = await repositories.products.decrementStock(
+    const stock = await repositories.products.adjustStock(
       input.items
         .filter((item) => item.productUid !== undefined)
         .map((item) => ({

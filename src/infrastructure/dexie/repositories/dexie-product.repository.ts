@@ -5,7 +5,7 @@ import type {
 } from '../../../domain/product/product.entity';
 import type {
   ProductRepository,
-  StockDecrement,
+  StockAdjustment,
 } from '../../../domain/product/product.repository';
 import { RecordNotFoundError, type InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
@@ -69,17 +69,17 @@ export class DexieProductRepository implements ProductRepository {
     }
   }
 
-  async decrementStock(
-    decrements: StockDecrement[],
+  async adjustStock(
+    adjustments: StockAdjustment[],
   ): Promise<Either<InfrastructureError, void>> {
     try {
-      for (const decrement of decrements) {
+      for (const adjustment of adjustments) {
         const product = await this.db.products
-          .filter((p) => p.uid === decrement.productUid)
+          .filter((p) => p.uid === adjustment.productUid)
           .first();
         if (product && product.id != null) {
           await this.db.products.update(product.id, {
-            stock: product.stock - decrement.qty,
+            stock: product.stock - adjustment.qty,
           });
         }
       }

@@ -57,7 +57,7 @@ function makeRepositories(
       },
     },
     products: {
-      async decrementStock() {
+      async adjustStock() {
         return options.stockFails
           ? left(new InsufficientStockError('Refri'))
           : right(undefined);
