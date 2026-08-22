@@ -2,15 +2,38 @@ import type { Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import type { Observable } from '../../domain/shared/observable';
 import type { Order, OrderStage } from '../../domain/order/order.entity';
-import type { OrderRepository } from '../../domain/order/order.repository';
+import type {
+  OrderPage,
+  OrderQuery,
+  OrderRepository,
+} from '../../domain/order/order.repository';
 
 export function makeListOrders(repository: OrderRepository) {
   return (): Promise<Either<AppError, Order[]>> => repository.listAll();
 }
 
+export function makeListOrderPage(repository: OrderRepository) {
+  return (query: OrderQuery): Promise<Either<AppError, OrderPage>> =>
+    repository.listPage(query);
+}
+
+export function makeListFinishedOrderPage(repository: OrderRepository) {
+  return (
+    sessionUid: string,
+    offset: number,
+    limit: number,
+  ): Promise<Either<AppError, OrderPage>> =>
+    repository.listFinishedPage(sessionUid, offset, limit);
+}
+
 export function makeObserveSessionOrders(repository: OrderRepository) {
   return (sessionUid: string): Observable<Order[]> =>
     repository.observeBySession(sessionUid);
+}
+
+export function makeObserveActiveSessionOrders(repository: OrderRepository) {
+  return (sessionUid: string): Observable<Order[]> =>
+    repository.observeActiveBySession(sessionUid);
 }
 
 export function makeObserveActiveOrders(repository: OrderRepository) {

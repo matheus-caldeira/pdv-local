@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useKdsOrders } from './useKdsOrders';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
-import type { Order } from '../../domain/order/order.entity';
+import type { Order, OrderStage } from '../../domain/order/order.entity';
 
 const observeSessionOrders = vi.fn();
 const setOrderStage = vi.fn();
@@ -132,6 +138,121 @@ describe('useKdsOrders', () => {
     await userEvent.click(screen.getByText('move'));
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('falha estagio'),
+    );
+  });
+});
+
+function AutoProbe({ autoStages }: { autoStages: OrderStage[] }) {
+  const { orders } = useKdsOrders('session-7', autoStages);
+  return <span>orders:{orders.length}</span>;
+}
+
+function renderAutoProbe(autoStages: OrderStage[]) {
+  return render(
+    <ToastProvider>
+      <AutoProbe autoStages={autoStages} />
+    </ToastProvider>,
+  );
+}
+
+describe('useKdsOrders auto stages', () => {
+  beforeEach(() => {
+    observeSessionOrders.mockReset();
+    setOrderStage.mockReset();
+    unsubscribe.mockReset();
+    observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    setOrderStage.mockResolvedValue(right(undefined));
+  });
+  afterEach(cleanup);
+
+  it('leaves the orders alone when no stage is automated', () => {
+    renderAutoProbe([]);
+    expect(setOrderStage).not.toHaveBeenCalled();
+  });
+
+  it('advances the orders sitting on an automated stage', async () => {
+    renderAutoProbe(['aceito']);
+    await waitFor(() =>
+      expect(setOrderStage).toHaveBeenCalledWith('order-1', 'em_preparo'),
+    );
+    expect(setOrderStage).toHaveBeenCalledWith('order-2', 'em_preparo');
+  });
+
+  it('does not touch orders on stages without automation', async () => {
+    renderAutoProbe(['aceito']);
+    await waitFor(() => expect(setOrderStage).toHaveBeenCalled());
+    expect(setOrderStage).not.toHaveBeenCalledWith(
+      'order-3',
+      expect.anything(),
+    );
+  });
+
+  it('cascades across consecutive automated stages', async () => {
+    renderAutoProbe(['aceito', 'em_preparo']);
+    await waitFor(() =>
+      expect(setOrderStage).toHaveBeenCalledWith('order-1', 'a_caminho'),
+    );
+    expect(setOrderStage).toHaveBeenCalledWith('order-3', 'a_caminho');
+  });
+
+  it('never moves a cancelled order', async () => {
+    renderAutoProbe(['aceito']);
+    await waitFor(() => expect(setOrderStage).toHaveBeenCalled());
+    expect(setOrderStage).not.toHaveBeenCalledWith(
+      'order-4',
+      expect.anything(),
+    );
+  });
+
+  it('writes once per order even when the list refreshes', async () => {
+    const { rerender } = renderAutoProbe(['aceito']);
+    await waitFor(() => expect(setOrderStage).toHaveBeenCalledTimes(2));
+
+    rerender(
+      <ToastProvider>
+        <AutoProbe autoStages={['aceito']} />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => expect(setOrderStage).toHaveBeenCalledTimes(2));
+  });
+
+  it('does not write again while the previous move is still pending', async () => {
+    let release: (value: unknown) => void = () => {};
+    setOrderStage.mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    let emit: (value: Order[]) => void = () => {};
+    observeSessionOrders.mockReturnValue({
+      subscribe(next: (value: Order[]) => void) {
+        emit = next;
+        next(ORDERS);
+        return { unsubscribe };
+      },
+    });
+
+    renderAutoProbe(['aceito']);
+    await waitFor(() => expect(setOrderStage).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      emit([...ORDERS]);
+    });
+
+    expect(setOrderStage).toHaveBeenCalledTimes(2);
+    release(right(undefined));
+  });
+
+  it('stops at the last stage when every stage is automated', async () => {
+    renderAutoProbe(['aceito', 'em_preparo', 'a_caminho', 'finalizado']);
+    await waitFor(() =>
+      expect(setOrderStage).toHaveBeenCalledWith('order-1', 'finalizado'),
+    );
+    expect(setOrderStage).not.toHaveBeenCalledWith(
+      'order-1',
+      expect.stringMatching(/^(?!finalizado).*$/),
     );
   });
 });

@@ -7,12 +7,19 @@ import type {
   Order,
   OrderStage,
 } from '../../domain/order/order.entity';
-import type { OrderRepository } from '../../domain/order/order.repository';
+import type {
+  OrderPage,
+  OrderQuery,
+  OrderRepository,
+} from '../../domain/order/order.repository';
 import {
   makeCancelOrder,
+  makeListFinishedOrderPage,
+  makeListOrderPage,
   makeListOrders,
   makeMarkOrderPaid,
   makeObserveActiveOrders,
+  makeObserveActiveSessionOrders,
   makeObserveSessionOrders,
   makeSetOrderStage,
 } from './order-management.usecases';
@@ -23,6 +30,13 @@ class FakeOrderRepository implements OrderRepository {
   staged: { uid: string; stage: OrderStage } | null = null;
   observedSession: string | null = null;
   observedActive = false;
+  observedActiveSession: string | null = null;
+  query: OrderQuery | null = null;
+  finishedQuery: {
+    sessionUid: string;
+    offset: number;
+    limit: number;
+  } | null = null;
   readonly stream: Observable<Order[]> = {
     subscribe: () => ({ unsubscribe: () => {} }),
   };
@@ -81,6 +95,27 @@ class FakeOrderRepository implements OrderRepository {
   async setStatus(): Promise<Either<InfrastructureError, void>> {
     return right(undefined);
   }
+
+  async listPage(
+    query: OrderQuery,
+  ): Promise<Either<InfrastructureError, OrderPage>> {
+    this.query = query;
+    return right({ orders: [{ id: 2 } as Order], total: 7, hasMore: true });
+  }
+
+  async listFinishedPage(
+    sessionUid: string,
+    offset: number,
+    limit: number,
+  ): Promise<Either<InfrastructureError, OrderPage>> {
+    this.finishedQuery = { sessionUid, offset, limit };
+    return right({ orders: [{ id: 3 } as Order], total: 4, hasMore: false });
+  }
+
+  observeActiveBySession(sessionUid: string): Observable<Order[]> {
+    this.observedActiveSession = sessionUid;
+    return this.stream;
+  }
 }
 
 describe('order management use cases', () => {
@@ -120,6 +155,41 @@ describe('order management use cases', () => {
     const repo = new FakeOrderRepository();
     await makeSetOrderStage(repo)('order-9', 'em_preparo');
     expect(repo.staged).toEqual({ uid: 'order-9', stage: 'em_preparo' });
+  });
+
+  it('lists a page of orders forwarding the query', async () => {
+    const repo = new FakeOrderRepository();
+    const result = await makeListOrderPage(repo)({
+      statuses: ['open', 'pending'],
+      term: 'ana',
+      offset: 30,
+      limit: 30,
+    });
+    expect(repo.query).toEqual({
+      statuses: ['open', 'pending'],
+      term: 'ana',
+      offset: 30,
+      limit: 30,
+    });
+    expect(isRight(result) && result.right.total).toBe(7);
+  });
+
+  it('lists a page of finished orders of a session', async () => {
+    const repo = new FakeOrderRepository();
+    const result = await makeListFinishedOrderPage(repo)('s3', 20, 20);
+    expect(repo.finishedQuery).toEqual({
+      sessionUid: 's3',
+      offset: 20,
+      limit: 20,
+    });
+    expect(isRight(result) && result.right.total).toBe(4);
+  });
+
+  it('observes active orders of a session', () => {
+    const repo = new FakeOrderRepository();
+    const stream = makeObserveActiveSessionOrders(repo)('s4');
+    expect(repo.observedActiveSession).toBe('s4');
+    expect(stream).toBe(repo.stream);
   });
 
   it('subscribes to the returned observable', () => {

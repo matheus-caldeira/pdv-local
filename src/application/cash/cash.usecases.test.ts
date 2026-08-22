@@ -18,7 +18,10 @@ import type {
   Session,
 } from '../../domain/cash/cash.entity';
 import type { CashRepository } from '../../domain/cash/cash.repository';
-import type { OrderRepository } from '../../domain/order/order.repository';
+import type {
+  OrderPage,
+  OrderRepository,
+} from '../../domain/order/order.repository';
 import type { Observable } from '../../domain/shared/observable';
 import type { NewOrder, Order } from '../../domain/order/order.entity';
 import {
@@ -147,6 +150,18 @@ class FakeOrderRepository implements OrderRepository {
 
   observeActiveStages(): Observable<Order[]> {
     return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+
+  observeActiveBySession(): Observable<Order[]> {
+    return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+
+  async listPage(): Promise<Either<InfrastructureError, OrderPage>> {
+    return right({ orders: [], total: 0, hasMore: false });
+  }
+
+  async listFinishedPage(): Promise<Either<InfrastructureError, OrderPage>> {
+    return right({ orders: [], total: 0, hasMore: false });
   }
 
   async markAsPaid(): Promise<Either<InfrastructureError, void>> {

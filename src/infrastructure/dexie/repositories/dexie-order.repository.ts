@@ -8,12 +8,42 @@ import type {
   OrderStage,
   OrderStatus,
 } from '../../../domain/order/order.entity';
-import type { OrderRepository } from '../../../domain/order/order.repository';
+import type {
+  OrderPage,
+  OrderQuery,
+  OrderRepository,
+} from '../../../domain/order/order.repository';
 import type { InfrastructureError } from '../../errors';
 import type { PDVDatabase } from '../dexie-database';
 import { toInfrastructureError } from '../dexie-errors';
 
 const ACTIVE_STAGES: OrderStage[] = ['aceito', 'em_preparo', 'a_caminho'];
+
+function matcher(
+  statuses: OrderStatus[] | undefined,
+  term: string | undefined,
+): (order: Order) => boolean {
+  const normalized = term?.trim().toLowerCase() ?? '';
+  return (order) => {
+    if (statuses && statuses.length > 0 && !statuses.includes(order.status)) {
+      return false;
+    }
+    if (!normalized) return true;
+    return (
+      order.ticket.toLowerCase().includes(normalized) ||
+      order.customerName.toLowerCase().includes(normalized)
+    );
+  };
+}
+
+function paginate(orders: Order[], offset: number, limit: number): OrderPage {
+  const page = orders.slice(offset, offset + limit);
+  return {
+    orders: page,
+    total: orders.length,
+    hasMore: offset + page.length < orders.length,
+  };
+}
 
 export class DexieOrderRepository implements OrderRepository {
   private readonly db: PDVDatabase;
@@ -39,6 +69,56 @@ export class DexieOrderRepository implements OrderRepository {
     } catch (cause) {
       return left(toInfrastructureError(cause));
     }
+  }
+
+  async listPage(
+    query: OrderQuery,
+  ): Promise<Either<InfrastructureError, OrderPage>> {
+    try {
+      const matches = matcher(query.statuses, query.term);
+      const all = await this.db.orders
+        .orderBy('createdAt')
+        .reverse()
+        .filter(matches)
+        .toArray();
+      return right(paginate(all, query.offset, query.limit));
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  async listFinishedPage(
+    sessionUid: string,
+    offset: number,
+    limit: number,
+  ): Promise<Either<InfrastructureError, OrderPage>> {
+    try {
+      const all = await this.db.orders
+        .where('stage')
+        .equals('finalizado')
+        .filter(
+          (order) =>
+            order.sessionUid === sessionUid && order.status !== 'cancelled',
+        )
+        .toArray();
+      all.sort((a, b) => b.updatedAt - a.updatedAt);
+      return right(paginate(all, offset, limit));
+    } catch (cause) {
+      return left(toInfrastructureError(cause));
+    }
+  }
+
+  observeActiveBySession(sessionUid: string): Observable<Order[]> {
+    return liveQuery(() =>
+      this.db.orders
+        .filter(
+          (order) =>
+            order.sessionUid === sessionUid &&
+            order.stage !== 'finalizado' &&
+            order.status !== 'cancelled',
+        )
+        .toArray(),
+    );
   }
 
   async listBySession(

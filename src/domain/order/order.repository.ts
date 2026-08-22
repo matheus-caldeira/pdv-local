@@ -9,9 +9,29 @@ import type {
   OrderStatus,
 } from './order.entity';
 
+export interface OrderQuery {
+  statuses?: OrderStatus[];
+  term?: string;
+  offset: number;
+  limit: number;
+}
+
+export interface OrderPage {
+  orders: Order[];
+  total: number;
+  hasMore: boolean;
+}
+
 export interface OrderRepository {
   create(order: NewOrder): Promise<Either<InfrastructureError, Order>>;
   listAll(): Promise<Either<InfrastructureError, Order[]>>;
+  listPage(query: OrderQuery): Promise<Either<InfrastructureError, OrderPage>>;
+  listFinishedPage(
+    sessionUid: string,
+    offset: number,
+    limit: number,
+  ): Promise<Either<InfrastructureError, OrderPage>>;
+  observeActiveBySession(sessionUid: string): Observable<Order[]>;
   listBySession(
     sessionUid: string,
   ): Promise<Either<InfrastructureError, Order[]>>;

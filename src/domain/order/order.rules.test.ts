@@ -14,6 +14,7 @@ import {
   mergeOrderItems,
   nextStage,
   prevStage,
+  resolveAutoStage,
   validateCartNotEmpty,
   validateRequiredCustomizations,
 } from './order.rules';
@@ -74,6 +75,42 @@ describe('order stages', () => {
 
   it('returns null before the first stage', () => {
     expect(prevStage('aceito')).toBeNull();
+  });
+});
+
+describe('resolveAutoStage', () => {
+  it('keeps the stage when it has no automation', () => {
+    expect(resolveAutoStage('aceito', [])).toBeNull();
+  });
+
+  it('advances one stage when the current one is automated', () => {
+    expect(resolveAutoStage('aceito', ['aceito'])).toBe('em_preparo');
+  });
+
+  it('cascades through consecutive automated stages', () => {
+    expect(resolveAutoStage('aceito', ['aceito', 'em_preparo'])).toBe(
+      'a_caminho',
+    );
+  });
+
+  it('cascades to the last stage and stops there', () => {
+    expect(
+      resolveAutoStage('aceito', ['aceito', 'em_preparo', 'a_caminho']),
+    ).toBe('finalizado');
+  });
+
+  it('stops at the first stage without automation', () => {
+    expect(resolveAutoStage('aceito', ['aceito', 'a_caminho'])).toBe(
+      'em_preparo',
+    );
+  });
+
+  it('never moves past the last stage even if it is automated', () => {
+    expect(resolveAutoStage('finalizado', ['finalizado'])).toBeNull();
+  });
+
+  it('ignores automation of stages the order already passed', () => {
+    expect(resolveAutoStage('a_caminho', ['aceito'])).toBeNull();
   });
 });
 

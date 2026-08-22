@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { KdsPage } from './KdsPage';
 import { ToastProvider } from '../molecules/Toast';
@@ -226,7 +232,7 @@ describe('KdsPage collapsible stages', () => {
     expect(header.querySelector('span')).toHaveClass(
       'lg:[writing-mode:vertical-rl]',
     );
-    expect(header.parentElement).toHaveClass('lg:w-14');
+    expect(header.closest('.lg\\:w-14')).not.toBeNull();
   });
 
   it('keeps the title horizontal while expanded', () => {
@@ -238,7 +244,79 @@ describe('KdsPage collapsible stages', () => {
     expect(header.querySelector('span')).not.toHaveClass(
       'lg:[writing-mode:vertical-rl]',
     );
-    expect(header.parentElement).not.toHaveClass('lg:w-14');
+    expect(header.closest('.lg\\:w-14')).toBeNull();
+  });
+
+  it('offers the automation toggle on stages that have a next one', () => {
+    renderPage();
+    expect(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de Aceito/,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('omits the automation toggle on the last stage', () => {
+    renderPage();
+    expect(
+      screen.queryByRole('button', {
+        name: /avanço automático de Finalizado/,
+      }),
+    ).toBeNull();
+  });
+
+  it('advances the orders of a stage once its automation is on', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de Aceito/,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(setOrderStage).toHaveBeenCalledWith('order-1', 'em_preparo'),
+    );
+  });
+
+  it('turns the automation off again', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de Aceito/,
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /Desativar avanço automático de Aceito/,
+      }),
+    );
+
+    expect(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de Aceito/,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('restores the automation choice on the next mount', async () => {
+    const first = renderPage();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de Aceito/,
+      }),
+    );
+    first.unmount();
+    setOrderStage.mockClear();
+
+    renderPage();
+
+    expect(
+      screen.getByRole('button', {
+        name: /Desativar avanço automático de Aceito/,
+      }),
+    ).toBeInTheDocument();
   });
 
   it('restores the collapsed stages on the next mount', async () => {

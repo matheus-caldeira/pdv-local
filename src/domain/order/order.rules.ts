@@ -35,6 +35,23 @@ export function prevStage(stage: OrderStage): OrderStage | null {
   return index > 0 ? ORDER_STAGES[index - 1] : null;
 }
 
+export function resolveAutoStage(
+  stage: OrderStage,
+  autoStages: OrderStage[],
+): OrderStage | null {
+  let current = stage;
+  let target: OrderStage | null = null;
+
+  while (autoStages.includes(current)) {
+    const next = nextStage(current);
+    if (next === null) break;
+    current = next;
+    target = next;
+  }
+
+  return target;
+}
+
 export function calculateOrderTotal(items: OrderItem[]): number {
   return items.reduce(
     (sum, item) =>

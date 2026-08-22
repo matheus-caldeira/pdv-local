@@ -8,7 +8,10 @@ import {
 } from '../../domain/shared/either';
 import type { Order, OrderItem } from '../../domain/order/order.entity';
 import type { Session } from '../../domain/cash/cash.entity';
-import type { OrderRepository } from '../../domain/order/order.repository';
+import type {
+  OrderPage,
+  OrderRepository,
+} from '../../domain/order/order.repository';
 import type { CashRepository } from '../../domain/cash/cash.repository';
 import type { CashMovement } from '../../domain/cash/cash.entity';
 import type { Observable } from '../../domain/shared/observable';
@@ -67,6 +70,15 @@ class FakeOrderRepository implements OrderRepository {
   }
   observeActiveStages(): Observable<Order[]> {
     return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+  observeActiveBySession(): Observable<Order[]> {
+    return { subscribe: () => ({ unsubscribe: () => {} }) };
+  }
+  async listPage(): Promise<Either<InfrastructureError, OrderPage>> {
+    return right({ orders: [], total: 0, hasMore: false });
+  }
+  async listFinishedPage(): Promise<Either<InfrastructureError, OrderPage>> {
+    return right({ orders: [], total: 0, hasMore: false });
   }
   async markAsPaid(): Promise<Either<InfrastructureError, void>> {
     return right(undefined);

@@ -49,9 +49,12 @@ import {
 } from '../application/cash/cash.usecases';
 import {
   makeCancelOrder,
+  makeListFinishedOrderPage,
+  makeListOrderPage,
   makeListOrders,
   makeMarkOrderPaid,
   makeObserveActiveOrders,
+  makeObserveActiveSessionOrders,
   makeObserveSessionOrders,
   makeSetOrderStage,
 } from '../application/order/order-management.usecases';
@@ -216,7 +219,10 @@ export function createContainer() {
     closeSession: makeCloseSession(cash),
     addCashMovement: makeAddCashMovement(cash),
     listOrders: makeListOrders(orders),
+    listOrderPage: makeListOrderPage(orders),
+    listFinishedOrderPage: makeListFinishedOrderPage(orders),
     observeSessionOrders: makeObserveSessionOrders(orders),
+    observeActiveSessionOrders: makeObserveActiveSessionOrders(orders),
     observeActiveOrders: makeObserveActiveOrders(orders),
     markOrderPaid: makeMarkOrderPaid(orders),
     cancelOrder: makeCancelOrder(orders),

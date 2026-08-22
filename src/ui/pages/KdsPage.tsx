@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Money } from '../atoms/Money';
@@ -6,6 +6,7 @@ import { cn } from '../lib/cn';
 import { useSession } from '../hooks/useSession';
 import { useKdsOrders } from '../hooks/useKdsOrders';
 import { useKdsCollapsedStages } from '../hooks/useKdsCollapsedStages';
+import { useKdsAutoStages } from '../hooks/useKdsAutoStages';
 import {
   ORDER_STAGES,
   STAGE_LABELS,
@@ -15,7 +16,8 @@ import {
 
 export function KdsPage() {
   const { activeSession } = useSession();
-  const { byStage, moveStage } = useKdsOrders(activeSession?.uid);
+  const { autoStages, isAuto, toggle: toggleAuto } = useKdsAutoStages();
+  const { byStage, moveStage } = useKdsOrders(activeSession?.uid, autoStages);
   const { isCollapsed, toggle } = useKdsCollapsedStages();
 
   return (
@@ -41,47 +43,75 @@ export function KdsPage() {
                     : 'flex-col lg:flex-1',
                 )}
               >
-                <button
-                  type="button"
-                  aria-expanded={!collapsed}
-                  aria-label={`${collapsed ? 'Expandir' : 'Recolher'} etapa ${STAGE_LABELS[stage]}`}
+                <div
                   className={cn(
-                    'flex items-center rounded-md transition-colors hover:bg-surface-2',
-                    collapsed
-                      ? 'justify-between px-1 py-1 lg:h-full lg:flex-col lg:justify-start lg:gap-3 lg:px-0 lg:py-3'
-                      : 'justify-between px-1 py-1',
+                    'flex items-center gap-1',
+                    collapsed ? 'lg:h-full lg:flex-col' : '',
                   )}
-                  onClick={() => toggle(stage)}
                 >
-                  <span
+                  <button
+                    type="button"
+                    aria-expanded={!collapsed}
+                    aria-label={`${collapsed ? 'Expandir' : 'Recolher'} etapa ${STAGE_LABELS[stage]}`}
                     className={cn(
-                      'text-sm font-bold text-ink-secondary',
+                      'flex flex-1 items-center rounded-md transition-colors hover:bg-surface-2',
                       collapsed
-                        ? 'lg:[writing-mode:vertical-rl] lg:rotate-180'
-                        : '',
+                        ? 'justify-between px-1 py-1 lg:w-full lg:flex-col lg:justify-start lg:gap-3 lg:px-0 lg:py-3'
+                        : 'justify-between px-1 py-1',
                     )}
+                    onClick={() => toggle(stage)}
                   >
-                    {STAGE_LABELS[stage]}
-                  </span>
-                  <span
-                    className={cn(
-                      'flex items-center gap-1',
-                      collapsed ? 'lg:flex-col-reverse' : '',
-                    )}
-                  >
-                    <Badge tone="muted" size="xs">
-                      {list.length}
-                    </Badge>
-                    <ChevronDown
-                      size={16}
-                      strokeWidth={2}
+                    <span
                       className={cn(
-                        'text-ink-tertiary transition-transform',
-                        collapsed ? '-rotate-90' : '',
+                        'text-sm font-bold text-ink-secondary',
+                        collapsed
+                          ? 'lg:[writing-mode:vertical-rl] lg:rotate-180'
+                          : '',
                       )}
-                    />
-                  </span>
-                </button>
+                    >
+                      {STAGE_LABELS[stage]}
+                    </span>
+                    <span
+                      className={cn(
+                        'flex items-center gap-1',
+                        collapsed ? 'lg:flex-col-reverse' : '',
+                      )}
+                    >
+                      <Badge tone="muted" size="xs">
+                        {list.length}
+                      </Badge>
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={2}
+                        className={cn(
+                          'text-ink-tertiary transition-transform',
+                          collapsed ? '-rotate-90' : '',
+                        )}
+                      />
+                    </span>
+                  </button>
+                  {nextStage(stage) && (
+                    <button
+                      type="button"
+                      aria-pressed={isAuto(stage)}
+                      aria-label={`${isAuto(stage) ? 'Desativar' : 'Ativar'} avanço automático de ${STAGE_LABELS[stage]}`}
+                      title={
+                        isAuto(stage)
+                          ? `Avanço automático ligado: pedidos seguem direto para ${STAGE_LABELS[nextStage(stage)!]}`
+                          : 'Avançar pedidos automaticamente'
+                      }
+                      className={cn(
+                        'grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors',
+                        isAuto(stage)
+                          ? 'bg-accent-subtle text-accent'
+                          : 'text-ink-tertiary hover:bg-surface-2 hover:text-ink-secondary',
+                      )}
+                      onClick={() => toggleAuto(stage)}
+                    >
+                      <Zap size={14} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
                 {!collapsed &&
                   list.map((order) => {
                     const previous = prevStage(order.stage);

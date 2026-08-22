@@ -9,11 +9,16 @@ import { OpenTabPromptModal } from '../organisms/OpenTabPromptModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
 import { QuickCustomerModal } from '../organisms/QuickCustomerModal';
 import { TabSelector } from '../organisms/TabSelector';
+import { CartBar } from '../organisms/CartBar';
+import { Modal } from '../molecules/Modal';
+import { CartItemList } from '../molecules/CartItemList';
+import { CustomerPicker } from '../molecules/CustomerPicker';
 import { useSession } from '../hooks/useSession';
 import { useProducts } from '../hooks/useProducts';
 import { usePdvController, type PayOption } from '../hooks/usePdvController';
 import { useTabs } from '../hooks/useTabs';
 import { usePrint } from '../hooks/usePrint';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   useCustomizationLoader,
   type LoadedCustomizationGroup,
@@ -39,6 +44,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     refresh: refreshTabs,
   } = useTabs(sessionUid);
   const { printTabNumber } = usePrint();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -52,6 +58,8 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
   const [promptTab, setPromptTab] = useState<Order | null>(null);
   const [openedTab, setOpenedTab] = useState<Order | null>(null);
+  const [cartSheetOpen, setCartSheetOpen] = useState(false);
+  const [customerSheetOpen, setCustomerSheetOpen] = useState(false);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
@@ -112,45 +120,113 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     void refreshTabs();
   }
 
+  function handleTabAction() {
+    if (selectedTab) {
+      void handleLaunchToTab(selectedTab.uid);
+      return;
+    }
+    void handleOpenNewTab();
+  }
+
   return (
-    <div className="flex min-h-[calc(100dvh-3rem)] flex-col gap-4 md:flex-row">
+    <div
+      className={
+        isMobile
+          ? 'flex flex-col gap-4 pb-32'
+          : 'flex min-h-[calc(100dvh-3rem)] flex-col gap-4 md:flex-row'
+      }
+    >
       <ProductGrid
         products={products}
         cart={controller.cart}
         onSelect={handleProductClick}
       />
 
-      <div className="flex w-full flex-col gap-3 md:w-auto">
-        <TabSelector
-          tabs={openTabs}
-          selectedUid={selectedTabUid}
-          onSelect={setSelectedTabUid}
-        />
+      {isMobile ? (
+        <>
+          <CartBar
+            cart={controller.cart}
+            total={controller.total}
+            customerName={controller.customerName}
+            ordering={controller.ordering}
+            selectedTab={selectedTab}
+            onExpand={() => setCartSheetOpen(true)}
+            onOpenCustomer={() => setCustomerSheetOpen(true)}
+            onOpenTab={handleTabAction}
+            onFinalize={() => setPaymentOpen(true)}
+            onCreateCustomer={() => setQuickCustomerOpen(true)}
+            onClearCart={controller.clearCart}
+          />
 
-        <Cart
-          cart={controller.cart}
-          total={controller.total}
-          customerName={controller.customerName}
-          onCustomerNameChange={controller.onCustomerNameChange}
-          customerSuggestions={controller.customerSuggestions}
-          onSelectCustomer={handleSelectCustomer}
-          onCreateCustomer={() => setQuickCustomerOpen(true)}
-          address={controller.address}
-          onAddressChange={controller.setAddress}
-          showAddress={false}
-          matchedCustomer={controller.matchedCustomer}
-          ordering={controller.ordering}
-          onUpdateQty={controller.updateQty}
-          onRemoveItem={controller.removeCartItem}
-          onSetObservation={controller.setObservation}
-          onFinalize={() => setPaymentOpen(true)}
-          selectedTab={selectedTab}
-          onLaunchToTab={
-            selectedTab ? () => handleLaunchToTab(selectedTab.uid) : undefined
-          }
-          onOpenNewTab={handleOpenNewTab}
-        />
-      </div>
+          <Modal
+            open={cartSheetOpen}
+            onClose={() => setCartSheetOpen(false)}
+            title="Itens do pedido"
+          >
+            <CartItemList
+              cart={controller.cart}
+              onUpdateQty={controller.updateQty}
+              onRemoveItem={controller.removeCartItem}
+              onSetObservation={controller.setObservation}
+            />
+          </Modal>
+
+          <Modal
+            open={customerSheetOpen}
+            onClose={() => setCustomerSheetOpen(false)}
+            title="Cliente"
+          >
+            <CustomerPicker
+              customerName={controller.customerName}
+              onCustomerNameChange={controller.onCustomerNameChange}
+              customerSuggestions={controller.customerSuggestions}
+              onSelectCustomer={(customer) => {
+                handleSelectCustomer(customer);
+                setCustomerSheetOpen(false);
+              }}
+              onCreateCustomer={() => {
+                setCustomerSheetOpen(false);
+                setQuickCustomerOpen(true);
+              }}
+              tabs={openTabs}
+              selectedTabUid={selectedTabUid}
+              onSelectTab={setSelectedTabUid}
+            />
+          </Modal>
+        </>
+      ) : (
+        <div className="flex w-full flex-col gap-3 md:w-auto">
+          <TabSelector
+            tabs={openTabs}
+            selectedUid={selectedTabUid}
+            onSelect={setSelectedTabUid}
+          />
+
+          <Cart
+            cart={controller.cart}
+            total={controller.total}
+            customerName={controller.customerName}
+            onCustomerNameChange={controller.onCustomerNameChange}
+            customerSuggestions={controller.customerSuggestions}
+            onSelectCustomer={handleSelectCustomer}
+            onCreateCustomer={() => setQuickCustomerOpen(true)}
+            address={controller.address}
+            onAddressChange={controller.setAddress}
+            showAddress={false}
+            matchedCustomer={controller.matchedCustomer}
+            ordering={controller.ordering}
+            onUpdateQty={controller.updateQty}
+            onRemoveItem={controller.removeCartItem}
+            onSetObservation={controller.setObservation}
+            onFinalize={() => setPaymentOpen(true)}
+            selectedTab={selectedTab}
+            onLaunchToTab={
+              selectedTab ? () => handleLaunchToTab(selectedTab.uid) : undefined
+            }
+            onOpenNewTab={handleOpenNewTab}
+          />
+        </div>
+      )}
 
       {customization && (
         <CustomizationModal
