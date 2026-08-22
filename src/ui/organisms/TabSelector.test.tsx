@@ -1,92 +1,102 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Order } from '../../domain/order/order.entity';
 import { TabSelector } from './TabSelector';
+import type { Order } from '../../domain/order/order.entity';
 
-const tabs = [
-  { uid: 'a', ticket: '001', customerName: 'Maju (Lobinha)', total: 0 },
-  { uid: 'b', ticket: '002', customerName: 'Pedro (Escoteiro)', total: 15 },
-] as Order[];
+afterEach(cleanup);
+
+function makeTab(overrides: Partial<Order> & { uid: string }): Order {
+  return {
+    businessTypeId: 'scout',
+    sessionUid: 'session-1',
+    items: [],
+    total: 0,
+    paymentMethod: null,
+    customerName: 'Maju',
+    customerPhone: '',
+    ticket: '0001',
+    stage: 'aceito',
+    status: 'open',
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  };
+}
+
+const tabs: Order[] = [
+  makeTab({ uid: 't-1', ticket: '0001', customerName: 'Maju' }),
+  makeTab({ uid: 't-2', ticket: '0042', customerName: 'Pedro' }),
+];
 
 describe('TabSelector', () => {
-  afterEach(cleanup);
+  it('avisa quando não há comanda aberta', () => {
+    render(<TabSelector tabs={[]} selectedUid={null} onSelect={vi.fn()} />);
 
-  it('lista as comandas abertas', () => {
-    render(
-      <TabSelector
-        tabs={tabs}
-        selectedUid={null}
-        onSelect={vi.fn()}
-        onOpenNew={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByRole('option', { name: /001/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /002/ })).toBeInTheDocument();
+    expect(screen.getByText('Nenhuma comanda aberta')).toBeInTheDocument();
   });
 
-  it('avisa quando escolhem uma comanda', async () => {
+  it('filtra pelo número da comanda', async () => {
+    render(<TabSelector tabs={tabs} selectedUid={null} onSelect={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText('Comanda'), '0042');
+
+    expect(screen.getByRole('option', { name: /Pedro/ })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: /Maju/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('filtra pelo nome do cliente', async () => {
+    render(<TabSelector tabs={tabs} selectedUid={null} onSelect={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText('Comanda'), 'maju');
+
+    expect(screen.getByRole('option', { name: /Maju/ })).toBeInTheDocument();
+  });
+
+  it('seleciona a comanda escolhida', async () => {
     const onSelect = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <TabSelector
-        tabs={tabs}
-        selectedUid={null}
-        onSelect={onSelect}
-        onOpenNew={vi.fn()}
-      />,
-    );
+    render(<TabSelector tabs={tabs} selectedUid={null} onSelect={onSelect} />);
 
-    await user.selectOptions(screen.getByLabelText(/comanda/i), 'b');
+    await userEvent.type(screen.getByLabelText('Comanda'), 'pedro');
+    await userEvent.click(screen.getByRole('option', { name: /Pedro/ }));
 
-    expect(onSelect).toHaveBeenCalledWith('b');
+    expect(onSelect).toHaveBeenCalledWith('t-2');
   });
 
-  it('oferece abrir uma comanda nova', async () => {
-    const onOpenNew = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <TabSelector
-        tabs={tabs}
-        selectedUid={null}
-        onSelect={vi.fn()}
-        onOpenNew={onOpenNew}
-      />,
-    );
+  it('mostra a comanda já selecionada no campo', () => {
+    render(<TabSelector tabs={tabs} selectedUid="t-1" onSelect={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: /nova comanda/i }));
-
-    expect(onOpenNew).toHaveBeenCalled();
+    expect(screen.getByLabelText('Comanda')).toHaveValue('0001 — Maju');
   });
 
-  it('mostra aviso quando não há comanda aberta', () => {
-    render(
-      <TabSelector
-        tabs={[]}
-        selectedUid={null}
-        onSelect={vi.fn()}
-        onOpenNew={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText(/nenhuma comanda aberta/i)).toBeInTheDocument();
-  });
-
-  it('volta para venda avulsa ao escolher a opção vazia', async () => {
+  it('limpa a seleção quando o campo é esvaziado', async () => {
     const onSelect = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <TabSelector
-        tabs={tabs}
-        selectedUid="a"
-        onSelect={onSelect}
-        onOpenNew={vi.fn()}
-      />,
-    );
+    render(<TabSelector tabs={tabs} selectedUid="t-1" onSelect={onSelect} />);
 
-    await user.selectOptions(screen.getByLabelText(/comanda/i), '');
+    await userEvent.clear(screen.getByLabelText('Comanda'));
 
     expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it('atualiza o campo quando a comanda selecionada muda externamente', () => {
+    const { rerender } = render(
+      <TabSelector tabs={tabs} selectedUid="t-1" onSelect={vi.fn()} />,
+    );
+
+    rerender(<TabSelector tabs={tabs} selectedUid="t-2" onSelect={vi.fn()} />);
+
+    expect(screen.getByLabelText('Comanda')).toHaveValue('0042 — Pedro');
+  });
+
+  it('limpa o campo quando a seleção é removida externamente', () => {
+    const { rerender } = render(
+      <TabSelector tabs={tabs} selectedUid="t-1" onSelect={vi.fn()} />,
+    );
+
+    rerender(<TabSelector tabs={tabs} selectedUid={null} onSelect={vi.fn()} />);
+
+    expect(screen.getByLabelText('Comanda')).toHaveValue('');
   });
 });

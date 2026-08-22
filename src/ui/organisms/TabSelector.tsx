@@ -1,45 +1,72 @@
-import { Button } from '../atoms/Button';
-import { FormField } from '../molecules/FormField';
-import { Select } from '../molecules/Select';
+import { useState } from 'react';
+import {
+  Autocomplete,
+  type AutocompleteOption,
+} from '../molecules/Autocomplete';
 import type { Order } from '../../domain/order/order.entity';
 
 interface TabSelectorProps {
   tabs: Order[];
   selectedUid: string | null;
   onSelect: (uid: string | null) => void;
-  onOpenNew: () => void;
+}
+
+function tabLabel(tab: Order): string {
+  return `${tab.ticket} — ${tab.customerName}`;
 }
 
 export function TabSelector({
   tabs,
   selectedUid,
   onSelect,
-  onOpenNew,
 }: TabSelectorProps) {
+  const selected = tabs.find((tab) => tab.uid === selectedUid) ?? null;
+  const [term, setTerm] = useState(() => (selected ? tabLabel(selected) : ''));
+  const [lastSelected, setLastSelected] = useState(selected);
+
+  if (selected !== lastSelected) {
+    setLastSelected(selected);
+    setTerm(selected ? tabLabel(selected) : '');
+  }
+
+  if (tabs.length === 0) {
+    return (
+      <div className="flex min-h-[44px] items-center text-sm text-ink-tertiary">
+        Nenhuma comanda aberta
+      </div>
+    );
+  }
+
+  const query = term.trim().toLowerCase();
+  const options: AutocompleteOption[] =
+    selected && term === tabLabel(selected)
+      ? []
+      : tabs
+          .filter(
+            (tab) =>
+              !query ||
+              tab.ticket.toLowerCase().includes(query) ||
+              tab.customerName.toLowerCase().includes(query),
+          )
+          .map((tab) => ({
+            value: tab.uid,
+            label: tab.customerName,
+            hint: tab.ticket,
+          }));
+
+  function handleChange(value: string) {
+    setTerm(value);
+    if (!value.trim()) onSelect(null);
+  }
+
   return (
-    <div className="flex items-end gap-2">
-      <FormField label="Comanda" className="flex-1">
-        {tabs.length === 0 ? (
-          <div className="flex min-h-[44px] items-center text-sm text-ink-tertiary">
-            Nenhuma comanda aberta
-          </div>
-        ) : (
-          <Select
-            value={selectedUid ?? ''}
-            onChange={(event) => onSelect(event.target.value || null)}
-          >
-            <option value="">Venda avulsa</option>
-            {tabs.map((tab) => (
-              <option key={tab.uid} value={tab.uid}>
-                {tab.ticket} — {tab.customerName}
-              </option>
-            ))}
-          </Select>
-        )}
-      </FormField>
-      <Button variant="ghost" onClick={onOpenNew}>
-        Nova comanda
-      </Button>
-    </div>
+    <Autocomplete
+      label="Comanda"
+      placeholder="Número ou nome"
+      value={term}
+      options={options}
+      onChange={handleChange}
+      onSelect={(option) => onSelect(option.value)}
+    />
   );
 }

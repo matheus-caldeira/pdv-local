@@ -93,7 +93,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           tabs={openTabs}
           selectedUid={selectedTabUid}
           onSelect={setSelectedTabUid}
-          onOpenNew={() => setOpenTabModalOpen(true)}
         />
 
         <Cart
