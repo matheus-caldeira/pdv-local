@@ -118,11 +118,11 @@ export function buildNavModel(
     });
     groups.push({
       id: 'products',
-      label: 'Produtos',
+      label: 'Cadastros',
       icon: Package,
       fixed: false,
-      items: [PRODUCTS, EXTRAS, CUSTOMERS],
-      bar: [PRODUCTS, EXTRAS, CUSTOMERS],
+      items: [CUSTOMERS, PRODUCTS, EXTRAS],
+      bar: [CUSTOMERS, PRODUCTS, EXTRAS],
     });
   }
 

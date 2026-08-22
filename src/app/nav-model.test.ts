@@ -24,10 +24,11 @@ describe('buildNavModel', () => {
       'Relatórios',
     ]);
     expect(labels(model.groups[1].items)).toEqual([
+      'Clientes',
       'Produtos',
       'Extras',
-      'Clientes',
     ]);
+    expect(model.groups[1].label).toBe('Cadastros');
     expect(labels(model.groups[2].items)).toEqual([
       'Configurações',
       'Sobre e contato',
