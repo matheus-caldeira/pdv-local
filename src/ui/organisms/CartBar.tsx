@@ -52,7 +52,10 @@ export function CartBar({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h,0px)] z-40 border-t border-border-emphasis bg-surface-2 pb-[env(safe-area-inset-bottom,0px)]">
+    <div
+      data-testid="cart-bar"
+      className="fixed inset-x-0 bottom-[calc(var(--nav-bottom-height)+env(safe-area-inset-bottom,0px))] z-[110] border-t border-border-emphasis bg-surface-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+    >
       <button
         type="button"
         className="flex w-full items-center justify-between px-4 pt-3 text-left"

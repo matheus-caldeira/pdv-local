@@ -35,6 +35,14 @@ function baseProps() {
 }
 
 describe('CartBar', () => {
+  it('fica acima do menu de navegação', () => {
+    render(<CartBar {...baseProps()} />);
+
+    const bar = screen.getByTestId('cart-bar');
+    expect(bar.className).toContain('var(--nav-bottom-height)');
+    expect(bar.className).toContain('z-[110]');
+  });
+
   it('avisa quando não há itens', () => {
     render(<CartBar {...baseProps()} />);
 

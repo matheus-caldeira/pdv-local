@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProductGrid } from './ProductGrid';
 import type { Product } from '../../domain/product/product.entity';
@@ -196,5 +196,147 @@ describe('ProductGrid', () => {
     await userEvent.click(screen.getByRole('button', { name: /Coca/ }));
 
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ProductGrid linear', () => {
+  const linearProducts: Product[] = [
+    make({ id: 1, name: 'X-Burger', category: 'Lanches' }),
+    make({ id: 2, name: 'Coca', category: 'Bebidas' }),
+    make({ id: 3, name: 'Suco', category: 'Bebidas' }),
+    make({ id: 4, name: 'Avulso', category: '' }),
+  ];
+
+  it('agrupa os produtos em seções por categoria', () => {
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Bebidas' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Lanches' })).toBeInTheDocument();
+  });
+
+  it('agrupa produtos sem categoria em Outros', () => {
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Outros' })).toBeInTheDocument();
+  });
+
+  it('mostra todos os produtos sem precisar filtrar', () => {
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /X-Burger/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Coca/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Suco/ })).toBeInTheDocument();
+  });
+
+  it('oferece navegação por categoria', () => {
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    const nav = screen.getByRole('navigation', { name: 'Categorias' });
+    expect(
+      within(nav).getByRole('button', { name: 'Bebidas' }),
+    ).toBeInTheDocument();
+    expect(
+      within(nav).getByRole('button', { name: 'Lanches' }),
+    ).toBeInTheDocument();
+  });
+
+  it('rola até a categoria escolhida e a destaca', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    const nav = screen.getByRole('navigation', { name: 'Categorias' });
+    await userEvent.click(within(nav).getByRole('button', { name: 'Lanches' }));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'start',
+    });
+    expect(
+      within(nav).getByRole('button', { name: 'Lanches' }),
+    ).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('adiciona ao carrinho pelo item da lista', async () => {
+    const onSelect = vi.fn();
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={[]}
+        onSelect={onSelect}
+        linear
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Coca/ }));
+
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('mostra a quantidade já no carrinho', () => {
+    const cart: CartItem[] = [
+      {
+        cartId: 'a',
+        productUid: 'product-2',
+        name: 'Coca',
+        salePrice: 10,
+        costPrice: 1,
+        qty: 4,
+      },
+    ];
+    render(
+      <ProductGrid
+        products={linearProducts}
+        cart={cart}
+        onSelect={vi.fn()}
+        linear
+      />,
+    );
+
+    expect(screen.getByText('4')).toBeInTheDocument();
+  });
+
+  it('avisa quando não há produtos cadastrados', () => {
+    render(<ProductGrid products={[]} cart={[]} onSelect={vi.fn()} linear />);
+
+    expect(screen.getByText('Cadastre produtos primeiro')).toBeInTheDocument();
   });
 });

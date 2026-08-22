@@ -132,7 +132,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     <div
       className={
         isMobile
-          ? 'flex flex-col gap-4 pb-32'
+          ? 'flex flex-col gap-4 pb-[calc(var(--nav-bottom-height)+7rem)]'
           : 'flex min-h-[calc(100dvh-3rem)] flex-col gap-4 md:flex-row'
       }
     >
@@ -140,6 +140,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         products={products}
         cart={controller.cart}
         onSelect={handleProductClick}
+        linear={isMobile}
       />
 
       {isMobile ? (
