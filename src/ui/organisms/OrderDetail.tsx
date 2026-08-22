@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Money } from '../atoms/Money';
+import { QtyStepper } from '../atoms/QtyStepper';
 import { Modal } from '../molecules/Modal';
 import { formatDateTime } from '../../domain/shared/format';
-import type { Order, OrderStatus } from '../../domain/order/order.entity';
+import { calculateOrderTotal } from '../../domain/order/order.rules';
+import type {
+  Order,
+  OrderItem,
+  OrderStatus,
+} from '../../domain/order/order.entity';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   open: 'Aberto',
@@ -42,6 +48,7 @@ interface OrderDetailProps {
   onClose?: () => void;
   onReopen?: () => void;
   onAddItems?: () => void;
+  onSaveItems?: (items: OrderItem[]) => void;
 }
 
 export function OrderDetail({
@@ -52,12 +59,52 @@ export function OrderDetail({
   onClose,
   onReopen,
   onAddItems,
+  onSaveItems,
 }: OrderDetailProps) {
   const [payMethodOpen, setPayMethodOpen] = useState(false);
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
+  const [draftItems, setDraftItems] = useState(order.items);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
   const canSettle = order.status === 'open' || order.status === 'pending';
   const isOpenTab = order.status === 'open';
   const isClosedTab = order.status === 'pending';
+  const canEdit = isOpenTab && onSaveItems !== undefined;
+  const isDirty = JSON.stringify(draftItems) !== JSON.stringify(order.items);
+  const displayedTotal = canEdit
+    ? calculateOrderTotal(draftItems)
+    : order.total;
+
+  useEffect(() => {
+    setDraftItems(order.items);
+  }, [order]);
+
+  function decrementItem(index: number) {
+    const item = draftItems[index];
+    if (item.qty === 1) {
+      setRemovingIndex(index);
+      return;
+    }
+    setDraftItems((current) =>
+      current.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, qty: entry.qty - 1 } : entry,
+      ),
+    );
+  }
+
+  function incrementItem(index: number) {
+    setDraftItems((current) =>
+      current.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, qty: entry.qty + 1 } : entry,
+      ),
+    );
+  }
+
+  function confirmRemoveItem() {
+    setDraftItems((current) =>
+      current.filter((_, entryIndex) => entryIndex !== removingIndex),
+    );
+    setRemovingIndex(null);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,7 +138,7 @@ export function OrderDetail({
         <h3 className="text-xs font-bold uppercase tracking-wide text-ink-tertiary">
           Itens
         </h3>
-        {order.items.map((item, index) => {
+        {draftItems.map((item, index) => {
           const unitTotal = item.salePrice + (item.customizationTotal ?? 0);
           return (
             <div
@@ -103,7 +150,17 @@ export function OrderDetail({
                   <span className="font-mono tabular-nums">{item.qty}x</span>{' '}
                   {item.name}
                 </span>
-                <Money value={unitTotal * item.qty} className="font-bold" />
+                <div className="flex items-center gap-3">
+                  {canEdit && (
+                    <QtyStepper
+                      qty={item.qty}
+                      onDecrement={() => decrementItem(index)}
+                      onIncrement={() => incrementItem(index)}
+                      size="sm"
+                    />
+                  )}
+                  <Money value={unitTotal * item.qty} className="font-bold" />
+                </div>
               </div>
 
               {item.customizations && item.customizations.length > 0 && (
@@ -152,13 +209,22 @@ export function OrderDetail({
 
       <div className="flex items-center justify-between rounded-md border border-border-emphasis bg-surface-inset px-4 py-3">
         <span className="font-semibold text-ink-secondary">Total</span>
-        <Money value={order.total} className="text-xl font-extrabold" />
+        <Money value={displayedTotal} className="text-xl font-extrabold" />
       </div>
 
       <div className="flex flex-col gap-2">
         <Button variant="ghost" fullWidth onClick={onPrint}>
           <Printer size={16} /> Imprimir
         </Button>
+        {canEdit && (
+          <Button
+            fullWidth
+            disabled={!isDirty}
+            onClick={() => onSaveItems?.(draftItems)}
+          >
+            Salvar alterações
+          </Button>
+        )}
         {isOpenTab && (
           <>
             <Button variant="ghost" fullWidth onClick={onAddItems}>
@@ -230,6 +296,25 @@ export function OrderDetail({
             }}
           >
             Reabrir
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={removingIndex !== null}
+        onClose={() => setRemovingIndex(null)}
+        title="Remover item"
+      >
+        <p className="text-sm text-ink-secondary">
+          Remover {removingIndex !== null && draftItems[removingIndex].name} da
+          comanda?
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setRemovingIndex(null)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmRemoveItem}>
+            Remover
           </Button>
         </div>
       </Modal>

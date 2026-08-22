@@ -16,7 +16,9 @@ function makeOrder(partial: Partial<Order>): Order {
     uid: 'order-1',
     businessTypeId: 'tab',
     sessionUid: 'session-1',
-    items: [],
+    items: [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ],
     total: 30,
     paymentMethod: null,
     customerName: 'Bia',
@@ -335,5 +337,232 @@ describe('OrderDetail', () => {
   it('mostra a data de fechamento quando existir', () => {
     renderDetail(makeOrder({ status: 'pending', closedAt: 1700003600000 }));
     expect(screen.getByText(/Fechada em/)).toBeInTheDocument();
+  });
+
+  it('mostra o botão de salvar desabilitado sem alterações', () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeDisabled();
+  });
+
+  it('aumenta a quantidade e habilita o salvar', async () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Aumentar' })[0],
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeEnabled();
+  });
+
+  it('pede confirmação ao zerar a quantidade', async () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+
+    expect(screen.getByText('Remover Refri da comanda?')).toBeInTheDocument();
+  });
+
+  it('remove o item após a confirmação', async () => {
+    const onSaveItems = vi.fn();
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={onSaveItems}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Remover' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+
+    expect(onSaveItems).toHaveBeenCalledWith([]);
+  });
+
+  it('diminui a quantidade sem pedir confirmação quando ainda resta item', async () => {
+    render(
+      <OrderDetail
+        order={makeOrder({
+          status: 'open',
+          items: [
+            {
+              productUid: 'p-1',
+              name: 'Refri',
+              salePrice: 5,
+              costPrice: 2,
+              qty: 2,
+            },
+          ],
+        })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+
+    expect(
+      screen.queryByText('Remover Refri da comanda?'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeEnabled();
+  });
+
+  it('cancela a remoção do item sem alterar o rascunho', async () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Cancelar' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeDisabled();
+  });
+
+  it('fecha a confirmação de remoção pelo backdrop', async () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'open' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+    await userEvent.click(screen.getByRole('presentation'));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    ).toBeDisabled();
+  });
+
+  it('altera apenas o item selecionado quando há múltiplos itens', async () => {
+    const onSaveItems = vi.fn();
+    render(
+      <OrderDetail
+        order={makeOrder({
+          status: 'open',
+          items: [
+            {
+              productUid: 'p-1',
+              name: 'Refri',
+              salePrice: 5,
+              costPrice: 2,
+              qty: 1,
+            },
+            {
+              productUid: 'p-2',
+              name: 'Água',
+              salePrice: 3,
+              costPrice: 1,
+              qty: 1,
+            },
+          ],
+        })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={onSaveItems}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Aumentar' })[1],
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Aumentar' })[1],
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Diminuir' })[1],
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+
+    expect(onSaveItems).toHaveBeenCalledWith([
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+      { productUid: 'p-2', name: 'Água', salePrice: 3, costPrice: 1, qty: 2 },
+    ]);
+  });
+
+  it('não oferece edição em comanda fechada', () => {
+    render(
+      <OrderDetail
+        order={makeOrder({ status: 'pending' })}
+        onPrint={vi.fn()}
+        onMarkPaid={vi.fn()}
+        onCancel={vi.fn()}
+        onSaveItems={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Salvar alterações' }),
+    ).not.toBeInTheDocument();
   });
 });
