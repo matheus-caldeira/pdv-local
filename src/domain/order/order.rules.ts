@@ -6,6 +6,7 @@ import {
   TabNotClosedError,
   TabNotOpenError,
 } from '../errors';
+import type { StockAdjustment } from '../product/product.repository';
 import type { Order, OrderItem, OrderStage } from './order.entity';
 
 export const ORDER_STAGES: OrderStage[] = [
@@ -157,4 +158,40 @@ export function mergeOrderItems(
     merged.push({ ...item });
   }
   return merged;
+}
+
+function totalsByProduct(items: OrderItem[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const item of items) {
+    if (!item.productUid) continue;
+    totals.set(item.productUid, (totals.get(item.productUid) ?? 0) + item.qty);
+  }
+  return totals;
+}
+
+export function diffStockByProduct(
+  current: OrderItem[],
+  next: OrderItem[],
+): StockAdjustment[] {
+  const before = totalsByProduct(current);
+  const after = totalsByProduct(next);
+  const productUids = new Set([...before.keys(), ...after.keys()]);
+
+  const adjustments: StockAdjustment[] = [];
+  for (const productUid of productUids) {
+    const qty = (after.get(productUid) ?? 0) - (before.get(productUid) ?? 0);
+    if (qty !== 0) adjustments.push({ productUid, qty });
+  }
+  return adjustments;
+}
+
+export function findOpenTabForCustomer(
+  orders: Order[],
+  customerUid: string,
+): Order | null {
+  return (
+    orders.find(
+      (order) => order.status === 'open' && order.customerUid === customerUid,
+    ) ?? null
+  );
 }

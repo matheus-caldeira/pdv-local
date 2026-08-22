@@ -9,6 +9,8 @@ import {
   canAddItems,
   canClose,
   canReopen,
+  diffStockByProduct,
+  findOpenTabForCustomer,
   mergeOrderItems,
   nextStage,
   prevStage,
@@ -391,5 +393,119 @@ describe('mergeOrderItems', () => {
       { name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
     ];
     expect(mergeOrderItems([], incoming)).toEqual(incoming);
+  });
+});
+
+describe('diffStockByProduct', () => {
+  it('retira do estoque o que foi acrescentado', () => {
+    const current: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+    const next: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 3 },
+    ];
+
+    expect(diffStockByProduct(current, next)).toEqual([
+      { productUid: 'p-1', qty: 2 },
+    ]);
+  });
+
+  it('devolve ao estoque o que foi removido', () => {
+    const current: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 3 },
+    ];
+
+    expect(diffStockByProduct(current, [])).toEqual([
+      { productUid: 'p-1', qty: -3 },
+    ]);
+  });
+
+  it('soma itens repetidos do mesmo produto antes de comparar', () => {
+    const current: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 2 },
+    ];
+    const next: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 1 },
+    ];
+
+    expect(diffStockByProduct(current, next)).toEqual([
+      { productUid: 'p-1', qty: -2 },
+    ]);
+  });
+
+  it('ignora itens sem produto vinculado', () => {
+    const current: OrderItem[] = [
+      { name: 'Taxa', salePrice: 5, costPrice: 0, qty: 1 },
+    ];
+
+    expect(diffStockByProduct(current, [])).toEqual([]);
+  });
+
+  it('omite produtos cujo saldo não mudou', () => {
+    const items: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 2 },
+    ];
+
+    expect(diffStockByProduct(items, items)).toEqual([]);
+  });
+
+  it('retira do estoque produto adicionado à comanda vazia', () => {
+    const next: OrderItem[] = [
+      { productUid: 'p-1', name: 'Refri', salePrice: 5, costPrice: 2, qty: 2 },
+    ];
+
+    expect(diffStockByProduct([], next)).toEqual([
+      { productUid: 'p-1', qty: 2 },
+    ]);
+  });
+});
+
+describe('findOpenTabForCustomer', () => {
+  function makeOrderWithCustomer(overrides: Partial<Order>): Order {
+    return {
+      uid: 'order-1',
+      businessTypeId: 'scout',
+      sessionUid: 'session-1',
+      items: [],
+      total: 0,
+      paymentMethod: null,
+      customerName: 'Maju',
+      customerPhone: '',
+      ticket: '0001',
+      stage: 'aceito',
+      status: 'open',
+      createdAt: 1,
+      updatedAt: 1,
+      ...overrides,
+    };
+  }
+
+  it('encontra a comanda aberta do cliente', () => {
+    const order = makeOrderWithCustomer({ customerUid: 'c-1' });
+
+    expect(findOpenTabForCustomer([order], 'c-1')).toBe(order);
+  });
+
+  it('ignora comanda fechada, paga ou cancelada', () => {
+    const orders = [
+      makeOrderWithCustomer({ customerUid: 'c-1', status: 'pending' }),
+      makeOrderWithCustomer({ customerUid: 'c-1', status: 'paid' }),
+      makeOrderWithCustomer({ customerUid: 'c-1', status: 'cancelled' }),
+    ];
+
+    expect(findOpenTabForCustomer(orders, 'c-1')).toBeNull();
+  });
+
+  it('ignora comanda de outro cliente', () => {
+    const orders = [makeOrderWithCustomer({ customerUid: 'c-2' })];
+
+    expect(findOpenTabForCustomer(orders, 'c-1')).toBeNull();
+  });
+
+  it('ignora comanda sem cliente vinculado', () => {
+    const orders = [makeOrderWithCustomer({ customerUid: undefined })];
+
+    expect(findOpenTabForCustomer(orders, 'c-1')).toBeNull();
   });
 });
