@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { isLeft, isRight } from '../shared/either';
 import { InvalidCustomerError } from '../errors';
 import { getBusinessType } from '../business-type/registry';
-import { buildCustomer, type CustomerInput } from './customer.rules';
+import {
+  buildCustomer,
+  customerSuggestionLabel,
+  type CustomerInput,
+} from './customer.rules';
+import type { Customer } from './customer.entity';
 
 const quickSale = getBusinessType('quick_sale')!;
 
@@ -137,5 +142,56 @@ describe('buildCustomer por tipo de negócio', () => {
     );
 
     expect(isRight(result)).toBe(true);
+  });
+});
+
+describe('customerSuggestionLabel', () => {
+  function makeCustomer(extra: Record<string, string>): Customer {
+    return {
+      uid: 'c-1',
+      name: 'Maju',
+      addresses: [],
+      extra,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+  }
+
+  it('mostra nome, seção e responsável', () => {
+    const label = customerSuggestionLabel(
+      makeCustomer({ section: 'lobinho', guardian: 'Ana' }),
+    );
+
+    expect(label).toBe('Maju - Lobinho - Ana');
+  });
+
+  it('omite o responsável quando não há', () => {
+    const label = customerSuggestionLabel(makeCustomer({ section: 'senior' }));
+
+    expect(label).toBe('Maju - Sênior');
+  });
+
+  it('omite a seção quando não há', () => {
+    const label = customerSuggestionLabel(makeCustomer({ guardian: 'Ana' }));
+
+    expect(label).toBe('Maju - Ana');
+  });
+
+  it('mostra só o nome quando não há seção nem responsável', () => {
+    expect(customerSuggestionLabel(makeCustomer({}))).toBe('Maju');
+  });
+
+  it('ignora campos preenchidos só com espaços', () => {
+    const label = customerSuggestionLabel(
+      makeCustomer({ section: '   ', guardian: '  ' }),
+    );
+
+    expect(label).toBe('Maju');
+  });
+
+  it('usa a chave crua quando a seção é desconhecida', () => {
+    const label = customerSuggestionLabel(makeCustomer({ section: 'outra' }));
+
+    expect(label).toBe('Maju - outra');
   });
 });

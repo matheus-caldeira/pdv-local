@@ -7,6 +7,7 @@ import { QtyStepper } from '../atoms/QtyStepper';
 import { Autocomplete } from '../molecules/Autocomplete';
 import { Modal } from '../molecules/Modal';
 import { TextField } from '../molecules/TextField';
+import { customerSuggestionLabel } from '../../domain/customer/customer.rules';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { Order } from '../../domain/order/order.entity';
 import type { BusinessTypeRules } from '../../domain/business-type/business-type.entity';
@@ -96,7 +97,7 @@ export function Cart({
               value={customerName}
               options={customerSuggestions.map((entry) => ({
                 value: entry.uid,
-                label: entry.name,
+                label: customerSuggestionLabel(entry),
                 hint: entry.phone,
               }))}
               onChange={onCustomerNameChange}

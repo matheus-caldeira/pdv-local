@@ -1,6 +1,14 @@
 import { left, right, type Either } from '../shared/either';
 import { InvalidCustomerError } from '../errors';
 import type { BusinessTypeDefinition } from '../business-type/business-type.entity';
+import type { Customer } from './customer.entity';
+
+export const SECTION_LABELS: Record<string, string> = {
+  lobinho: 'Lobinho',
+  escoteiro: 'Escoteiro',
+  senior: 'Sênior',
+  pioneiro: 'Pioneiro',
+};
 
 export interface CustomerInput {
   name: string;
@@ -47,4 +55,12 @@ export function buildCustomer(
 
   const addresses = input.addresses.map((a) => a.trim()).filter(Boolean);
   return right({ name, phone, addresses, extra });
+}
+
+export function customerSuggestionLabel(customer: Customer): string {
+  const section = (customer.extra.section ?? '').trim();
+  const guardian = (customer.extra.guardian ?? '').trim();
+  return [customer.name, section && (SECTION_LABELS[section] ?? section), guardian]
+    .filter(Boolean)
+    .join(' - ');
 }

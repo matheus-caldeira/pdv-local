@@ -152,6 +152,21 @@ describe('Cart', () => {
     expect(props.onSelectCustomer).toHaveBeenCalledWith(customer);
   });
 
+  it('mostra nome, seção e responsável na sugestão de cliente', async () => {
+    const scout: Customer = {
+      ...customer,
+      name: 'Maju',
+      extra: { section: 'lobinho', guardian: 'Ana' },
+    };
+    render(<Cart {...baseProps()} customerSuggestions={[scout]} />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Cliente' }));
+
+    expect(
+      screen.getByRole('option', { name: /Maju - Lobinho - Ana/ }),
+    ).toBeInTheDocument();
+  });
+
   it('abre o cadastro de cliente pelo botão +', async () => {
     const props = baseProps();
     render(<Cart {...props} />);

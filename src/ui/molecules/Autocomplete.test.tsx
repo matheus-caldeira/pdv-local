@@ -11,6 +11,58 @@ const options: AutocompleteOption[] = [
 ];
 
 describe('Autocomplete', () => {
+  it('não mostra a lista antes de o campo receber foco', () => {
+    render(
+      <Autocomplete
+        label="Comanda"
+        value=""
+        options={options}
+        onChange={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('mostra a lista ao focar e esconde ao sair do campo', async () => {
+    render(
+      <>
+        <Autocomplete
+          label="Comanda"
+          value=""
+          options={options}
+          onChange={vi.fn()}
+          onSelect={vi.fn()}
+        />
+        <button type="button">Fora</button>
+      </>,
+    );
+
+    await userEvent.click(screen.getByLabelText('Comanda'));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fora' }));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('mantém a lista aberta ao navegar para uma opção com Tab', async () => {
+    render(
+      <Autocomplete
+        label="Comanda"
+        value=""
+        options={options}
+        onChange={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText('Comanda'));
+    await userEvent.tab();
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
   it('não mostra a lista quando não há opções', () => {
     render(
       <Autocomplete
@@ -54,6 +106,7 @@ describe('Autocomplete', () => {
       />,
     );
 
+    await userEvent.click(screen.getByLabelText('Cliente'));
     await userEvent.click(screen.getByRole('option', { name: /Maju/ }));
 
     expect(onSelect).toHaveBeenCalledWith(options[0]);

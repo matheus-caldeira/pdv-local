@@ -1,4 +1,9 @@
-import { useId, useState, type KeyboardEvent } from 'react';
+import {
+  useId,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+} from 'react';
 import { cn } from '../lib/cn';
 
 export interface AutocompleteOption {
@@ -26,6 +31,7 @@ export function Autocomplete({
 }: AutocompleteProps) {
   const inputId = useId();
   const [dismissed, setDismissed] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [lastOptions, setLastOptions] = useState(options);
 
@@ -34,7 +40,15 @@ export function Autocomplete({
     setActiveIndex(-1);
   }
 
-  const expanded = options.length > 0 && !dismissed;
+  const expanded = focused && options.length > 0 && !dismissed;
+
+  function handleBlur(event: FocusEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+    setFocused(false);
+    setActiveIndex(-1);
+  }
 
   function handleChange(next: string) {
     setDismissed(false);
@@ -73,7 +87,11 @@ export function Autocomplete({
   }
 
   return (
-    <div className="relative flex flex-col gap-1">
+    <div
+      className="relative flex flex-col gap-1"
+      onFocus={() => setFocused(true)}
+      onBlur={handleBlur}
+    >
       <label
         htmlFor={inputId}
         className="text-xs font-semibold text-ink-secondary"
