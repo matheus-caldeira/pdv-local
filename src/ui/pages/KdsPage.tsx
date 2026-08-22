@@ -1,4 +1,11 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { useState } from 'react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Zap,
+} from 'lucide-react';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Money } from '../atoms/Money';
@@ -7,6 +14,8 @@ import { useSession } from '../hooks/useSession';
 import { useKdsOrders } from '../hooks/useKdsOrders';
 import { useKdsCollapsedStages } from '../hooks/useKdsCollapsedStages';
 import { useKdsAutoStages } from '../hooks/useKdsAutoStages';
+import { StageMoveModal } from '../organisms/StageMoveModal';
+import type { Order, OrderStage } from '../../domain/order/order.entity';
 import {
   ORDER_STAGES,
   STAGE_LABELS,
@@ -14,11 +23,44 @@ import {
   prevStage,
 } from '../../domain/order/order.rules';
 
+interface StageMoveTarget {
+  uid: string;
+  ticket: string;
+  stage: OrderStage;
+  blockedStage: OrderStage | null;
+}
+
 export function KdsPage() {
   const { activeSession } = useSession();
   const { autoStages, isAuto, toggle: toggleAuto } = useKdsAutoStages();
-  const { byStage, moveStage } = useKdsOrders(activeSession?.uid, autoStages);
+  const {
+    byStage,
+    moveStage,
+    finishedTotal,
+    finishedHasMore,
+    finishedLoading,
+    loadMoreFinished,
+  } = useKdsOrders(activeSession?.uid, autoStages);
   const { isCollapsed, toggle } = useKdsCollapsedStages();
+  const [moving, setMoving] = useState<StageMoveTarget | null>(null);
+
+  const handleBack = (order: Order, previous: OrderStage) => {
+    if (isAuto(previous)) {
+      setMoving({
+        uid: order.uid,
+        ticket: order.ticket,
+        stage: order.stage,
+        blockedStage: previous,
+      });
+      return;
+    }
+    moveStage(order.uid, previous);
+  };
+
+  const handleSelectStage = (stage: OrderStage) => {
+    if (moving) moveStage(moving.uid, stage);
+    setMoving(null);
+  };
 
   return (
     <div>
@@ -32,6 +74,8 @@ export function KdsPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           {ORDER_STAGES.map((stage) => {
             const list = byStage(stage);
+            const isFinished = stage === 'finalizado';
+            const count = isFinished ? finishedTotal : list.length;
             const collapsed = isCollapsed(stage);
             return (
               <div
@@ -78,7 +122,7 @@ export function KdsPage() {
                       )}
                     >
                       <Badge tone="muted" size="xs">
-                        {list.length}
+                        {count}
                       </Badge>
                       <ChevronDown
                         size={16}
@@ -121,14 +165,31 @@ export function KdsPage() {
                         key={order.id}
                         className="flex flex-col gap-2 rounded-md border border-border bg-surface-2 px-3 py-2"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="font-mono font-bold tabular-nums text-ink-primary">
                             #{order.ticket}
                           </span>
-                          <Money
-                            value={order.total}
-                            className="font-semibold"
-                          />
+                          <div className="flex items-center gap-1">
+                            <Money
+                              value={order.total}
+                              className="font-semibold"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Mover pedido #${order.ticket} para outra etapa`}
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-ink-tertiary transition-colors hover:bg-surface-inset hover:text-ink-primary"
+                              onClick={() =>
+                                setMoving({
+                                  uid: order.uid,
+                                  ticket: order.ticket,
+                                  stage: order.stage,
+                                  blockedStage: null,
+                                })
+                              }
+                            >
+                              <MoreHorizontal size={16} strokeWidth={2} />
+                            </button>
+                          </div>
                         </div>
                         {order.customerName && (
                           <span className="text-sm text-ink-secondary">
@@ -145,7 +206,7 @@ export function KdsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => moveStage(order.uid, previous)}
+                              onClick={() => handleBack(order, previous)}
                             >
                               <ChevronLeft size={14} /> Voltar
                             </Button>
@@ -162,11 +223,31 @@ export function KdsPage() {
                       </div>
                     );
                   })}
+                {!collapsed && isFinished && finishedHasMore && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={finishedLoading}
+                    onClick={loadMoreFinished}
+                  >
+                    Carregar mais
+                  </Button>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      <StageMoveModal
+        open={moving !== null}
+        ticket={moving?.ticket ?? ''}
+        currentStage={moving?.stage ?? 'aceito'}
+        autoStages={autoStages}
+        blockedStage={moving?.blockedStage ?? null}
+        onClose={() => setMoving(null)}
+        onSelect={handleSelectStage}
+      />
     </div>
   );
 }

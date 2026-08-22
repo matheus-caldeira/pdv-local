@@ -83,7 +83,8 @@ class FakeRepositories implements Repositories {
     observeActiveBySession: () => ({
       subscribe: () => ({ unsubscribe: () => {} }),
     }),
-    listPage: async () => right({ orders: [] as Order[], total: 0, hasMore: false }),
+    listPage: async () =>
+      right({ orders: [] as Order[], total: 0, hasMore: false }),
     listFinishedPage: async () =>
       right({ orders: [] as Order[], total: 0, hasMore: false }),
     markAsPaid: async () => right(undefined),

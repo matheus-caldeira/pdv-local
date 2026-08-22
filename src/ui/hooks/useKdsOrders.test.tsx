@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  act,
-  cleanup,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useKdsOrders } from './useKdsOrders';
 import { ToastProvider } from '../molecules/Toast';
@@ -14,13 +8,19 @@ import { AppError } from '../../domain/shared/errors';
 import type { Order, OrderStage } from '../../domain/order/order.entity';
 
 const observeSessionOrders = vi.fn();
+const listFinishedOrderPage = vi.fn();
 const setOrderStage = vi.fn();
 const unsubscribe = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: {
-    observeSessionOrders: (sessionUid: string) =>
+    observeActiveSessionOrders: (sessionUid: string) =>
       observeSessionOrders(sessionUid),
+    listFinishedOrderPage: (
+      sessionUid: string,
+      offset: number,
+      limit: number,
+    ) => listFinishedOrderPage(sessionUid, offset, limit),
     setOrderStage: (uid: string, stage: string) => setOrderStage(uid, stage),
   },
 }));
@@ -83,6 +83,12 @@ function Probe({ sessionUid }: { sessionUid: string | undefined }) {
           .map((o) => o.uid)
           .join(',')}
       </span>
+      <span>
+        finalizado:
+        {byStage('finalizado')
+          .map((o) => o.uid)
+          .join(',')}
+      </span>
       <button onClick={() => moveStage('order-1', 'em_preparo')}>move</button>
     </div>
   );
@@ -99,9 +105,13 @@ function renderProbe(sessionUid: string | undefined) {
 describe('useKdsOrders', () => {
   beforeEach(() => {
     observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
     setOrderStage.mockReset();
     unsubscribe.mockReset();
     observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: [], total: 0, hasMore: false }),
+    );
   });
   afterEach(cleanup);
 
@@ -116,6 +126,28 @@ describe('useKdsOrders', () => {
     expect(observeSessionOrders).toHaveBeenCalledWith('session-7');
     expect(screen.getByText('orders:3')).toBeInTheDocument();
     expect(screen.getByText('aceito:order-2,order-1')).toBeInTheDocument();
+  });
+
+  it('toma os finalizados da paginação, não do stream ao vivo', async () => {
+    observeSessionOrders.mockReturnValue(
+      fakeObservable([
+        ...ORDERS,
+        makeOrder({ id: 9, uid: 'stream-done', stage: 'finalizado' }),
+      ]),
+    );
+    listFinishedOrderPage.mockResolvedValue(
+      right({
+        orders: [makeOrder({ uid: 'paged-done', stage: 'finalizado' })],
+        total: 1,
+        hasMore: false,
+      }),
+    );
+
+    renderProbe('session-7');
+
+    await waitFor(() =>
+      expect(screen.getByText('finalizado:paged-done')).toBeInTheDocument(),
+    );
   });
 
   it('unsubscribes on unmount', () => {
@@ -142,6 +174,107 @@ describe('useKdsOrders', () => {
   });
 });
 
+function FinishedProbe({ sessionUid }: { sessionUid: string | undefined }) {
+  const { finished, finishedTotal, finishedHasMore, loadMoreFinished } =
+    useKdsOrders(sessionUid);
+  return (
+    <div>
+      <span>finished:{finished.map((order) => order.uid).join(',')}</span>
+      <span>finishedTotal:{finishedTotal}</span>
+      <span>finishedMore:{String(finishedHasMore)}</span>
+      <button onClick={loadMoreFinished}>more</button>
+    </div>
+  );
+}
+
+function renderFinishedProbe(sessionUid: string | undefined) {
+  return render(
+    <ToastProvider>
+      <FinishedProbe sessionUid={sessionUid} />
+    </ToastProvider>,
+  );
+}
+
+describe('useKdsOrders finalizados', () => {
+  beforeEach(() => {
+    observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
+    setOrderStage.mockReset();
+    unsubscribe.mockReset();
+    observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: [], total: 0, hasMore: false }),
+    );
+  });
+  afterEach(cleanup);
+
+  it('não busca finalizados sem sessão', () => {
+    renderFinishedProbe(undefined);
+    expect(listFinishedOrderPage).not.toHaveBeenCalled();
+  });
+
+  it('carrega a primeira página de finalizados da sessão', async () => {
+    listFinishedOrderPage.mockResolvedValue(
+      right({
+        orders: [makeOrder({ uid: 'done-1', stage: 'finalizado' })],
+        total: 25,
+        hasMore: true,
+      }),
+    );
+
+    renderFinishedProbe('session-7');
+
+    await waitFor(() =>
+      expect(screen.getByText('finished:done-1')).toBeInTheDocument(),
+    );
+    expect(listFinishedOrderPage).toHaveBeenCalledWith('session-7', 0, 20);
+    expect(screen.getByText('finishedTotal:25')).toBeInTheDocument();
+    expect(screen.getByText('finishedMore:true')).toBeInTheDocument();
+  });
+
+  it('acumula a próxima página de finalizados', async () => {
+    listFinishedOrderPage.mockResolvedValueOnce(
+      right({
+        orders: [makeOrder({ uid: 'done-1', stage: 'finalizado' })],
+        total: 2,
+        hasMore: true,
+      }),
+    );
+    listFinishedOrderPage.mockResolvedValueOnce(
+      right({
+        orders: [makeOrder({ uid: 'done-2', stage: 'finalizado' })],
+        total: 2,
+        hasMore: false,
+      }),
+    );
+
+    renderFinishedProbe('session-7');
+    await waitFor(() =>
+      expect(screen.getByText('finished:done-1')).toBeInTheDocument(),
+    );
+
+    await userEvent.click(screen.getByText('more'));
+
+    await waitFor(() =>
+      expect(screen.getByText('finished:done-1,done-2')).toBeInTheDocument(),
+    );
+    expect(listFinishedOrderPage).toHaveBeenLastCalledWith('session-7', 1, 20);
+    expect(screen.getByText('finishedMore:false')).toBeInTheDocument();
+  });
+
+  it('avisa quando a busca de finalizados falha', async () => {
+    listFinishedOrderPage.mockResolvedValue(
+      left(new FakeError('falha finalizados')),
+    );
+
+    renderFinishedProbe('session-7');
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha finalizados'),
+    );
+  });
+});
+
 function AutoProbe({ autoStages }: { autoStages: OrderStage[] }) {
   const { orders } = useKdsOrders('session-7', autoStages);
   return <span>orders:{orders.length}</span>;
@@ -158,9 +291,13 @@ function renderAutoProbe(autoStages: OrderStage[]) {
 describe('useKdsOrders auto stages', () => {
   beforeEach(() => {
     observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
     setOrderStage.mockReset();
     unsubscribe.mockReset();
     observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: [], total: 0, hasMore: false }),
+    );
     setOrderStage.mockResolvedValue(right(undefined));
   });
   afterEach(cleanup);

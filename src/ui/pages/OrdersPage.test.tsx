@@ -14,9 +14,14 @@ import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
 import { getBusinessType } from '../../domain/business-type/registry';
 import type { Order } from '../../domain/order/order.entity';
+import type {
+  OrderPage,
+  OrderQuery,
+} from '../../domain/order/order.repository';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 
 const navigate = vi.fn();
+const listOrderPage = vi.fn();
 const listOrders = vi.fn();
 const readConfig = vi.fn();
 const markOrderPaid = vi.fn();
@@ -47,6 +52,7 @@ vi.mock('../hooks/usePrint', () => ({
 
 vi.mock('../../app/container', () => ({
   container: {
+    listOrderPage: (query: unknown) => listOrderPage(query),
     listOrders: () => listOrders(),
     readConfig: () => readConfig(),
     markOrderPaid: (uid: string, method: string) => markOrderPaid(uid, method),
@@ -175,6 +181,30 @@ function renderPage() {
   );
 }
 
+function queryOrders(source: Order[], query: OrderQuery): OrderPage {
+  const term = query.term?.trim().toLowerCase() ?? '';
+  const matched = source.filter((order) => {
+    if (
+      query.statuses &&
+      query.statuses.length > 0 &&
+      !query.statuses.includes(order.status)
+    ) {
+      return false;
+    }
+    if (!term) return true;
+    return (
+      order.ticket.toLowerCase().includes(term) ||
+      order.customerName.toLowerCase().includes(term)
+    );
+  });
+  const page = matched.slice(query.offset, query.offset + query.limit);
+  return {
+    orders: page,
+    total: matched.length,
+    hasMore: query.offset + page.length < matched.length,
+  };
+}
+
 function orderRow(ticket: string): HTMLElement {
   return screen.getByText('#' + ticket).closest('div[data-order]')!;
 }
@@ -188,7 +218,9 @@ async function openDetail(ticket: string) {
 describe('OrdersPage', () => {
   beforeEach(() => {
     navigate.mockReset();
+    listOrderPage.mockReset();
     listOrders.mockReset();
+    listOrders.mockResolvedValue(right(ORDERS));
     readConfig.mockReset();
     markOrderPaid.mockReset();
     cancelOrder.mockReset();
@@ -200,7 +232,9 @@ describe('OrdersPage', () => {
     closeTab.mockReset();
     reopenTab.mockReset();
     printOrder.mockReset();
-    listOrders.mockResolvedValue(right(ORDERS));
+    listOrderPage.mockImplementation(async (query) =>
+      right(queryOrders(ORDERS, query)),
+    );
     readConfig.mockResolvedValue(right(CONFIG));
     getActiveSession.mockResolvedValue(
       right({ id: 1, uid: 'session-1', closedAt: null }),
@@ -213,7 +247,9 @@ describe('OrdersPage', () => {
   });
 
   it('shows the empty hint when there are no orders', async () => {
-    listOrders.mockResolvedValue(right([]));
+    listOrderPage.mockResolvedValue(
+      right({ orders: [], total: 0, hasMore: false }),
+    );
     renderPage();
     await waitFor(() =>
       expect(screen.getByText('Nenhum pedido encontrado')).toBeInTheDocument(),
@@ -221,9 +257,19 @@ describe('OrdersPage', () => {
     expect(screen.getByText('0 pedidos')).toBeInTheDocument();
   });
 
+  it('esconde pagos e cancelados por padrão', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    expect(screen.getByText('#004')).toBeInTheDocument();
+    expect(screen.queryByText('#002')).not.toBeInTheDocument();
+    expect(screen.queryByText('#003')).not.toBeInTheDocument();
+  });
+
   it('lists orders with status badges, payment labels and item counts', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Todos' }));
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
     expect(screen.getByText('4 pedidos')).toBeInTheDocument();
     expect(screen.getByText('Aberto')).toBeInTheDocument();
     expect(screen.getByText('Pago')).toBeInTheDocument();
@@ -242,6 +288,8 @@ describe('OrdersPage', () => {
 
   it('shows a dash when there is no payment method', async () => {
     renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Todos' }));
     await waitFor(() => expect(screen.getByText('#003')).toBeInTheDocument());
     expect(screen.getAllByText('-').length).toBeGreaterThan(0);
   });
@@ -256,24 +304,137 @@ describe('OrdersPage', () => {
     );
   });
 
-  it('filters by status', async () => {
+  it('liga um status a mais sem perder os que já estavam marcados', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
     await userEvent.click(screen.getByRole('button', { name: 'Pagos' }));
+
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+    expect(screen.getByText('#001')).toBeInTheDocument();
+    expect(screen.getByText('#004')).toBeInTheDocument();
+  });
+
+  it('desliga um status já marcado', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Abertos' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('#001')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText('#004')).toBeInTheDocument();
+  });
+
+  it('marca os chips ativos para leitores de tela', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    expect(screen.getByRole('button', { name: 'Abertos' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Pagos' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('mostra todos os status pelo botão Todos', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Todos' }));
+
+    await waitFor(() => expect(screen.getByText('#003')).toBeInTheDocument());
     expect(screen.getByText('#002')).toBeInTheDocument();
-    expect(screen.queryByText('#001')).not.toBeInTheDocument();
+  });
+
+  it('avisa quando nenhum status está marcado', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Abertos' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Pendentes' }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Selecione ao menos um status'),
+      ).toBeInTheDocument(),
+    );
   });
 
   it('filters by ticket and by customer name', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.type(screen.getByLabelText('Buscar pedidos'), '002');
-    expect(screen.getByText('#002')).toBeInTheDocument();
-    expect(screen.queryByText('#001')).not.toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Buscar pedidos'), '001');
+
+    await waitFor(() =>
+      expect(screen.queryByText('#004')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText('#001')).toBeInTheDocument();
+
     await userEvent.clear(screen.getByLabelText('Buscar pedidos'));
     await userEvent.type(screen.getByLabelText('Buscar pedidos'), 'davi');
+
+    await waitFor(() =>
+      expect(screen.queryByText('#001')).not.toBeInTheDocument(),
+    );
     expect(screen.getByText('#004')).toBeInTheDocument();
-    expect(screen.queryByText('#001')).not.toBeInTheDocument();
+  });
+
+  it('carrega a próxima página pelo botão carregar mais', async () => {
+    const many = Array.from({ length: 31 }, (_, index) =>
+      makeOrder({
+        id: 100 + index,
+        uid: `bulk-${index}`,
+        ticket: String(500 + index),
+        status: 'open',
+      }),
+    );
+    listOrderPage.mockImplementation(async (query) =>
+      right(queryOrders(many, query)),
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#500')).toBeInTheDocument());
+    expect(screen.queryByText('#530')).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar mais' }),
+    );
+
+    await waitFor(() => expect(screen.getByText('#530')).toBeInTheDocument());
+    expect(screen.getByText('#500')).toBeInTheDocument();
+  });
+
+  it('esconde o carregar mais na última página', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    expect(
+      screen.queryByRole('button', { name: 'Carregar mais' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('mostra quantos pedidos foram carregados do total', async () => {
+    const many = Array.from({ length: 31 }, (_, index) =>
+      makeOrder({
+        id: 100 + index,
+        uid: `bulk-${index}`,
+        ticket: String(500 + index),
+        status: 'open',
+      }),
+    );
+    listOrderPage.mockImplementation(async (query) =>
+      right(queryOrders(many, query)),
+    );
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByText('30 de 31 pedidos')).toBeInTheDocument(),
+    );
   });
 
   it('opens the detail modal and prints', async () => {
@@ -603,6 +764,8 @@ describe('OrdersPage', () => {
 
   it('não oferece marcar como pago em pedido já pago', async () => {
     renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: 'Todos' }));
     await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
 
     expect(

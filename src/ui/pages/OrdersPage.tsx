@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CircleDollarSign,
@@ -27,13 +27,14 @@ import type {
   OrderStatus,
 } from '../../domain/order/order.entity';
 
-const STATUS_OPTIONS: { key: OrderStatus | ''; label: string }[] = [
-  { key: '', label: 'Todos' },
+const STATUS_OPTIONS: { key: OrderStatus; label: string }[] = [
   { key: 'open', label: 'Abertos' },
-  { key: 'paid', label: 'Pagos' },
   { key: 'pending', label: 'Pendentes' },
+  { key: 'paid', label: 'Pagos' },
   { key: 'cancelled', label: 'Cancelados' },
 ];
+
+const ALL_STATUSES = STATUS_OPTIONS.map((option) => option.key);
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   open: 'Aberto',
@@ -65,13 +66,24 @@ const QUICK_PAYMENT_METHODS = ['pix', 'credito', 'debito', 'dinheiro'];
 export function OrdersPage() {
   const navigate = useNavigate();
   const { activeSession } = useSession();
-  const { orders, statusControlEnabled, markPaid, cancel } = useOrders();
+  const {
+    orders,
+    statuses,
+    setStatuses,
+    term,
+    setTerm,
+    total,
+    hasMore,
+    loading,
+    loadMore,
+    statusControlEnabled,
+    markPaid,
+    cancel,
+  } = useOrders();
   const { updateItems, closeTab, reopenTab } = useTabs(
     activeSession?.uid ?? '',
   );
   const { printOrder } = usePrint();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [payingOrder, setPayingOrder] = useState<Order | null>(null);
   const autoPrintOnCloseRef = useRef(false);
@@ -85,17 +97,15 @@ export function OrdersPage() {
     load();
   }, []);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return orders.filter((order) => {
-      if (statusFilter && order.status !== statusFilter) return false;
-      if (!term) return true;
-      return (
-        order.ticket.toLowerCase().includes(term) ||
-        order.customerName.toLowerCase().includes(term)
-      );
-    });
-  }, [orders, search, statusFilter]);
+  const allSelected = statuses.length === ALL_STATUSES.length;
+
+  function toggleStatus(status: OrderStatus) {
+    setStatuses(
+      statuses.includes(status)
+        ? statuses.filter((current) => current !== status)
+        : [...statuses, status],
+    );
+  }
 
   async function handleMarkPaid(method: string) {
     const ok = await markPaid(detailOrder!.uid, method);
@@ -142,7 +152,9 @@ export function OrdersPage() {
         <h1 className="text-2xl font-extrabold tracking-tight">Pedidos</h1>
         <div className="flex items-center gap-3">
           <span className="text-sm text-ink-tertiary">
-            {filtered.length} pedidos
+            {orders.length < total
+              ? `${orders.length} de ${total} pedidos`
+              : `${total} pedidos`}
           </span>
           <Button size="sm" onClick={() => navigate('/pdv')}>
             Novo pedido
@@ -154,20 +166,20 @@ export function OrdersPage() {
         <SearchField
           aria-label="Buscar pedidos"
           placeholder="Buscar por comanda ou nome..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {STATUS_OPTIONS.map((option) => (
           <button
             key={option.key}
             type="button"
-            aria-pressed={statusFilter === option.key}
-            onClick={() => setStatusFilter(option.key)}
+            aria-pressed={statuses.includes(option.key)}
+            onClick={() => toggleStatus(option.key)}
             className={
-              statusFilter === option.key
+              statuses.includes(option.key)
                 ? 'rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-text'
                 : 'rounded-full border border-border-emphasis bg-surface-2 px-3 py-1 text-sm font-semibold text-ink-secondary hover:bg-surface-inset'
             }
@@ -175,15 +187,27 @@ export function OrdersPage() {
             {option.label}
           </button>
         ))}
+        <button
+          type="button"
+          aria-pressed={allSelected}
+          onClick={() => setStatuses(ALL_STATUSES)}
+          className="rounded-full border border-dashed border-border-emphasis px-3 py-1 text-sm font-semibold text-ink-tertiary hover:bg-surface-inset"
+        >
+          Todos
+        </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {statuses.length === 0 ? (
+        <div className="py-10 text-center text-sm text-ink-tertiary">
+          Selecione ao menos um status
+        </div>
+      ) : orders.length === 0 ? (
         <div className="py-10 text-center text-sm text-ink-tertiary">
           Nenhum pedido encontrado
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {filtered.map((order) => (
+          {orders.map((order) => (
             <div
               key={order.id}
               data-order={order.uid}
@@ -263,6 +287,16 @@ export function OrdersPage() {
               </div>
             </div>
           ))}
+          {hasMore && (
+            <Button
+              variant="ghost"
+              className="mt-2 self-center"
+              disabled={loading}
+              onClick={loadMore}
+            >
+              Carregar mais
+            </Button>
+          )}
         </div>
       )}
 

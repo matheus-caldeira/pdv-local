@@ -14,6 +14,7 @@ import type { Order } from '../../domain/order/order.entity';
 
 const useSession = vi.fn();
 const observeSessionOrders = vi.fn();
+const listFinishedOrderPage = vi.fn();
 const setOrderStage = vi.fn();
 
 vi.mock('../hooks/useSession', () => ({
@@ -22,8 +23,13 @@ vi.mock('../hooks/useSession', () => ({
 
 vi.mock('../../app/container', () => ({
   container: {
-    observeSessionOrders: (sessionUid: string) =>
+    observeActiveSessionOrders: (sessionUid: string) =>
       observeSessionOrders(sessionUid),
+    listFinishedOrderPage: (
+      sessionUid: string,
+      offset: number,
+      limit: number,
+    ) => listFinishedOrderPage(sessionUid, offset, limit),
     setOrderStage: (uid: string, stage: string) => setOrderStage(uid, stage),
   },
 }));
@@ -64,6 +70,9 @@ const ORDERS: Order[] = [
     stage: 'aceito',
     customerName: 'Ana',
   }),
+];
+
+const FINISHED: Order[] = [
   makeOrder({ id: 2, uid: 'order-2', ticket: '002', stage: 'finalizado' }),
 ];
 
@@ -88,8 +97,12 @@ describe('KdsPage', () => {
   beforeEach(() => {
     useSession.mockReset();
     observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
     setOrderStage.mockReset();
     observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: FINISHED, total: FINISHED.length, hasMore: false }),
+    );
     setOrderStage.mockResolvedValue(right(undefined));
   });
   afterEach(cleanup);
@@ -103,7 +116,7 @@ describe('KdsPage', () => {
     expect(observeSessionOrders).not.toHaveBeenCalled();
   });
 
-  it('renders the board with cards and item summaries', () => {
+  it('renders the board with cards and item summaries', async () => {
     useSession.mockReturnValue({
       activeSession: { uid: 'session-9' },
       loading: false,
@@ -112,7 +125,75 @@ describe('KdsPage', () => {
     expect(observeSessionOrders).toHaveBeenCalledWith('session-9');
     expect(screen.getByText('#001')).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
-    expect(screen.getAllByText('2x X-Burger').length).toBe(2);
+    await waitFor(() =>
+      expect(screen.getAllByText('2x X-Burger').length).toBe(2),
+    );
+  });
+
+  it('busca os finalizados paginados da sessão', async () => {
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
+    renderPage();
+    await waitFor(() =>
+      expect(listFinishedOrderPage).toHaveBeenCalledWith('session-9', 0, 20),
+    );
+    expect(screen.getByText('#002')).toBeInTheDocument();
+  });
+
+  it('oferece carregar mais quando há finalizados além da página', async () => {
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
+    listFinishedOrderPage.mockResolvedValueOnce(
+      right({ orders: FINISHED, total: 40, hasMore: true }),
+    );
+    listFinishedOrderPage.mockResolvedValueOnce(
+      right({
+        orders: [makeOrder({ id: 3, uid: 'order-3', ticket: '003' })],
+        total: 40,
+        hasMore: false,
+      }),
+    );
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Carregar mais' }),
+    );
+
+    await waitFor(() => expect(screen.getByText('#003')).toBeInTheDocument());
+    expect(listFinishedOrderPage).toHaveBeenLastCalledWith('session-9', 1, 20);
+  });
+
+  it('não oferece carregar mais na última página de finalizados', async () => {
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+
+    expect(
+      screen.queryByRole('button', { name: 'Carregar mais' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('conta o total de finalizados, não só os carregados', async () => {
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: FINISHED, total: 40, hasMore: true }),
+    );
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('40')).toBeInTheDocument());
   });
 
   it('advances a card on the first stage with no back button', async () => {
@@ -137,6 +218,7 @@ describe('KdsPage', () => {
       loading: false,
     });
     renderPage();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
     const card = screen.getByText('#002').closest('div')!.parentElement!;
     expect(
       within(card).queryByRole('button', { name: /Avançar/ }),
@@ -150,8 +232,12 @@ describe('KdsPage collapsible stages', () => {
   beforeEach(() => {
     useSession.mockReset();
     observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
     setOrderStage.mockReset();
     observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: FINISHED, total: FINISHED.length, hasMore: false }),
+    );
     setOrderStage.mockResolvedValue(right(undefined));
     useSession.mockReturnValue({
       activeSession: { uid: 'session-9' },
@@ -179,7 +265,7 @@ describe('KdsPage collapsible stages', () => {
     );
 
     expect(screen.queryByText('#001')).toBeNull();
-    expect(screen.getByText('#002')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
   });
 
   it('expands a collapsed stage again', async () => {
@@ -332,5 +418,119 @@ describe('KdsPage collapsible stages', () => {
       screen.getByRole('button', { name: /Expandir etapa Aceito/ }),
     ).toBeInTheDocument();
     expect(screen.queryByText('#001')).toBeNull();
+  });
+});
+
+describe('KdsPage stage move modal', () => {
+  beforeEach(() => {
+    useSession.mockReset();
+    observeSessionOrders.mockReset();
+    listFinishedOrderPage.mockReset();
+    setOrderStage.mockReset();
+    observeSessionOrders.mockReturnValue(fakeObservable(ORDERS));
+    listFinishedOrderPage.mockResolvedValue(
+      right({ orders: FINISHED, total: FINISHED.length, hasMore: false }),
+    );
+    setOrderStage.mockResolvedValue(right(undefined));
+    useSession.mockReturnValue({
+      activeSession: { uid: 'session-9' },
+      loading: false,
+    });
+  });
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+  });
+
+  it('opens the stage picker from the card menu', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Mover pedido #001 para outra etapa',
+      }),
+    );
+
+    expect(screen.getByRole('dialog')).toHaveAccessibleName(
+      'Mover pedido #001',
+    );
+  });
+
+  it('moves the order to the stage chosen in the modal', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Mover pedido #001 para outra etapa',
+      }),
+    );
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /Finalizado/,
+      }),
+    );
+
+    expect(setOrderStage).toHaveBeenCalledWith('order-1', 'finalizado');
+  });
+
+  it('closes the modal after moving', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Mover pedido #001 para outra etapa',
+      }),
+    );
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /Finalizado/,
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('closes the modal on cancel without moving', async () => {
+    renderPage();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Mover pedido #001 para outra etapa',
+      }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(setOrderStage).not.toHaveBeenCalled();
+  });
+
+  it('goes back directly when the previous stage has no automation', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+
+    const card = screen.getByText('#002').closest('div')!.parentElement!;
+    await userEvent.click(within(card).getByRole('button', { name: /Voltar/ }));
+
+    expect(setOrderStage).toHaveBeenCalledWith('order-2', 'a_caminho');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens the modal instead of going back into an automated stage', async () => {
+    renderPage();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /Ativar avanço automático de A caminho/,
+      }),
+    );
+    setOrderStage.mockClear();
+
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+    const card = screen.getByText('#002').closest('div')!.parentElement!;
+    await userEvent.click(within(card).getByRole('button', { name: /Voltar/ }));
+
+    expect(setOrderStage).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/A caminho avança automaticamente/),
+    ).toBeInTheDocument();
   });
 });
