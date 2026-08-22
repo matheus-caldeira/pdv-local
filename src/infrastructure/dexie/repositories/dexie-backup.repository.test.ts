@@ -65,6 +65,7 @@ const businessConfig = (name: string): BusinessConfig => ({
   extra: {},
   printerDriver: 'browser',
   printerPaperWidth: 80,
+  printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
 });
 

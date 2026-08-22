@@ -1,5 +1,6 @@
 declare module 'esc-pos-encoder' {
   export default class EscPosEncoder {
+    constructor(options?: { width?: number });
     codepage(page: string): this;
     align(alignment: 'left' | 'center' | 'right'): this;
     line(text: string): this;

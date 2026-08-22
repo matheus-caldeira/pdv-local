@@ -37,6 +37,7 @@ const config: BusinessConfig = {
   extra: {},
   printerDriver: 'browser',
   printerPaperWidth: 80,
+  printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
 };
 
@@ -102,12 +103,14 @@ describe('makeSavePrinterConfig', () => {
     const result = await makeSavePrinterConfig(repo)({
       printerDriver: 'bluetooth',
       printerPaperWidth: 58,
+      printerCodepage: 'cp860',
       printerAutoPrintOnClose: true,
     });
     expect(isRight(result)).toBe(true);
     expect(repo.saved).toEqual({
       printerDriver: 'bluetooth',
       printerPaperWidth: 58,
+      printerCodepage: 'cp860',
       printerAutoPrintOnClose: true,
     });
   });

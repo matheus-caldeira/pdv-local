@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { container } from '../../app/container';
 import { isLeft } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
@@ -13,66 +13,84 @@ import {
   buildPendingTabsReceipt,
   buildStockReceipt,
 } from '../../domain/printing/receipt.builders';
-import { BrowserReceiptPrinter } from '../../infrastructure/printing/browser-receipt-printer';
+import type {
+  PaperWidth,
+  PrinterCodepage,
+  PrinterDriver,
+} from '../../domain/printing/printer-driver';
 import { EscPosBluetoothPrinter } from '../../infrastructure/printing/escpos-bluetooth-printer';
+import { RawBtReceiptPrinter } from '../../infrastructure/printing/rawbt-receipt-printer';
+import {
+  TriggeredReceiptPrinter,
+  type PrintTrigger,
+} from '../../infrastructure/printing/triggered-receipt-printer';
+import { useReceiptPrintHandler } from '../molecules/receipt-print-context';
 import { useToast } from '../molecules/toast-context';
 
 interface PrinterSettings {
   businessName: string;
-  driver: 'browser' | 'bluetooth';
-  paperWidth: 58 | 80;
+  driver: PrinterDriver;
+  paperWidth: PaperWidth;
+  codepage: PrinterCodepage;
 }
 
 function buildPrinter(
-  driver: 'browser' | 'bluetooth',
-  paperWidth: 58 | 80,
+  settings: PrinterSettings,
+  trigger: PrintTrigger | null,
 ): ReceiptPrinter {
-  return driver === 'bluetooth'
-    ? new EscPosBluetoothPrinter(paperWidth)
-    : new BrowserReceiptPrinter(paperWidth);
+  if (settings.driver === 'bluetooth') {
+    return new EscPosBluetoothPrinter(settings.paperWidth, settings.codepage);
+  }
+  if (settings.driver === 'rawbt') {
+    return new RawBtReceiptPrinter(settings.paperWidth, settings.codepage);
+  }
+  return new TriggeredReceiptPrinter(trigger);
 }
 
 export function usePrint() {
   const toast = useToast();
+  const trigger = useReceiptPrintHandler();
   const [printing, setPrinting] = useState(false);
   const settingsRef = useRef<PrinterSettings>({
     businessName: '',
     driver: 'browser',
     paperWidth: 80,
+    codepage: 'cp860',
   });
 
-  useEffect(() => {
-    async function load() {
-      const result = await container.readConfig();
-      if (isLeft(result)) return;
+  const loadSettings = useCallback(async (): Promise<PrinterSettings> => {
+    const result = await container.readConfig();
+    if (!isLeft(result)) {
       settingsRef.current = {
         businessName: result.right.name,
         driver: result.right.printerDriver,
         paperWidth: result.right.printerPaperWidth,
+        codepage: result.right.printerCodepage,
       };
     }
-    load();
+    return settingsRef.current;
   }, []);
 
   const printReceipt = useCallback(
-    async (receipt: Receipt): Promise<boolean> => {
+    async (receipt: Receipt, settings: PrinterSettings): Promise<boolean> => {
       setPrinting(true);
       try {
-        const { driver, paperWidth } = settingsRef.current;
-        const primary = buildPrinter(driver, paperWidth);
+        const primary = buildPrinter(settings, trigger);
         const primaryResult = await primary.print(receipt);
         if (!isLeft(primaryResult)) return true;
 
-        if (driver !== 'bluetooth') {
+        if (settings.driver === 'browser') {
           toast((primaryResult.left as AppError).message, 'error');
           return false;
         }
 
         toast(
-          'Impressora Bluetooth indisponível. Imprimindo pelo navegador.',
+          settings.driver === 'bluetooth'
+            ? 'Impressora Bluetooth indisponível. Imprimindo pelo navegador.'
+            : 'RawBT indisponível. Imprimindo pelo navegador.',
           'info',
         );
-        const fallback = new BrowserReceiptPrinter(paperWidth);
+        const fallback = new TriggeredReceiptPrinter(trigger);
         const fallbackResult = await fallback.print(receipt);
         if (isLeft(fallbackResult)) {
           toast((fallbackResult.left as AppError).message, 'error');
@@ -83,51 +101,51 @@ export function usePrint() {
         setPrinting(false);
       }
     },
-    [toast],
+    [toast, trigger],
   );
 
   const printOrder = useCallback(
-    (order: Order) =>
-      printReceipt(
-        buildOrderReceipt(order, settingsRef.current.businessName, Date.now()),
-      ),
-    [printReceipt],
+    async (order: Order) => {
+      const settings = await loadSettings();
+      return printReceipt(
+        buildOrderReceipt(order, settings.businessName, Date.now()),
+        settings,
+      );
+    },
+    [loadSettings, printReceipt],
   );
 
   const printStock = useCallback(
-    (products: Product[]) =>
-      printReceipt(
-        buildStockReceipt(
-          products,
-          settingsRef.current.businessName,
-          Date.now(),
-        ),
-      ),
-    [printReceipt],
+    async (products: Product[]) => {
+      const settings = await loadSettings();
+      return printReceipt(
+        buildStockReceipt(products, settings.businessName, Date.now()),
+        settings,
+      );
+    },
+    [loadSettings, printReceipt],
   );
 
   const printPendingTabs = useCallback(
-    (orders: Order[]) =>
-      printReceipt(
-        buildPendingTabsReceipt(
-          orders,
-          settingsRef.current.businessName,
-          Date.now(),
-        ),
-      ),
-    [printReceipt],
+    async (orders: Order[]) => {
+      const settings = await loadSettings();
+      return printReceipt(
+        buildPendingTabsReceipt(orders, settings.businessName, Date.now()),
+        settings,
+      );
+    },
+    [loadSettings, printReceipt],
   );
 
   const printDayReport = useCallback(
-    (report: SessionReport) =>
-      printReceipt(
-        buildDayReportReceipt(
-          report,
-          settingsRef.current.businessName,
-          Date.now(),
-        ),
-      ),
-    [printReceipt],
+    async (report: SessionReport) => {
+      const settings = await loadSettings();
+      return printReceipt(
+        buildDayReportReceipt(report, settings.businessName, Date.now()),
+        settings,
+      );
+    },
+    [loadSettings, printReceipt],
   );
 
   return { printOrder, printStock, printPendingTabs, printDayReport, printing };

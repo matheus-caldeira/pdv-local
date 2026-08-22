@@ -2,6 +2,11 @@ import { isLeft, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { ConfigRepository } from '../../domain/config/config.repository';
+import type {
+  PaperWidth,
+  PrinterCodepage,
+  PrinterDriver,
+} from '../../domain/printing/printer-driver';
 import {
   buildBusinessInfo,
   formatTicket,
@@ -22,8 +27,9 @@ export interface ConfigInput {
 }
 
 export interface PrinterConfigInput {
-  printerDriver: 'browser' | 'bluetooth';
-  printerPaperWidth: 58 | 80;
+  printerDriver: PrinterDriver;
+  printerPaperWidth: PaperWidth;
+  printerCodepage: PrinterCodepage;
   printerAutoPrintOnClose: boolean;
 }
 

@@ -1,56 +1,17 @@
-import EscPosEncoder from 'esc-pos-encoder';
 import { left, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import { PrintFailedError, PrinterUnavailableError } from '../../domain/errors';
-import { formatMoney } from '../../domain/shared/format';
+import type {
+  PaperWidth,
+  PrinterCodepage,
+} from '../../domain/printing/printer-driver';
 import type { Receipt } from '../../domain/printing/receipt.entity';
 import type { ReceiptPrinter } from '../../domain/printing/receipt-printer';
+import { encodeReceipt } from './escpos-bytes';
 
 const PRINTER_SERVICE = '000018f0-0000-1000-8000-00805f9b34fb';
 const PRINTER_CHARACTERISTIC = '00002af1-0000-1000-8000-00805f9b34fb';
 const CHUNK_SIZE = 512;
-
-const CHARS_BY_PAPER_WIDTH: Record<58 | 80, number> = {
-  58: 32,
-  80: 48,
-};
-
-function padLine(label: string, value: string, width: number): string {
-  const spacing = Math.max(1, width - label.length - value.length);
-  return label + ' '.repeat(spacing) + value;
-}
-
-function buildBytes(receipt: Receipt, width: number): Uint8Array {
-  const encoder = new EscPosEncoder();
-  encoder.codepage('cp860');
-  encoder.align('center');
-  encoder.line(receipt.businessName);
-  encoder.line(receipt.title);
-  if (receipt.ticket) encoder.line(receipt.ticket);
-  if (receipt.customerName) encoder.line(receipt.customerName);
-  encoder.align('left');
-
-  for (const line of receipt.lines) {
-    const label = line.qty ? `${line.qty}x ${line.label}` : line.label;
-    const value = line.value ?? '';
-    encoder.line(value ? padLine(label, value, width) : label);
-  }
-
-  if (receipt.total !== undefined) {
-    encoder.bold(true);
-    encoder.line(padLine('Total', formatMoney(receipt.total), width));
-    encoder.bold(false);
-  }
-
-  if (receipt.footer) encoder.line(receipt.footer);
-
-  encoder.newline();
-  encoder.newline();
-  encoder.newline();
-  encoder.cut();
-
-  return encoder.encode();
-}
 
 function chunk(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = [];
@@ -61,10 +22,12 @@ function chunk(bytes: Uint8Array, size: number): Uint8Array[] {
 }
 
 export class EscPosBluetoothPrinter implements ReceiptPrinter {
-  private readonly paperWidth: 58 | 80;
+  private readonly paperWidth: PaperWidth;
+  private readonly codepage: PrinterCodepage;
 
-  constructor(paperWidth: 58 | 80) {
+  constructor(paperWidth: PaperWidth, codepage: PrinterCodepage = 'cp860') {
     this.paperWidth = paperWidth;
+    this.codepage = codepage;
   }
 
   async print(receipt: Receipt): Promise<Either<AppError, void>> {
@@ -86,7 +49,7 @@ export class EscPosBluetoothPrinter implements ReceiptPrinter {
         PRINTER_CHARACTERISTIC,
       );
 
-      const bytes = buildBytes(receipt, CHARS_BY_PAPER_WIDTH[this.paperWidth]);
+      const bytes = encodeReceipt(receipt, this.paperWidth, this.codepage);
       for (const part of chunk(bytes, CHUNK_SIZE)) {
         await characteristic.writeValue(part);
       }

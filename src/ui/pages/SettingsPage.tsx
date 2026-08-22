@@ -25,6 +25,12 @@ import { useModules } from '../../app/modules-context';
 import { fold } from '../../domain/shared/either';
 import { ALL_MODULE_IDS, type ModuleId } from '../../domain/modules/module';
 import type { BusinessConfig } from '../../domain/config/config.entity';
+import {
+  PRINTER_CODEPAGES,
+  type PaperWidth,
+  type PrinterCodepage,
+  type PrinterDriver,
+} from '../../domain/printing/printer-driver';
 import type { BackupEntity } from '../../domain/backup/backup.repository';
 
 const MODULE_LABELS: Record<ModuleId, string> = {
@@ -51,8 +57,9 @@ interface FormState {
 }
 
 interface PrinterFormState {
-  printerDriver: 'browser' | 'bluetooth';
-  printerPaperWidth: 58 | 80;
+  printerDriver: PrinterDriver;
+  printerPaperWidth: PaperWidth;
+  printerCodepage: PrinterCodepage;
   printerAutoPrintOnClose: boolean;
 }
 
@@ -90,6 +97,7 @@ function toPrinterFormState(config: BusinessConfig): PrinterFormState {
   return {
     printerDriver: config.printerDriver,
     printerPaperWidth: config.printerPaperWidth,
+    printerCodepage: config.printerCodepage,
     printerAutoPrintOnClose: config.printerAutoPrintOnClose,
   };
 }
@@ -541,15 +549,23 @@ export function SettingsPage() {
                 (p) =>
                   p && {
                     ...p,
-                    printerDriver: e.target.value as 'browser' | 'bluetooth',
+                    printerDriver: e.target.value as PrinterDriver,
                   },
               )
             }
           >
             <option value="browser">Navegador (cupom na tela)</option>
             <option value="bluetooth">Bluetooth (Web Bluetooth)</option>
+            <option value="rawbt">RawBT (app Android)</option>
           </Select>
         </FormField>
+        {printerForm.printerDriver === 'rawbt' && (
+          <p className="text-sm text-ink-tertiary">
+            O RawBT precisa estar instalado no aparelho. Ele cuida da conexão
+            com a impressora (USB, Bluetooth ou rede) e recebe a impressão pelo
+            app.
+          </p>
+        )}
         <FormField label="Largura do Papel">
           <Select
             value={String(printerForm.printerPaperWidth)}
@@ -567,6 +583,31 @@ export function SettingsPage() {
             <option value="80">80mm</option>
           </Select>
         </FormField>
+        {printerForm.printerDriver !== 'browser' && (
+          <FormField
+            label="Acentuação (codepage)"
+            hint="Se os acentos saírem trocados na impressão, escolha outra opção aqui."
+          >
+            <Select
+              value={printerForm.printerCodepage}
+              onChange={(e) =>
+                setPrinterForm(
+                  (p) =>
+                    p && {
+                      ...p,
+                      printerCodepage: e.target.value as PrinterCodepage,
+                    },
+                )
+              }
+            >
+              {PRINTER_CODEPAGES.map((codepage) => (
+                <option key={codepage.value} value={codepage.value}>
+                  {codepage.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        )}
         <FormField label="Imprimir Automaticamente">
           <Select
             value={printerForm.printerAutoPrintOnClose ? '1' : '0'}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { left, right } from '../../domain/shared/either';
 import { PrintFailedError, PrinterUnavailableError } from '../../domain/errors';
 import { container } from '../../app/container';
@@ -10,13 +10,14 @@ import type { SessionReport } from '../../application/report/report.usecases';
 
 const browserPrint = vi.fn();
 const bluetoothPrint = vi.fn();
+const rawbtPrint = vi.fn();
 
 vi.mock('../../app/container', () => ({
   container: { readConfig: vi.fn() },
 }));
 
-vi.mock('../../infrastructure/printing/browser-receipt-printer', () => ({
-  BrowserReceiptPrinter: vi.fn(function BrowserReceiptPrinter() {
+vi.mock('../../infrastructure/printing/triggered-receipt-printer', () => ({
+  TriggeredReceiptPrinter: vi.fn(function TriggeredReceiptPrinter() {
     return { print: browserPrint };
   }),
 }));
@@ -25,6 +26,16 @@ vi.mock('../../infrastructure/printing/escpos-bluetooth-printer', () => ({
   EscPosBluetoothPrinter: vi.fn(function EscPosBluetoothPrinter() {
     return { print: bluetoothPrint };
   }),
+}));
+
+vi.mock('../../infrastructure/printing/rawbt-receipt-printer', () => ({
+  RawBtReceiptPrinter: vi.fn(function RawBtReceiptPrinter() {
+    return { print: rawbtPrint };
+  }),
+}));
+
+vi.mock('../molecules/receipt-print-context', () => ({
+  useReceiptPrintHandler: () => vi.fn(),
 }));
 
 const toast = vi.fn();
@@ -47,6 +58,7 @@ describe('usePrint', () => {
     vi.clearAllMocks();
     browserPrint.mockResolvedValue(right(undefined));
     bluetoothPrint.mockResolvedValue(right(undefined));
+    rawbtPrint.mockResolvedValue(right(undefined));
   });
 
   it('usa o driver do navegador quando a flag é browser', async () => {
@@ -59,7 +71,6 @@ describe('usePrint', () => {
     );
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printOrder(order);
@@ -67,6 +78,39 @@ describe('usePrint', () => {
 
     expect(browserPrint).toHaveBeenCalled();
     expect(bluetoothPrint).not.toHaveBeenCalled();
+  });
+
+  it('passa a usar o novo driver quando a config muda, sem remontar', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        name: 'Grupo',
+        printerDriver: 'browser',
+        printerPaperWidth: 80,
+        printerCodepage: 'cp860',
+      } as never),
+    );
+
+    const { result } = renderHook(() => usePrint());
+
+    await act(async () => {
+      await result.current.printOrder(order);
+    });
+    expect(browserPrint).toHaveBeenCalled();
+
+    readConfig.mockResolvedValue(
+      right({
+        name: 'Grupo',
+        printerDriver: 'rawbt',
+        printerPaperWidth: 80,
+        printerCodepage: 'cp860',
+      } as never),
+    );
+
+    await act(async () => {
+      await result.current.printOrder(order);
+    });
+
+    expect(rawbtPrint).toHaveBeenCalled();
   });
 
   it('usa o driver bluetooth quando a flag é bluetooth', async () => {
@@ -79,7 +123,6 @@ describe('usePrint', () => {
     );
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printOrder(order);
@@ -87,6 +130,49 @@ describe('usePrint', () => {
 
     expect(bluetoothPrint).toHaveBeenCalled();
     expect(browserPrint).not.toHaveBeenCalled();
+  });
+
+  it('usa o driver rawbt quando a flag é rawbt', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        name: 'Grupo',
+        printerDriver: 'rawbt',
+        printerPaperWidth: 80,
+        printerCodepage: 'cp860',
+      } as never),
+    );
+
+    const { result } = renderHook(() => usePrint());
+
+    await act(async () => {
+      await result.current.printOrder(order);
+    });
+
+    expect(rawbtPrint).toHaveBeenCalled();
+    expect(browserPrint).not.toHaveBeenCalled();
+    expect(bluetoothPrint).not.toHaveBeenCalled();
+  });
+
+  it('cai no navegador quando o rawbt não está disponível', async () => {
+    readConfig.mockResolvedValue(
+      right({
+        name: 'Grupo',
+        printerDriver: 'rawbt',
+        printerPaperWidth: 80,
+        printerCodepage: 'cp860',
+      } as never),
+    );
+    rawbtPrint.mockResolvedValue(left(new PrinterUnavailableError()));
+
+    const { result } = renderHook(() => usePrint());
+
+    await act(async () => {
+      await result.current.printOrder(order);
+    });
+
+    expect(rawbtPrint).toHaveBeenCalled();
+    expect(browserPrint).toHaveBeenCalled();
+    expect(toast).toHaveBeenCalled();
   });
 
   it('cai no navegador quando o bluetooth não está disponível', async () => {
@@ -100,7 +186,6 @@ describe('usePrint', () => {
     bluetoothPrint.mockResolvedValue(left(new PrinterUnavailableError()));
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printOrder(order);
@@ -122,7 +207,6 @@ describe('usePrint', () => {
     browserPrint.mockResolvedValue(left(new PrintFailedError()));
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     const ok = await act(async () => result.current.printOrder(order));
 
@@ -142,7 +226,6 @@ describe('usePrint', () => {
     browserPrint.mockResolvedValue(left(new PrintFailedError()));
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     const ok = await act(async () => result.current.printOrder(order));
 
@@ -154,7 +237,6 @@ describe('usePrint', () => {
     readConfig.mockResolvedValue(left(new PrintFailedError()));
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printOrder(order);
@@ -174,7 +256,6 @@ describe('usePrint', () => {
     const products = [{ uid: 'p1', name: 'Refri', stock: 3 }] as Product[];
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printStock(products);
@@ -194,7 +275,6 @@ describe('usePrint', () => {
     const orders = [order] as Order[];
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printPendingTabs(orders);
@@ -224,7 +304,6 @@ describe('usePrint', () => {
     } as unknown as SessionReport;
 
     const { result } = renderHook(() => usePrint());
-    await waitFor(() => expect(readConfig).toHaveBeenCalled());
 
     await act(async () => {
       await result.current.printDayReport(report);

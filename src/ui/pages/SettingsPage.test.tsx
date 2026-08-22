@@ -88,6 +88,7 @@ const CONFIG: BusinessConfig = {
   extra: {},
   printerDriver: 'browser',
   printerPaperWidth: 80,
+  printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
 };
 
@@ -589,6 +590,7 @@ describe('SettingsPage', () => {
     expect(options.map((option) => option.getAttribute('value'))).toEqual([
       'browser',
       'bluetooth',
+      'rawbt',
     ]);
   });
 
@@ -616,6 +618,7 @@ describe('SettingsPage', () => {
       expect(savePrinterConfig).toHaveBeenCalledWith({
         printerDriver: 'bluetooth',
         printerPaperWidth: 58,
+        printerCodepage: 'cp860',
         printerAutoPrintOnClose: true,
       }),
     );
@@ -624,6 +627,50 @@ describe('SettingsPage', () => {
         'Configurações de impressão salvas',
       ),
     );
+  });
+
+  it('persists the chosen codepage', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Conexão')).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Conexão'),
+      'rawbt',
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Acentuação (codepage)'),
+      'windows1252',
+    );
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Salvar' }).at(-1)!,
+    );
+    await waitFor(() =>
+      expect(savePrinterConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          printerDriver: 'rawbt',
+          printerCodepage: 'windows1252',
+        }),
+      ),
+    );
+  });
+
+  it('hides the codepage field for the browser driver', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Tipo de Conexão')).toBeInTheDocument(),
+    );
+
+    expect(
+      screen.queryByLabelText('Acentuação (codepage)'),
+    ).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByLabelText('Tipo de Conexão'),
+      'bluetooth',
+    );
+
+    expect(screen.getByLabelText('Acentuação (codepage)')).toBeInTheDocument();
   });
 
   it('toasts when saving the printer settings fails', async () => {

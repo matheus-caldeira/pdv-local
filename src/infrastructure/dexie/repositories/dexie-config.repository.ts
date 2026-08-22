@@ -28,6 +28,7 @@ function withDefaults(stored?: BusinessConfig): BusinessConfig {
     extra: {},
     printerDriver: 'browser',
     printerPaperWidth: 80,
+    printerCodepage: 'cp860',
     printerAutoPrintOnClose: false,
     ...stored,
   };

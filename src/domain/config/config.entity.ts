@@ -1,3 +1,9 @@
+import type {
+  PaperWidth,
+  PrinterCodepage,
+  PrinterDriver,
+} from '../printing/printer-driver';
+
 export interface BusinessConfig {
   id?: number;
   name: string;
@@ -11,8 +17,9 @@ export interface BusinessConfig {
   businessTypeId: string;
   enabledModules: string[];
   extra: Record<string, string>;
-  printerDriver: 'browser' | 'bluetooth';
-  printerPaperWidth: 58 | 80;
+  printerDriver: PrinterDriver;
+  printerPaperWidth: PaperWidth;
+  printerCodepage: PrinterCodepage;
   printerAutoPrintOnClose: boolean;
   lastBackupAt?: number;
   lastBackupPromptAt?: number;

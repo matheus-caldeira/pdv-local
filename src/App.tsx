@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ToastProvider } from './ui/molecules/Toast';
+import { ReceiptPrintProvider } from './ui/molecules/ReceiptPrintProvider';
 import { UpdateBanner } from './ui/organisms/UpdateBanner';
 import { AppShellRoute } from './app/AppShellRoute';
 import { ModulesProvider } from './app/ModulesProvider';
@@ -346,9 +347,11 @@ export function App() {
             </Routes>
           </Suspense>
         ) : (
-          <ModulesProvider>
-            <AppRoutes />
-          </ModulesProvider>
+          <ReceiptPrintProvider>
+            <ModulesProvider>
+              <AppRoutes />
+            </ModulesProvider>
+          </ReceiptPrintProvider>
         )}
       </BrowserRouter>
       {!isDocs && <UpdateBanner />}
