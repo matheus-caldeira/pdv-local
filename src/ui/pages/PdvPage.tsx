@@ -12,13 +12,13 @@ import { TabSelector } from '../organisms/TabSelector';
 import { CartBar } from '../organisms/CartBar';
 import { Modal } from '../molecules/Modal';
 import { CartItemList } from '../molecules/CartItemList';
-import { CustomerPicker } from '../molecules/CustomerPicker';
 import { useSession } from '../hooks/useSession';
 import { useProducts } from '../hooks/useProducts';
 import { usePdvController, type PayOption } from '../hooks/usePdvController';
 import { useTabs } from '../hooks/useTabs';
 import { usePrint } from '../hooks/usePrint';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useToast } from '../molecules/toast-context';
 import {
   useCustomizationLoader,
   type LoadedCustomizationGroup,
@@ -45,6 +45,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   } = useTabs(sessionUid);
   const { printTabNumber } = usePrint();
   const isMobile = useIsMobile();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -59,7 +60,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const [promptTab, setPromptTab] = useState<Order | null>(null);
   const [openedTab, setOpenedTab] = useState<Order | null>(null);
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
-  const [customerSheetOpen, setCustomerSheetOpen] = useState(false);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
@@ -111,7 +111,12 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   }
 
   async function handleOpenNewTab() {
-    const opened = await openTab(controller.customerName.trim(), {
+    const name = controller.customerName.trim();
+    if (!name) {
+      toast('Informe o cliente para abrir uma comanda.', 'error');
+      return;
+    }
+    const opened = await openTab(name, {
       customerUid: controller.matchedCustomer?.uid,
     });
     if (!opened) return;
@@ -152,7 +157,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
             ordering={controller.ordering}
             selectedTab={selectedTab}
             onExpand={() => setCartSheetOpen(true)}
-            onOpenCustomer={() => setCustomerSheetOpen(true)}
+            onOpenCustomer={() => setQuickCustomerOpen(true)}
             onOpenTab={handleTabAction}
             onFinalize={() => setPaymentOpen(true)}
             onCreateCustomer={() => setQuickCustomerOpen(true)}
@@ -169,29 +174,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
               onUpdateQty={controller.updateQty}
               onRemoveItem={controller.removeCartItem}
               onSetObservation={controller.setObservation}
-            />
-          </Modal>
-
-          <Modal
-            open={customerSheetOpen}
-            onClose={() => setCustomerSheetOpen(false)}
-            title="Cliente"
-          >
-            <CustomerPicker
-              customerName={controller.customerName}
-              onCustomerNameChange={controller.onCustomerNameChange}
-              customerSuggestions={controller.customerSuggestions}
-              onSelectCustomer={(customer) => {
-                handleSelectCustomer(customer);
-                setCustomerSheetOpen(false);
-              }}
-              onCreateCustomer={() => {
-                setCustomerSheetOpen(false);
-                setQuickCustomerOpen(true);
-              }}
-              tabs={openTabs}
-              selectedTabUid={selectedTabUid}
-              onSelectTab={setSelectedTabUid}
             />
           </Modal>
         </>

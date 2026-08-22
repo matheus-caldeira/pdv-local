@@ -43,6 +43,31 @@ describe('CartBar', () => {
     expect(bar.className).toContain('z-[110]');
   });
 
+  it('mostra o nome do cliente vinculado', () => {
+    render(<CartBar {...baseProps()} customerName="Maju" />);
+
+    expect(screen.getByText('Maju')).toBeInTheDocument();
+  });
+
+  it('mostra o número da comanda selecionada', () => {
+    render(<CartBar {...baseProps()} selectedTab={tab} />);
+
+    expect(screen.getByText('nº 0012')).toBeInTheDocument();
+  });
+
+  it('mostra cliente e comanda juntos', () => {
+    render(<CartBar {...baseProps()} customerName="Maju" selectedTab={tab} />);
+
+    expect(screen.getByText('Maju')).toBeInTheDocument();
+    expect(screen.getByText('nº 0012')).toBeInTheDocument();
+  });
+
+  it('esconde a linha de contexto sem cliente nem comanda', () => {
+    render(<CartBar {...baseProps()} />);
+
+    expect(screen.queryByText(/nº /)).not.toBeInTheDocument();
+  });
+
   it('avisa quando não há itens', () => {
     render(<CartBar {...baseProps()} />);
 

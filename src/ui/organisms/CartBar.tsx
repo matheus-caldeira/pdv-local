@@ -56,6 +56,21 @@ export function CartBar({
       data-testid="cart-bar"
       className="fixed inset-x-0 bottom-[calc(var(--nav-bottom-height)+env(safe-area-inset-bottom,0px))] z-[110] border-t border-border-emphasis bg-surface-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
     >
+      {(hasCustomer || selectedTab) && (
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs">
+          {selectedTab && (
+            <span className="rounded-full bg-accent-subtle px-2 py-0.5 font-mono font-bold tabular-nums text-accent">
+              nº {selectedTab.ticket}
+            </span>
+          )}
+          {hasCustomer && (
+            <span className="min-w-0 flex-1 truncate font-semibold text-ink-secondary">
+              {customerName}
+            </span>
+          )}
+        </div>
+      )}
+
       <button
         type="button"
         className="flex w-full items-center justify-between px-4 pt-3 text-left"

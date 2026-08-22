@@ -774,3 +774,109 @@ describe('PdvPage', () => {
     expect(openTab).not.toHaveBeenCalled();
   });
 });
+
+describe('PdvPage no celular', () => {
+  beforeEach(() => {
+    navigate.mockReset();
+    registerOrder.mockReset();
+    getActiveSession.mockReset();
+    listActiveProducts.mockReset();
+    peekTicketSuggestion.mockReset();
+    searchCustomers.mockReset();
+    loadProductCustomizations.mockReset();
+    readConfig.mockReset();
+    resolveActiveType.mockReset();
+    listOrders.mockReset();
+    openTab.mockReset();
+    addItemsToTab.mockReset();
+    saveCustomer.mockReset();
+    peekTicketSuggestion.mockResolvedValue(right('0001'));
+    searchCustomers.mockResolvedValue(right([]));
+    loadProductCustomizations.mockResolvedValue(right([]));
+    listActiveProducts.mockResolvedValue(right([simpleProduct]));
+    readConfig.mockResolvedValue(
+      right({
+        layoutMode: 'mobile',
+        businessTypeId: 'tab',
+        name: '',
+        document: '',
+        phone: '',
+        address: '',
+        ticketCounter: 0,
+        ticketLimit: 0,
+        ticketAutoReset: false,
+        statusControlEnabled: false,
+        extra: {},
+      }),
+    );
+    resolveActiveType.mockResolvedValue(right(getBusinessType('tab')));
+    listOrders.mockResolvedValue(right([]));
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+  });
+  afterEach(cleanup);
+
+  it('mostra a barra do carrinho no lugar do carrinho lateral', async () => {
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+
+    expect(await screen.findByTestId('cart-bar')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum item')).toBeInTheDocument();
+  });
+
+  it('não oferece seletor de comanda no celular', async () => {
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await screen.findByTestId('cart-bar');
+
+    expect(
+      screen.queryByRole('combobox', { name: 'Comanda' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('abre o cadastro de cliente direto pelo ícone', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await screen.findByTestId('cart-bar');
+
+    await user.click(screen.getByRole('button', { name: 'Cliente' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Novo cliente' }),
+    ).toBeInTheDocument();
+  });
+
+  it('mostra o cliente vinculado na barra', async () => {
+    const customer = {
+      uid: 'customer-9',
+      name: 'Maju',
+      phone: '',
+      addresses: [],
+      extra: {},
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    saveCustomer.mockResolvedValue(right(customer));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await screen.findByTestId('cart-bar');
+
+    await user.click(screen.getByRole('button', { name: 'Cliente' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Novo cliente' });
+    await user.type(within(dialog).getByLabelText('Nome'), 'Maju');
+    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('cart-bar')).getByText('Maju'),
+      ).toBeInTheDocument(),
+    );
+  });
+});
