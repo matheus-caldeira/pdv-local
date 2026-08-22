@@ -74,10 +74,10 @@ export function OpenTabModal({
       setError('Informe o nome para a comanda.');
       return;
     }
-    const openedTicket = ticket.trim() || suggestion;
-    const ok = await openTab(trimmed, openedTicket);
+    const override = ticketOverride?.trim();
+    const ok = await openTab(trimmed, override || undefined);
     if (!ok) return;
-    setPendingTicket(openedTicket);
+    setPendingTicket(override || suggestion);
     handleClose();
   }
 

@@ -2,6 +2,10 @@ import type { Either } from '../../domain/shared/either';
 import { isLeft, left, right } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
 import { InvalidCustomerError } from '../../domain/errors';
+import {
+  formatTicket,
+  shouldClaimTicket,
+} from '../../domain/config/config.rules';
 import { createUid } from '../../domain/shared/uid';
 import type { NewOrder, Order } from '../../domain/order/order.entity';
 import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
@@ -76,9 +80,18 @@ export class OpenTabUseCase extends UseCase<OpenTabInput, Order> {
     input: OpenTabInput,
     repositories: Repositories,
   ): Promise<Either<AppError, string>> {
-    const trimmed = input.ticket?.trim();
-    if (trimmed) return right(trimmed);
-    return repositories.config.claimTicket();
+    const config = await repositories.config.read();
+    if (isLeft(config)) return config;
+
+    const suggestion = formatTicket(
+      config.right.ticketCounter,
+      config.right.ticketLimit,
+    );
+
+    if (shouldClaimTicket(input.ticket, suggestion)) {
+      return repositories.config.claimTicket();
+    }
+    return right(input.ticket!.trim());
   }
 
   private async resolveCustomer(

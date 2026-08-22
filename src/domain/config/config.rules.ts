@@ -36,3 +36,12 @@ export function nextTicketCounter(
   if (autoReset && next > limit) return 1;
   return next;
 }
+
+export function shouldClaimTicket(
+  informedTicket: string | undefined,
+  suggestion: string,
+): boolean {
+  const trimmed = informedTicket?.trim();
+  if (!trimmed) return true;
+  return trimmed === suggestion.trim();
+}

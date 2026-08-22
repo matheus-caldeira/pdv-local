@@ -5,7 +5,9 @@ import {
   TicketLimitReachedError,
   DuplicatePhoneError,
 } from '../../domain/errors';
+import { ConnectorError } from '../../infrastructure/errors';
 import type { NewOrder, Order } from '../../domain/order/order.entity';
+import type { BusinessConfig } from '../../domain/config/config.entity';
 import type { Repositories } from '../../domain/shared/repositories';
 import type { UnitOfWork } from '../../domain/shared/unit-of-work';
 import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
@@ -19,8 +21,15 @@ const scout: BusinessTypeDefinition = {
 
 function makeRepositories(
   created: NewOrder[],
-  options: { ticketFails?: boolean; customerFails?: boolean } = {},
+  options: {
+    ticketFails?: boolean;
+    configReadFails?: boolean;
+    customerFails?: boolean;
+    claims?: number[];
+    suggestion?: string;
+  } = {},
 ): Repositories {
+  const suggestion = options.suggestion ?? '042';
   return {
     orders: {
       async create(order: NewOrder) {
@@ -29,10 +38,19 @@ function makeRepositories(
       },
     },
     config: {
+      async read() {
+        return options.configReadFails
+          ? left(new ConnectorError('Falha ao ler configuração.'))
+          : right({
+              ticketCounter: Number(suggestion),
+              ticketLimit: 10 ** suggestion.length - 1,
+            } as BusinessConfig);
+      },
       async claimTicket() {
+        options.claims?.push(1);
         return options.ticketFails
           ? left(new TicketLimitReachedError())
-          : right('042');
+          : right(suggestion);
       },
     },
     customers: {
@@ -151,6 +169,23 @@ describe('OpenTabUseCase', () => {
     expect(created).toHaveLength(0);
   });
 
+  it('propaga falha ao ler a configuração para sugerir a comanda', async () => {
+    const created: NewOrder[] = [];
+    const useCase = new OpenTabUseCase(
+      makeUow(makeRepositories(created, { configReadFails: true })),
+      scout,
+    );
+
+    const result = await useCase.run({
+      sessionUid: 'session-1',
+      customerName: 'Maju',
+    });
+
+    expect(isRight(result)).toBe(false);
+    if (!isRight(result)) expect(result.left.code).toBe('DB_CONNECTOR');
+    expect(created).toHaveLength(0);
+  });
+
   it('propaga falha ao vincular o cliente', async () => {
     const created: NewOrder[] = [];
     const useCase = new OpenTabUseCase(
@@ -166,5 +201,57 @@ describe('OpenTabUseCase', () => {
     expect(isRight(result)).toBe(false);
     if (!isRight(result)) expect(result.left.code).toBe('DUPLICATE_PHONE');
     expect(created).toHaveLength(0);
+  });
+
+  it('avança o contador quando nenhum ticket é informado', async () => {
+    const claims: number[] = [];
+    const created: NewOrder[] = [];
+    const useCase = new OpenTabUseCase(
+      makeUow(makeRepositories(created, { claims })),
+      scout,
+    );
+
+    const result = await useCase.run({
+      sessionUid: 'session-1',
+      customerName: 'Maju',
+    });
+
+    expect(isRight(result)).toBe(true);
+    expect(claims).toHaveLength(1);
+  });
+
+  it('avança o contador quando o ticket informado é igual à sugestão', async () => {
+    const claims: number[] = [];
+    const created: NewOrder[] = [];
+    const useCase = new OpenTabUseCase(
+      makeUow(makeRepositories(created, { claims, suggestion: '0001' })),
+      scout,
+    );
+
+    await useCase.run({
+      sessionUid: 'session-1',
+      customerName: 'Maju',
+      ticket: '0001',
+    });
+
+    expect(claims).toHaveLength(1);
+  });
+
+  it('não avança o contador quando o usuário digita outro número', async () => {
+    const claims: number[] = [];
+    const created: NewOrder[] = [];
+    const useCase = new OpenTabUseCase(
+      makeUow(makeRepositories(created, { claims, suggestion: '0001' })),
+      scout,
+    );
+
+    const result = await useCase.run({
+      sessionUid: 'session-1',
+      customerName: 'Maju',
+      ticket: '42',
+    });
+
+    expect(isRight(result)).toBe(true);
+    expect(claims).toHaveLength(0);
   });
 });

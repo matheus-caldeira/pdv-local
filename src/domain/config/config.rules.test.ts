@@ -5,6 +5,7 @@ import {
   nextTicketCounter,
   normalizeTicketCounter,
   normalizeTicketLimit,
+  shouldClaimTicket,
 } from './config.rules';
 
 describe('formatTicket', () => {
@@ -66,5 +67,22 @@ describe('normalizeTicketCounter', () => {
     expect(normalizeTicketCounter(5.7)).toBe(5);
     expect(normalizeTicketCounter(-3)).toBe(1);
     expect(normalizeTicketCounter(Number.POSITIVE_INFINITY)).toBe(1);
+  });
+});
+
+describe('shouldClaimTicket', () => {
+  it('reserva o próximo número quando nenhum ticket foi informado', () => {
+    expect(shouldClaimTicket(undefined, '0001')).toBe(true);
+    expect(shouldClaimTicket('', '0001')).toBe(true);
+    expect(shouldClaimTicket('   ', '0001')).toBe(true);
+  });
+
+  it('reserva o próximo número quando o informado é igual à sugestão', () => {
+    expect(shouldClaimTicket('0001', '0001')).toBe(true);
+    expect(shouldClaimTicket(' 0001 ', '0001')).toBe(true);
+  });
+
+  it('não reserva quando o usuário digitou outro número', () => {
+    expect(shouldClaimTicket('42', '0001')).toBe(false);
   });
 });

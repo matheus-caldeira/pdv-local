@@ -84,7 +84,7 @@ describe('OpenTabModal', () => {
     await user.click(screen.getByRole('button', { name: /abrir comanda/i }));
 
     await waitFor(() => expect(openTab).toHaveBeenCalled());
-    expect(openTab).toHaveBeenCalledWith('Maju', '042');
+    expect(openTab).toHaveBeenCalledWith('Maju', undefined);
   });
 
   it('chama onOpened com a comanda recém-criada', async () => {
@@ -182,7 +182,7 @@ describe('OpenTabModal', () => {
     expect(screen.getByLabelText(/nome/i)).toHaveValue('Pedro');
   });
 
-  it('usa a sugestão de comanda quando o campo fica vazio ao enviar', async () => {
+  it('não envia override quando o campo fica vazio ao enviar', async () => {
     const user = userEvent.setup();
     render(
       <OpenTabModal
@@ -198,7 +198,9 @@ describe('OpenTabModal', () => {
     await user.type(screen.getByLabelText(/nome/i), 'Maju');
     await user.click(screen.getByRole('button', { name: /abrir comanda/i }));
 
-    await waitFor(() => expect(openTab).toHaveBeenCalledWith('Maju', '042'));
+    await waitFor(() =>
+      expect(openTab).toHaveBeenCalledWith('Maju', undefined),
+    );
   });
 
   it('não abre comanda sem nome', async () => {
