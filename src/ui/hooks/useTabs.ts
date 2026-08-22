@@ -74,6 +74,24 @@ export function useTabs(sessionUid: string) {
     [refresh, toast],
   );
 
+  const updateItems = useCallback(
+    async (orderUid: string, items: OrderItem[]) => {
+      const result = await container.updateTabItems({ orderUid, items });
+      return fold(
+        result,
+        (error) => {
+          toast(error.message, 'error');
+          return false;
+        },
+        () => {
+          void refresh();
+          return true;
+        },
+      );
+    },
+    [refresh, toast],
+  );
+
   const closeTab = useCallback(
     async (orderUid: string) => {
       const result = await container.closeTab({ orderUid });
@@ -110,5 +128,14 @@ export function useTabs(sessionUid: string) {
     [refresh, toast],
   );
 
-  return { openTabs, loading, openTab, addItems, closeTab, reopenTab, refresh };
+  return {
+    openTabs,
+    loading,
+    openTab,
+    addItems,
+    updateItems,
+    closeTab,
+    reopenTab,
+    refresh,
+  };
 }

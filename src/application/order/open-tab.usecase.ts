@@ -45,14 +45,13 @@ export class OpenTabUseCase extends UseCase<OpenTabInput, Order> {
     if (isLeft(ticket)) return ticket;
 
     const customerUid = await this.resolveCustomer(input);
-    if (isLeft(customerUid)) return customerUid;
 
     const now = Date.now();
     const draft: NewOrder = {
       uid: createUid(),
       businessTypeId: this.definition.id,
       sessionUid: input.sessionUid,
-      customerUid: customerUid.right,
+      customerUid,
       items: [],
       total: 0,
       paymentMethod: null,
@@ -96,7 +95,7 @@ export class OpenTabUseCase extends UseCase<OpenTabInput, Order> {
 
   private async resolveCustomer(
     input: OpenTabInput,
-  ): Promise<Either<AppError, string | undefined>> {
-    return right(input.customerUid);
+  ): Promise<string | undefined> {
+    return input.customerUid;
   }
 }

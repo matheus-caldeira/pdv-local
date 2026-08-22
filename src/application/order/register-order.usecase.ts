@@ -62,15 +62,14 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
     const ticketResult = await this.resolveTicket(input, repositories);
     if (isLeft(ticketResult)) return ticketResult;
 
-    const customerResult = await this.resolveCustomer(input);
-    if (isLeft(customerResult)) return customerResult;
+    const customerUid = await this.resolveCustomer(input);
 
     const now = Date.now();
     const draft: NewOrder = {
       uid: createUid(),
       businessTypeId: this.definition.id,
       sessionUid: input.sessionUid,
-      customerUid: customerResult.right,
+      customerUid,
       items: input.items,
       total: calculateOrderTotal(input.items),
       paymentMethod: input.paymentMethod ?? null,
@@ -119,7 +118,7 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
 
   private async resolveCustomer(
     input: RegisterOrderInput,
-  ): Promise<Either<AppError, string | undefined>> {
-    return right(input.customerUid);
+  ): Promise<string | undefined> {
+    return input.customerUid;
   }
 }

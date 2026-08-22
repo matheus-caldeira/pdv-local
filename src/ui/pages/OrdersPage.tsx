@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  CircleDollarSign,
+  MoreVertical,
+  Printer,
+  ShoppingCart,
+} from 'lucide-react';
 import { Badge } from '../atoms/Badge';
+import { Button } from '../atoms/Button';
+import { IconButton } from '../atoms/IconButton';
 import { Money } from '../atoms/Money';
 import { Modal } from '../molecules/Modal';
 import { SearchField } from '../molecules/SearchField';
@@ -13,7 +21,11 @@ import { container } from '../../app/container';
 import { isLeft } from '../../domain/shared/either';
 import { formatDateTime } from '../../domain/shared/format';
 import { STAGE_LABELS } from '../../domain/order/order.rules';
-import type { Order, OrderStatus } from '../../domain/order/order.entity';
+import type {
+  Order,
+  OrderItem,
+  OrderStatus,
+} from '../../domain/order/order.entity';
 
 const STATUS_OPTIONS: { key: OrderStatus | ''; label: string }[] = [
   { key: '', label: 'Todos' },
@@ -48,15 +60,20 @@ const PAYMENT_LABELS: Record<string, string> = {
   pagar_depois: 'Pagar Depois',
 };
 
+const QUICK_PAYMENT_METHODS = ['pix', 'credito', 'debito', 'dinheiro'];
+
 export function OrdersPage() {
   const navigate = useNavigate();
   const { activeSession } = useSession();
   const { orders, statusControlEnabled, markPaid, cancel } = useOrders();
-  const { closeTab, reopenTab } = useTabs(activeSession?.uid ?? '');
+  const { updateItems, closeTab, reopenTab } = useTabs(
+    activeSession?.uid ?? '',
+  );
   const { printOrder } = usePrint();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [payingOrder, setPayingOrder] = useState<Order | null>(null);
   const autoPrintOnCloseRef = useRef(false);
 
   useEffect(() => {
@@ -108,13 +125,29 @@ export function OrdersPage() {
     navigate('/pdv?tab=' + detailOrder!.uid);
   }
 
+  async function handleSaveItems(items: OrderItem[]) {
+    const ok = await updateItems(detailOrder!.uid, items);
+    if (ok) setDetailOrder(null);
+  }
+
+  async function handleQuickPay(method: string) {
+    const order = payingOrder!;
+    const ok = await markPaid(order.uid, method);
+    if (ok) setPayingOrder(null);
+  }
+
   return (
     <div className="max-w-3xl">
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-extrabold tracking-tight">Pedidos</h1>
-        <span className="text-sm text-ink-tertiary">
-          {filtered.length} pedidos
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-ink-tertiary">
+            {filtered.length} pedidos
+          </span>
+          <Button size="sm" onClick={() => navigate('/pdv')}>
+            Novo pedido
+          </Button>
+        </div>
       </div>
 
       <div className="mb-3">
@@ -151,11 +184,10 @@ export function OrdersPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((order) => (
-            <button
+            <div
               key={order.id}
-              type="button"
-              onClick={() => setDetailOrder(order)}
-              className="flex flex-col gap-2 rounded-md border border-border bg-surface-2 px-4 py-3 text-left transition-colors hover:bg-surface-inset"
+              data-order={order.uid}
+              className="flex flex-col gap-2 rounded-md border border-border bg-surface-2 px-4 py-3 text-left"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-2">
@@ -195,7 +227,41 @@ export function OrdersPage() {
                   {formatDateTime(order.createdAt)}
                 </span>
               </div>
-            </button>
+              <div className="flex items-center justify-end gap-2">
+                {order.status === 'open' && (
+                  <IconButton
+                    aria-label="Continuar"
+                    title="Continuar"
+                    onClick={() => navigate('/pdv?tab=' + order.uid)}
+                  >
+                    <ShoppingCart size={15} />
+                  </IconButton>
+                )}
+                <IconButton
+                  aria-label="Imprimir"
+                  title="Imprimir"
+                  onClick={() => printOrder(order)}
+                >
+                  <Printer size={15} />
+                </IconButton>
+                {(order.status === 'open' || order.status === 'pending') && (
+                  <IconButton
+                    aria-label="Marcar como pago"
+                    title="Marcar como pago"
+                    onClick={() => setPayingOrder(order)}
+                  >
+                    <CircleDollarSign size={15} />
+                  </IconButton>
+                )}
+                <IconButton
+                  aria-label="Mais ações"
+                  title="Mais ações"
+                  onClick={() => setDetailOrder(order)}
+                >
+                  <MoreVertical size={15} />
+                </IconButton>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -214,8 +280,27 @@ export function OrdersPage() {
             onClose={handleCloseTab}
             onReopen={handleReopenTab}
             onAddItems={handleAddItems}
+            onSaveItems={handleSaveItems}
           />
         )}
+      </Modal>
+
+      <Modal
+        open={payingOrder !== null}
+        onClose={() => setPayingOrder(null)}
+        title="Marcar como pago"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {QUICK_PAYMENT_METHODS.map((method) => (
+            <Button
+              key={method}
+              variant="ghost"
+              onClick={() => handleQuickPay(method)}
+            >
+              {PAYMENT_LABELS[method]}
+            </Button>
+          ))}
+        </div>
       </Modal>
     </div>
   );

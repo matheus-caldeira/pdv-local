@@ -123,6 +123,16 @@ const openTabFixture = {
   updatedAt: 1,
 };
 
+const customerWithTab = {
+  uid: 'customer-7',
+  name: 'Maju',
+  phone: '',
+  addresses: [],
+  extra: {},
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 describe('PdvPage', () => {
   beforeEach(() => {
     navigate.mockReset();
@@ -515,6 +525,151 @@ describe('PdvPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     expect(saveCustomer).not.toHaveBeenCalled();
+  });
+
+  it('vai para os pedidos depois de lançar na comanda', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /coca/i }));
+    await user.type(screen.getByRole('combobox', { name: 'Comanda' }), 'Maju');
+    await user.click(screen.getByRole('option', { name: /Maju/i }));
+    await user.click(
+      screen.getByRole('button', { name: /lançar na comanda/i }),
+    );
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/orders'));
+  });
+
+  it('não navega quando lançar na comanda falha', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    addItemsToTab.mockResolvedValue(left(new EmptyCartError()));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /coca/i }));
+    await user.type(screen.getByRole('combobox', { name: 'Comanda' }), 'Maju');
+    await user.click(screen.getByRole('option', { name: /Maju/i }));
+    await user.click(
+      screen.getByRole('button', { name: /lançar na comanda/i }),
+    );
+
+    await waitFor(() => expect(addItemsToTab).toHaveBeenCalled());
+    expect(navigate).not.toHaveBeenCalledWith('/orders');
+  });
+
+  it('propõe a comanda aberta ao vincular o cliente e a seleciona ao confirmar', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    listOrders.mockResolvedValue(
+      right([{ ...openTabFixture, customerUid: 'customer-7' }]),
+    );
+    searchCustomers.mockResolvedValue(right([customerWithTab]));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
+    await user.click(
+      within(
+        await screen.findByRole('listbox', { name: 'Opções para Cliente' }),
+      ).getByRole('option', { name: /Maju/i }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Comanda em aberto',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: /Usar comanda nº 007/ }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('combobox', { name: 'Comanda' })).toHaveValue(
+      '007 — Maju',
+    );
+  });
+
+  it('segue em venda avulsa ao recusar a comanda aberta', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    listOrders.mockResolvedValue(
+      right([{ ...openTabFixture, customerUid: 'customer-7' }]),
+    );
+    searchCustomers.mockResolvedValue(right([customerWithTab]));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
+    await user.click(
+      within(
+        await screen.findByRole('listbox', { name: 'Opções para Cliente' }),
+      ).getByRole('option', { name: /Maju/i }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Comanda em aberto',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Continuar venda avulsa' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('combobox', { name: 'Comanda' })).toHaveValue('');
+  });
+
+  it('não propõe comanda quando o cliente vinculado não tem uma aberta', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    searchCustomers.mockResolvedValue(right([customerWithTab]));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
+    await user.click(
+      within(
+        await screen.findByRole('listbox', { name: 'Opções para Cliente' }),
+      ).getByRole('option', { name: /Maju/i }),
+    );
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Comanda em aberto' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('propõe a comanda aberta do cliente recém-cadastrado', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    listOrders.mockResolvedValue(
+      right([{ ...openTabFixture, customerUid: 'customer-7' }]),
+    );
+    saveCustomer.mockResolvedValue(right(customerWithTab));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Cadastrar cliente' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Novo cliente' });
+    await user.type(within(dialog).getByLabelText('Nome'), 'Maju');
+    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Comanda em aberto' }),
+    ).toBeInTheDocument();
   });
 
   it('abre uma comanda nova pelo carrinho e a seleciona automaticamente', async () => {

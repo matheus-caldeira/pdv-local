@@ -141,7 +141,7 @@ describe('usePdvController', () => {
       ]),
     );
     const { result } = await setup();
-    await act(async () => result.current.onPhoneChange('9988'));
+    await act(async () => result.current.onCustomerNameChange('Maj'));
     await waitFor(() =>
       expect(result.current.customerSuggestions).toHaveLength(1),
     );
@@ -149,8 +149,7 @@ describe('usePdvController', () => {
       result.current.selectCustomer(result.current.customerSuggestions[0]),
     );
     expect(result.current.customerName).toBe('Maju');
-    expect(result.current.phone).toBe('99887766');
-    expect(result.current.matchedCustomer).not.toBeNull();
+    expect(result.current.matchedCustomer?.phone).toBe('99887766');
     expect(result.current.customerSuggestions).toHaveLength(0);
   });
 
@@ -211,7 +210,8 @@ describe('usePdvController', () => {
     expect(result.current.address).toBe('Rua X');
   });
 
-  it('defaults phone to an empty string when the customer has none', async () => {
+  it('registra telefone vazio quando o cliente vinculado não tem telefone', async () => {
+    registerOrder.mockResolvedValue(right({ id: 1 }));
     const { result } = await setup();
     act(() =>
       result.current.selectCustomer({
@@ -224,7 +224,41 @@ describe('usePdvController', () => {
         updatedAt: 0,
       }),
     );
-    expect(result.current.phone).toBe('');
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+    await act(async () => {
+      await result.current.finalizeSale('tab', null);
+    });
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
+      expect.objectContaining({ customerPhone: '' }),
+    );
+  });
+
+  it('registra o telefone do cliente vinculado', async () => {
+    registerOrder.mockResolvedValue(right({ id: 1 }));
+    const { result } = await setup();
+    act(() =>
+      result.current.selectCustomer({
+        id: 4,
+        uid: 'customer-4',
+        name: 'Com Telefone',
+        phone: '33334444',
+        addresses: [],
+        extra: {},
+        createdAt: 0,
+        updatedAt: 0,
+      }),
+    );
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+    await act(async () => {
+      await result.current.finalizeSale('tab', null);
+    });
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
+      expect.objectContaining({ customerPhone: '33334444' }),
+    );
   });
 
   it('falls back to empty businessTypeId when reading the config fails', async () => {

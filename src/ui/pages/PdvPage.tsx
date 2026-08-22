@@ -5,6 +5,7 @@ import { ProductGrid } from '../organisms/ProductGrid';
 import { Cart } from '../organisms/Cart';
 import { CustomizationModal } from '../organisms/CustomizationModal';
 import { OpenTabModal } from '../organisms/OpenTabModal';
+import { OpenTabPromptModal } from '../organisms/OpenTabPromptModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
 import { QuickCustomerModal } from '../organisms/QuickCustomerModal';
 import { TabSelector } from '../organisms/TabSelector';
@@ -17,6 +18,7 @@ import {
   type LoadedCustomizationGroup,
 } from '../hooks/useCustomizationLoader';
 import { useToast } from '../molecules/toast-context';
+import { findOpenTabForCustomer } from '../../domain/order/order.rules';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { Order } from '../../domain/order/order.entity';
 import type { Product } from '../../domain/product/product.entity';
@@ -32,6 +34,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const controller = usePdvController(sessionUid);
   const { openTabs, addItems, refresh: refreshTabs } = useTabs(sessionUid);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const toast = useToast();
 
   const [customization, setCustomization] = useState<CustomizationState | null>(
@@ -43,11 +46,18 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   );
   const [openTabModalOpen, setOpenTabModalOpen] = useState(false);
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
+  const [promptTab, setPromptTab] = useState<Order | null>(null);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
-  function handleCustomerCreated(customer: Customer) {
+
+  function handleSelectCustomer(customer: Customer) {
     controller.selectCustomer(customer);
+    setPromptTab(findOpenTabForCustomer(openTabs, customer.uid));
+  }
+
+  function handleCustomerCreated(customer: Customer) {
+    handleSelectCustomer(customer);
     setQuickCustomerOpen(false);
   }
 
@@ -78,7 +88,10 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
 
   async function handleLaunchToTab(orderUid: string) {
     const ok = await addItems(orderUid, controller.cart);
-    if (ok) controller.clearCart();
+    if (ok) {
+      controller.clearCart();
+      navigate('/orders');
+    }
   }
 
   function handleTabOpened(order: Order) {
@@ -108,7 +121,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           customerName={controller.customerName}
           onCustomerNameChange={controller.onCustomerNameChange}
           customerSuggestions={controller.customerSuggestions}
-          onSelectCustomer={controller.selectCustomer}
+          onSelectCustomer={handleSelectCustomer}
           onCreateCustomer={() => setQuickCustomerOpen(true)}
           address={controller.address}
           onAddressChange={controller.setAddress}
@@ -153,6 +166,16 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         sessionUid={sessionUid}
         onClose={() => setOpenTabModalOpen(false)}
         onOpened={handleTabOpened}
+      />
+
+      <OpenTabPromptModal
+        tab={promptTab}
+        customerName={controller.customerName}
+        onUseTab={() => {
+          setSelectedTabUid(promptTab!.uid);
+          setPromptTab(null);
+        }}
+        onDismiss={() => setPromptTab(null)}
       />
 
       <QuickCustomerModal

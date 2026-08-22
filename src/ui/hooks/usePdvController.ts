@@ -38,7 +38,6 @@ export function usePdvController(sessionUid: string) {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
-  const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [ticket, setTicket] = useState('');
   const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
@@ -74,15 +73,6 @@ export function usePdvController(sessionUid: string) {
     [cart],
   );
 
-  const onPhoneChange = useCallback(
-    (value: string) => {
-      setPhone(value);
-      setMatchedCustomer(null);
-      customerSearch.search(value);
-    },
-    [customerSearch],
-  );
-
   const onCustomerNameChange = useCallback(
     (value: string) => {
       setCustomerName(value);
@@ -95,7 +85,6 @@ export function usePdvController(sessionUid: string) {
   const selectCustomer = useCallback(
     (customer: Customer) => {
       setMatchedCustomer(customer);
-      setPhone(customer.phone ?? '');
       setCustomerName(customer.name);
       setAddress(customer.addresses[0] || '');
       customerSearch.clear();
@@ -165,7 +154,6 @@ export function usePdvController(sessionUid: string) {
   const resetForm = useCallback(() => {
     setCart([]);
     setCustomerName('');
-    setPhone('');
     setAddress('');
     setMatchedCustomer(null);
     customerSearch.clear();
@@ -205,7 +193,7 @@ export function usePdvController(sessionUid: string) {
         paymentMethod: option === 'tab' ? null : paymentMethod,
         status: statusForOption(option),
         customerName,
-        customerPhone: phone,
+        customerPhone: matchedCustomer?.phone ?? '',
         customerAddress: realAddress,
       });
 
@@ -232,7 +220,7 @@ export function usePdvController(sessionUid: string) {
       businessTypeId,
       cart,
       customerName,
-      phone,
+      matchedCustomer,
       resetForm,
       sessionUid,
       suggestion,
@@ -249,8 +237,6 @@ export function usePdvController(sessionUid: string) {
     customerName,
     setCustomerName,
     onCustomerNameChange,
-    phone,
-    onPhoneChange,
     address,
     setAddress,
     ticket,

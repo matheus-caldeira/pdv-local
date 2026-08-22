@@ -25,6 +25,7 @@ const getActiveSession = vi.fn();
 const resolveActiveType = vi.fn();
 const openTab = vi.fn();
 const addItemsToTab = vi.fn();
+const updateTabItems = vi.fn();
 const closeTab = vi.fn();
 const reopenTab = vi.fn();
 const printOrder = vi.fn();
@@ -55,6 +56,7 @@ vi.mock('../../app/container', () => ({
     openTab: (definition: unknown, input: unknown) =>
       openTab(definition, input),
     addItemsToTab: (input: unknown) => addItemsToTab(input),
+    updateTabItems: (input: unknown) => updateTabItems(input),
     closeTab: (input: unknown) => closeTab(input),
     reopenTab: (input: unknown) => reopenTab(input),
   },
@@ -172,6 +174,16 @@ function renderPage() {
   );
 }
 
+function orderRow(ticket: string): HTMLElement {
+  return screen.getByText('#' + ticket).closest('div[data-order]')!;
+}
+
+async function openDetail(ticket: string) {
+  await userEvent.click(
+    within(orderRow(ticket)).getByRole('button', { name: 'Mais ações' }),
+  );
+}
+
 describe('OrdersPage', () => {
   beforeEach(() => {
     navigate.mockReset();
@@ -183,6 +195,7 @@ describe('OrdersPage', () => {
     resolveActiveType.mockReset();
     openTab.mockReset();
     addItemsToTab.mockReset();
+    updateTabItems.mockReset();
     closeTab.mockReset();
     reopenTab.mockReset();
     printOrder.mockReset();
@@ -265,7 +278,7 @@ describe('OrdersPage', () => {
   it('opens the detail modal and prints', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Pedido #001')).toBeInTheDocument();
     await userEvent.click(
@@ -281,7 +294,7 @@ describe('OrdersPage', () => {
   it('closes the detail modal via the backdrop', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('presentation'));
     await waitFor(() =>
@@ -293,7 +306,7 @@ describe('OrdersPage', () => {
     markOrderPaid.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#004'));
+    await openDetail('004');
     await userEvent.click(
       screen.getByRole('button', { name: 'Marcar como Pago' }),
     );
@@ -308,7 +321,7 @@ describe('OrdersPage', () => {
     markOrderPaid.mockResolvedValue(left(new FakeError('falha pago')));
     renderPage();
     await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#004'));
+    await openDetail('004');
     await userEvent.click(
       screen.getByRole('button', { name: 'Marcar como Pago' }),
     );
@@ -326,7 +339,7 @@ describe('OrdersPage', () => {
     cancelOrder.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: 'Cancelar Pedido' }),
     );
@@ -340,7 +353,7 @@ describe('OrdersPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: 'Cancelar Pedido' }),
     );
@@ -352,7 +365,7 @@ describe('OrdersPage', () => {
     cancelOrder.mockResolvedValue(left(new FakeError('falha cancelar')));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: 'Cancelar Pedido' }),
     );
@@ -368,7 +381,7 @@ describe('OrdersPage', () => {
     closeTab.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );
@@ -382,7 +395,7 @@ describe('OrdersPage', () => {
     closeTab.mockResolvedValue(left(new FakeError('falha fechar')));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );
@@ -398,7 +411,7 @@ describe('OrdersPage', () => {
     reopenTab.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#004'));
+    await openDetail('004');
     await userEvent.click(screen.getByRole('button', { name: /reabrir/i }));
     const dialog = screen.getByRole('dialog', { name: 'Reabrir comanda' });
     await userEvent.click(
@@ -416,7 +429,7 @@ describe('OrdersPage', () => {
     reopenTab.mockResolvedValue(left(new FakeError('falha reabrir')));
     renderPage();
     await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#004'));
+    await openDetail('004');
     await userEvent.click(screen.getByRole('button', { name: /reabrir/i }));
     const dialog = screen.getByRole('dialog', { name: 'Reabrir comanda' });
     await userEvent.click(
@@ -433,7 +446,7 @@ describe('OrdersPage', () => {
   it('navigates to the PDV to add items to an open tab', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /adicionar itens/i }),
     );
@@ -447,7 +460,7 @@ describe('OrdersPage', () => {
     closeTab.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );
@@ -462,7 +475,7 @@ describe('OrdersPage', () => {
     closeTab.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );
@@ -478,7 +491,7 @@ describe('OrdersPage', () => {
     closeTab.mockResolvedValue(right(undefined));
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );
@@ -489,6 +502,186 @@ describe('OrdersPage', () => {
     expect(printOrder).not.toHaveBeenCalled();
   });
 
+  it('leva ao PDV pelo botão de novo pedido', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Novo pedido' }));
+
+    expect(navigate).toHaveBeenCalledWith('/pdv');
+  });
+
+  it('continua a comanda pela ação rápida', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Continuar' })[0],
+    );
+
+    expect(navigate).toHaveBeenCalledWith('/pdv?tab=order-1');
+  });
+
+  it('só oferece continuar nas comandas abertas', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    expect(screen.getAllByRole('button', { name: 'Continuar' })).toHaveLength(
+      1,
+    );
+  });
+
+  it('imprime pela ação rápida sem abrir o detalhe', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Imprimir' })[0],
+    );
+
+    await waitFor(() =>
+      expect(printOrder).toHaveBeenCalledWith(
+        expect.objectContaining({ ticket: '001' }),
+      ),
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('marca como pago pela ação rápida', async () => {
+    markOrderPaid.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
+
+    await userEvent.click(
+      within(orderRow('004')).getByRole('button', { name: 'Marcar como pago' }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Marcar como pago' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'PIX' }));
+
+    expect(markOrderPaid).toHaveBeenCalledWith('order-4', 'pix');
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('mantém a escolha de pagamento aberta quando marcar como pago falha', async () => {
+    markOrderPaid.mockResolvedValue(left(new FakeError('falha rápida')));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
+
+    await userEvent.click(
+      within(orderRow('004')).getByRole('button', { name: 'Marcar como pago' }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Marcar como pago' });
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Dinheiro' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha rápida'),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Marcar como pago' }),
+    ).toBeInTheDocument();
+  });
+
+  it('fecha a escolha de pagamento rápido pelo fundo', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#004')).toBeInTheDocument());
+
+    await userEvent.click(
+      within(orderRow('004')).getByRole('button', { name: 'Marcar como pago' }),
+    );
+    await userEvent.click(screen.getByRole('presentation'));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(markOrderPaid).not.toHaveBeenCalled();
+  });
+
+  it('não oferece marcar como pago em pedido já pago', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#002')).toBeInTheDocument());
+
+    expect(
+      within(orderRow('002')).queryByRole('button', {
+        name: 'Marcar como pago',
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('abre o detalhe pelo menu de mais ações', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getAllByRole('button', { name: 'Mais ações' })[0],
+    );
+
+    expect(
+      screen.getByRole('dialog', { name: 'Pedido #001' }),
+    ).toBeInTheDocument();
+  });
+
+  it('salva os itens editados e fecha o detalhe', async () => {
+    updateTabItems.mockResolvedValue(right(undefined));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await openDetail('001');
+
+    const dialog = screen.getByRole('dialog', { name: 'Pedido #001' });
+    await userEvent.click(
+      within(dialog).getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Remover item' })).getByRole(
+        'button',
+        { name: 'Remover' },
+      ),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+
+    expect(updateTabItems).toHaveBeenCalledWith(
+      expect.objectContaining({ orderUid: 'order-1' }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Pedido #001' }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('mantém o detalhe aberto quando salvar os itens falha', async () => {
+    updateTabItems.mockResolvedValue(left(new FakeError('falha salvar')));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
+    await openDetail('001');
+
+    const dialog = screen.getByRole('dialog', { name: 'Pedido #001' });
+    await userEvent.click(
+      within(dialog).getAllByRole('button', { name: 'Diminuir' })[0],
+    );
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Remover item' })).getByRole(
+        'button',
+        { name: 'Remover' },
+      ),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Salvar alterações' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('falha salvar'),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Pedido #001' }),
+    ).toBeInTheDocument();
+  });
+
   it('mantém a comanda fechada quando a impressão falha', async () => {
     readConfig.mockResolvedValue(
       right({ ...CONFIG, printerAutoPrintOnClose: true }),
@@ -497,7 +690,7 @@ describe('OrdersPage', () => {
     printOrder.mockResolvedValue(false);
     renderPage();
     await waitFor(() => expect(screen.getByText('#001')).toBeInTheDocument());
-    await userEvent.click(screen.getByText('#001'));
+    await openDetail('001');
     await userEvent.click(
       screen.getByRole('button', { name: /fechar comanda/i }),
     );

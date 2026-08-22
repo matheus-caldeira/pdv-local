@@ -12,6 +12,7 @@ const resolveActiveType = vi.fn();
 const listOrders = vi.fn();
 const openTab = vi.fn();
 const addItemsToTab = vi.fn();
+const updateTabItems = vi.fn();
 const closeTab = vi.fn();
 const reopenTab = vi.fn();
 
@@ -22,6 +23,7 @@ vi.mock('../../app/container', () => ({
     openTab: (definition: unknown, input: unknown) =>
       openTab(definition, input),
     addItemsToTab: (input: unknown) => addItemsToTab(input),
+    updateTabItems: (input: unknown) => updateTabItems(input),
     closeTab: (input: unknown) => closeTab(input),
     reopenTab: (input: unknown) => reopenTab(input),
   },
@@ -54,6 +56,7 @@ describe('useTabs', () => {
     listOrders.mockReset();
     openTab.mockReset();
     addItemsToTab.mockReset();
+    updateTabItems.mockReset();
     closeTab.mockReset();
     reopenTab.mockReset();
     resolveActiveType.mockResolvedValue(right(getBusinessType('scout')));
@@ -167,6 +170,44 @@ describe('useTabs', () => {
     let ok: boolean | undefined;
     await act(async () => {
       ok = await result.current.addItems('order-1', []);
+    });
+
+    expect(ok).toBe(false);
+  });
+
+  it('atualiza os itens da comanda e devolve true no sucesso', async () => {
+    updateTabItems.mockResolvedValue(right(order()));
+
+    const { result } = renderHook(() => useTabs('session-1'), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.updateItems('order-1', [
+        {
+          name: 'Refrigerante',
+          salePrice: 5,
+          costPrice: 2,
+          qty: 1,
+        },
+      ]);
+    });
+
+    expect(ok).toBe(true);
+    expect(updateTabItems).toHaveBeenCalledWith(
+      expect.objectContaining({ orderUid: 'order-1' }),
+    );
+  });
+
+  it('devolve false quando atualizar os itens falha', async () => {
+    updateTabItems.mockResolvedValue(left(new TabNotOpenError()));
+
+    const { result } = renderHook(() => useTabs('session-1'), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.updateItems('order-1', []);
     });
 
     expect(ok).toBe(false);
