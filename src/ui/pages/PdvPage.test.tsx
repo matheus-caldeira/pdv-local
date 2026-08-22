@@ -837,46 +837,70 @@ describe('PdvPage no celular', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('abre o cadastro de cliente direto pelo ícone', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
-    await screen.findByTestId('cart-bar');
-
-    await user.click(screen.getByRole('button', { name: 'Cliente' }));
-
-    expect(
-      await screen.findByRole('dialog', { name: 'Novo cliente' }),
-    ).toBeInTheDocument();
-  });
-
-  it('mostra o cliente vinculado na barra', async () => {
+  it('busca e vincula o cliente pelo campo da barra', async () => {
     const customer = {
       uid: 'customer-9',
       name: 'Maju',
       phone: '',
       addresses: [],
-      extra: {},
+      extra: { section: 'lobinho' },
       createdAt: 1,
       updatedAt: 1,
     };
-    saveCustomer.mockResolvedValue(right(customer));
+    searchCustomers.mockResolvedValue(right([customer]));
     const user = userEvent.setup();
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
     await screen.findByTestId('cart-bar');
 
-    await user.click(screen.getByRole('button', { name: 'Cliente' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Novo cliente' });
-    await user.type(within(dialog).getByLabelText('Nome'), 'Maju');
-    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar' }));
+    await user.type(
+      within(screen.getByTestId('cart-bar')).getByRole('combobox', {
+        name: 'Cliente',
+      }),
+      'Ma',
+    );
+    await user.click(await screen.findByRole('option', { name: /Maju/ }));
 
     await waitFor(() =>
       expect(
-        within(screen.getByTestId('cart-bar')).getByText('Maju'),
-      ).toBeInTheDocument(),
+        within(screen.getByTestId('cart-bar')).getByRole('combobox', {
+          name: 'Cliente',
+        }),
+      ).toHaveValue('Maju'),
     );
+  });
+
+  it('aceita um nome livre sem vincular cliente', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await screen.findByTestId('cart-bar');
+
+    const field = within(screen.getByTestId('cart-bar')).getByRole('combobox', {
+      name: 'Cliente',
+    });
+    await user.type(field, 'Fulano');
+
+    await waitFor(() => expect(field).toHaveValue('Fulano'));
+  });
+
+  it('chega ao cadastro de cliente pelo ícone', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await screen.findByTestId('cart-bar');
+
+    await user.click(
+      within(screen.getByTestId('cart-bar')).getByRole('button', {
+        name: 'Cadastrar cliente',
+      }),
+    );
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Novo cliente' }),
+    ).toBeInTheDocument();
   });
 });

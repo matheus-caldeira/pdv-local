@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CartBar } from './CartBar';
+import type { Customer } from '../../domain/customer/customer.entity';
 import type { Order } from '../../domain/order/order.entity';
 import type { CartItem } from '../hooks/usePdvController';
 
@@ -23,10 +24,12 @@ function baseProps() {
     cart: [] as CartItem[],
     total: 0,
     customerName: '',
+    onCustomerNameChange: vi.fn(),
+    customerSuggestions: [] as Customer[],
+    onSelectCustomer: vi.fn(),
     ordering: 'optional' as const,
     selectedTab: null as Order | null,
     onExpand: vi.fn(),
-    onOpenCustomer: vi.fn(),
     onOpenTab: vi.fn(),
     onFinalize: vi.fn(),
     onCreateCustomer: vi.fn(),
@@ -43,10 +46,12 @@ describe('CartBar', () => {
     expect(bar.className).toContain('z-[110]');
   });
 
-  it('mostra o nome do cliente vinculado', () => {
+  it('mostra o nome do cliente no campo', () => {
     render(<CartBar {...baseProps()} customerName="Maju" />);
 
-    expect(screen.getByText('Maju')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Cliente' })).toHaveValue(
+      'Maju',
+    );
   });
 
   it('mostra o número da comanda selecionada', () => {
@@ -55,17 +60,43 @@ describe('CartBar', () => {
     expect(screen.getByText('nº 0012')).toBeInTheDocument();
   });
 
-  it('mostra cliente e comanda juntos', () => {
-    render(<CartBar {...baseProps()} customerName="Maju" selectedTab={tab} />);
-
-    expect(screen.getByText('Maju')).toBeInTheDocument();
-    expect(screen.getByText('nº 0012')).toBeInTheDocument();
-  });
-
-  it('esconde a linha de contexto sem cliente nem comanda', () => {
+  it('esconde o número quando não há comanda selecionada', () => {
     render(<CartBar {...baseProps()} />);
 
     expect(screen.queryByText(/nº /)).not.toBeInTheDocument();
+  });
+
+  it('busca e vincula o cliente pelo campo da barra', async () => {
+    const props = baseProps();
+    const customer: Customer = {
+      uid: 'customer-1',
+      name: 'Maju',
+      addresses: [],
+      extra: {},
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    render(
+      <CartBar {...props} customerName="Ma" customerSuggestions={[customer]} />,
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Cliente' }));
+    await userEvent.click(screen.getByRole('option', { name: /Maju/ }));
+
+    expect(props.onSelectCustomer).toHaveBeenCalledWith(customer);
+  });
+
+  it('encaminha o nome digitado sem vincular ninguém', async () => {
+    const props = baseProps();
+    render(<CartBar {...props} />);
+
+    await userEvent.type(
+      screen.getByRole('combobox', { name: 'Cliente' }),
+      'F',
+    );
+
+    expect(props.onCustomerNameChange).toHaveBeenCalledWith('F');
+    expect(props.onSelectCustomer).not.toHaveBeenCalled();
   });
 
   it('avisa quando não há itens', () => {
@@ -103,15 +134,6 @@ describe('CartBar', () => {
     await userEvent.click(screen.getByText('Nenhum item'));
 
     expect(props.onExpand).not.toHaveBeenCalled();
-  });
-
-  it('abre o cliente', async () => {
-    const props = baseProps();
-    render(<CartBar {...props} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Cliente' }));
-
-    expect(props.onOpenCustomer).toHaveBeenCalledTimes(1);
   });
 
   it('impede abrir comanda sem cliente informado', () => {
@@ -178,17 +200,15 @@ describe('CartBar', () => {
     expect(props.onFinalize).toHaveBeenCalledTimes(1);
   });
 
-  it('cadastra cliente pelo menu de mais ações', async () => {
+  it('abre o cadastro de cliente pelo ícone', async () => {
     const props = baseProps();
     render(<CartBar {...props} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Mais ações' }));
     await userEvent.click(
       screen.getByRole('button', { name: 'Cadastrar cliente' }),
     );
 
     expect(props.onCreateCustomer).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('limpa o carrinho pelo menu de mais ações', async () => {

@@ -156,8 +156,10 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
             customerName={controller.customerName}
             ordering={controller.ordering}
             selectedTab={selectedTab}
+            onCustomerNameChange={controller.onCustomerNameChange}
+            customerSuggestions={controller.customerSuggestions}
+            onSelectCustomer={handleSelectCustomer}
             onExpand={() => setCartSheetOpen(true)}
-            onOpenCustomer={() => setQuickCustomerOpen(true)}
             onOpenTab={handleTabAction}
             onFinalize={() => setPaymentOpen(true)}
             onCreateCustomer={() => setQuickCustomerOpen(true)}
