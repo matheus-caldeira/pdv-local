@@ -1,7 +1,6 @@
 import type { Either } from '../../domain/shared/either';
-import { isLeft, left, right } from '../../domain/shared/either';
+import { isLeft, right } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
-import { MissingTicketError } from '../../domain/errors';
 import { createUid } from '../../domain/shared/uid';
 import {
   calculateOrderTotal,
@@ -44,15 +43,7 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
   protected async pre(
     input: RegisterOrderInput,
   ): Promise<Either<AppError, void>> {
-    const notEmpty = validateCartNotEmpty(input.items);
-    if (isLeft(notEmpty)) return notEmpty;
-    if (
-      this.definition.rules.ordering === 'required' &&
-      !input.ticket?.trim()
-    ) {
-      return left(new MissingTicketError());
-    }
-    return right(undefined);
+    return validateCartNotEmpty(input.items);
   }
 
   protected async execute(

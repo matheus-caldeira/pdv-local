@@ -170,17 +170,20 @@ const itemWithProduct = (over: Partial<OrderItem> = {}): OrderItem => ({
 });
 
 describe('RegisterOrderUseCase', () => {
-  it('rejeita MISSING_TICKET quando ordering=required sem ticket', async () => {
-    const { uow } = makeUow();
+  it('reserva o número da comanda quando ordering=required sem ticket', async () => {
+    const { uow, created } = makeUow();
     const result = await new RegisterOrderUseCase(
       uow,
       definitionWith('required'),
     ).run({
       sessionUid: 's1',
       items: items(),
+      status: 'paid',
+      paymentMethod: 'dinheiro',
     });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.left.code).toBe('MISSING_TICKET');
+    expect(isRight(result)).toBe(true);
+    expect(created[0].ticket).toBe('0001');
+    expect(created[0].status).toBe('paid');
   });
 
   it('rejeita EMPTY_CART sem itens', async () => {

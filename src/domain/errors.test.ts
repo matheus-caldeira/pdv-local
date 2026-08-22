@@ -25,7 +25,6 @@ import {
   InvalidRecurrenceRangeError,
   InvoiceOverdetailedError,
   InvoicePaidError,
-  MissingTicketError,
   MonthAlreadyClosedError,
   MonthClosedError,
   MonthNotClosedError,
@@ -96,11 +95,6 @@ describe('domain errors', () => {
 });
 
 describe('erros de tipo de negócio', () => {
-  it('MissingTicketError', () => {
-    const e = new MissingTicketError();
-    expect(e.code).toBe('MISSING_TICKET');
-    expect(e.layer).toBe('domain');
-  });
   it('BusinessTypeNotSelectedError', () => {
     const e = new BusinessTypeNotSelectedError();
     expect(e.code).toBe('BUSINESS_TYPE_NOT_SELECTED');

@@ -91,14 +91,6 @@ export class SessionAlreadyOpenError extends DomainError {
   }
 }
 
-export class MissingTicketError extends DomainError {
-  readonly code = 'MISSING_TICKET';
-
-  constructor() {
-    super('Informe a comanda para registrar o pedido.');
-  }
-}
-
 export class BusinessTypeNotSelectedError extends DomainError {
   readonly code = 'BUSINESS_TYPE_NOT_SELECTED';
 

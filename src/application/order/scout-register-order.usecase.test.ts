@@ -44,15 +44,14 @@ function makeUow(): UnitOfWork {
 }
 
 describe('ScoutRegisterOrderUseCase', () => {
-  it('herda a regra MISSING_TICKET via super.pre', async () => {
+  it('reserva o número da comanda quando nenhum ticket é informado', async () => {
     const result = await new ScoutRegisterOrderUseCase(makeUow(), scoutDef).run(
       {
         sessionUid: 's1',
         items,
       },
     );
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.left.code).toBe('MISSING_TICKET');
+    expect(isRight(result)).toBe(true);
   });
 
   it('exige o par completo quando um dos campos do aluno é informado', async () => {
