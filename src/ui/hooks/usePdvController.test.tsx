@@ -211,6 +211,46 @@ describe('usePdvController', () => {
     expect(result.current.address).toBe('Rua X');
   });
 
+  it('vincula o cliente selecionado à venda', async () => {
+    registerOrder.mockResolvedValue(right({ id: 1 }));
+    const { result } = await setup();
+    act(() =>
+      result.current.selectCustomer({
+        id: 9,
+        uid: 'customer-9',
+        name: 'Maju',
+        addresses: [],
+        extra: {},
+        createdAt: 0,
+        updatedAt: 0,
+      }),
+    );
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+    await act(async () => {
+      await result.current.finalizeSale('now', 'dinheiro');
+    });
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
+      expect.objectContaining({ customerUid: 'customer-9' }),
+    );
+  });
+
+  it('não vincula cliente quando o nome foi digitado sem selecionar', async () => {
+    registerOrder.mockResolvedValue(right({ id: 1 }));
+    const { result } = await setup();
+    act(() => result.current.onCustomerNameChange('Fulano'));
+    act(() => result.current.addSimpleToCart(product({ id: 1 })));
+    await act(async () => {
+      await result.current.finalizeSale('now', 'dinheiro');
+    });
+    expect(registerOrder).toHaveBeenCalledWith(
+      'tab',
+      getBusinessType('tab'),
+      expect.objectContaining({ customerUid: undefined }),
+    );
+  });
+
   it('registra telefone vazio quando o cliente vinculado não tem telefone', async () => {
     registerOrder.mockResolvedValue(right({ id: 1 }));
     const { result } = await setup();

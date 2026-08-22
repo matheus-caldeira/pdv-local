@@ -10,6 +10,7 @@ import type { ReceiptPrinter } from '../../domain/printing/receipt-printer';
 import {
   buildDayReportReceipt,
   buildOrderReceipt,
+  buildTabNumberReceipt,
   buildPendingTabsReceipt,
   buildStockReceipt,
 } from '../../domain/printing/receipt.builders';
@@ -115,6 +116,17 @@ export function usePrint() {
     [loadSettings, printReceipt],
   );
 
+  const printTabNumber = useCallback(
+    async (order: Order) => {
+      const settings = await loadSettings();
+      return printReceipt(
+        buildTabNumberReceipt(order, settings.businessName, Date.now()),
+        settings,
+      );
+    },
+    [loadSettings, printReceipt],
+  );
+
   const printStock = useCallback(
     async (products: Product[]) => {
       const settings = await loadSettings();
@@ -148,5 +160,12 @@ export function usePrint() {
     [loadSettings, printReceipt],
   );
 
-  return { printOrder, printStock, printPendingTabs, printDayReport, printing };
+  return {
+    printOrder,
+    printTabNumber,
+    printStock,
+    printPendingTabs,
+    printDayReport,
+    printing,
+  };
 }

@@ -60,7 +60,11 @@ export function buildCustomer(
 export function customerSuggestionLabel(customer: Customer): string {
   const section = (customer.extra.section ?? '').trim();
   const guardian = (customer.extra.guardian ?? '').trim();
-  return [customer.name, section && (SECTION_LABELS[section] ?? section), guardian]
+  return [
+    customer.name,
+    section && (SECTION_LABELS[section] ?? section),
+    guardian,
+  ]
     .filter(Boolean)
     .join(' - ');
 }

@@ -37,6 +37,22 @@ export function buildOrderReceipt(
   };
 }
 
+export function buildTabNumberReceipt(
+  order: Order,
+  businessName: string,
+  printedAt: number,
+): Receipt {
+  return {
+    title: 'Comanda',
+    businessName,
+    ticket: order.ticket,
+    customerName: order.customerName,
+    lines: [],
+    footer: 'Guarde este número',
+    printedAt,
+  };
+}
+
 export function buildStockReceipt(
   products: Product[],
   businessName: string,

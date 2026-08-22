@@ -313,7 +313,7 @@ describe('PdvPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('shows the ticket field when the active business type requires ordering', async () => {
+  it('não mostra campo de número de comanda nem no escoteiro', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
@@ -333,9 +333,7 @@ describe('PdvPage', () => {
     );
     renderPage();
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
-    await waitFor(() =>
-      expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument(),
-    );
+    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
   });
 
   it('hides the ticket field when the active business type has no ordering', async () => {
@@ -686,14 +684,23 @@ describe('PdvPage', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
     await user.click(screen.getByRole('button', { name: /nova comanda/i }));
-    const dialog = screen.getByRole('dialog', { name: 'Abrir comanda' });
-    await user.type(within(dialog).getByLabelText(/nome/i), 'Maju');
-    await user.click(
-      within(dialog).getByRole('button', { name: /abrir comanda/i }),
-    );
 
     await waitFor(() => expect(openTab).toHaveBeenCalled());
+    expect(openTab).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ customerName: 'Maju' }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Comanda aberta',
+    });
+    expect(within(dialog).getByText('0001')).toBeInTheDocument();
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Continuar comprando' }),
+    );
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
@@ -702,5 +709,69 @@ describe('PdvPage', () => {
         '0001 — Maju',
       ),
     );
+  });
+
+  it('imprime o número da comanda recém-aberta', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    const newTab = { ...openTabFixture, ticket: '0001' };
+    let opened = false;
+    listOrders.mockImplementation(() =>
+      Promise.resolve(right(opened ? [newTab] : [])),
+    );
+    openTab.mockImplementation(() => {
+      opened = true;
+      return Promise.resolve(right(newTab));
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
+    await user.click(screen.getByRole('button', { name: /nova comanda/i }));
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Comanda aberta',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: /Imprimir número/ }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('não seleciona comanda quando a abertura falha', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    openTab.mockResolvedValue(left(new EmptyCartError()));
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.type(screen.getByRole('combobox', { name: 'Cliente' }), 'Maju');
+    await user.click(screen.getByRole('button', { name: /nova comanda/i }));
+
+    await waitFor(() => expect(openTab).toHaveBeenCalled());
+    expect(
+      screen.queryByRole('dialog', { name: 'Comanda aberta' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('não abre comanda sem cliente informado', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+
+    expect(
+      screen.getByRole('button', { name: /nova comanda/i }),
+    ).toBeDisabled();
+    expect(openTab).not.toHaveBeenCalled();
   });
 });

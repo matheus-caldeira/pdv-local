@@ -44,6 +44,18 @@ function makeUow(): UnitOfWork {
 }
 
 describe('ScoutRegisterOrderUseCase', () => {
+  it('propaga a rejeição do super.pre quando o carrinho está vazio', async () => {
+    const result = await new ScoutRegisterOrderUseCase(makeUow(), scoutDef).run(
+      {
+        sessionUid: 's1',
+        items: [],
+      },
+    );
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) expect(result.left.code).toBe('EMPTY_CART');
+  });
+
   it('reserva o número da comanda quando nenhum ticket é informado', async () => {
     const result = await new ScoutRegisterOrderUseCase(makeUow(), scoutDef).run(
       {

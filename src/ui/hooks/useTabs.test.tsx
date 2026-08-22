@@ -88,18 +88,18 @@ describe('useTabs', () => {
     expect(result.current.openTabs).toEqual([]);
   });
 
-  it('abre comanda e devolve true no sucesso', async () => {
+  it('abre comanda e devolve a comanda criada no sucesso', async () => {
     openTab.mockResolvedValue(right(order({ uid: 'nova' })));
 
     const { result } = renderHook(() => useTabs('session-1'), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    let ok: boolean | undefined;
+    let opened: Order | null | undefined;
     await act(async () => {
-      ok = await result.current.openTab('Maju (Lobinha)');
+      opened = await result.current.openTab('Maju (Lobinha)');
     });
 
-    expect(ok).toBe(true);
+    expect(opened?.uid).toBe('nova');
     expect(openTab).toHaveBeenCalledWith(
       getBusinessType('scout'),
       expect.objectContaining({
@@ -109,32 +109,48 @@ describe('useTabs', () => {
     );
   });
 
-  it('toasta e devolve false ao abrir sem tipo de negócio definido', async () => {
+  it('vincula o cliente informado à comanda', async () => {
+    openTab.mockResolvedValue(right(order({ uid: 'nova' })));
+
+    const { result } = renderHook(() => useTabs('session-1'), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.openTab('Maju', { customerUid: 'customer-7' });
+    });
+
+    expect(openTab).toHaveBeenCalledWith(
+      getBusinessType('scout'),
+      expect.objectContaining({ customerUid: 'customer-7' }),
+    );
+  });
+
+  it('toasta e devolve null ao abrir sem tipo de negócio definido', async () => {
     resolveActiveType.mockResolvedValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useTabs('session-1'), { wrapper });
 
-    let ok: boolean | undefined;
+    let opened: Order | null | undefined;
     await act(async () => {
-      ok = await result.current.openTab('Maju');
+      opened = await result.current.openTab('Maju');
     });
 
-    expect(ok).toBe(false);
+    expect(opened).toBeNull();
     expect(openTab).not.toHaveBeenCalled();
   });
 
-  it('devolve false quando abrir comanda falha', async () => {
+  it('devolve null quando abrir comanda falha', async () => {
     openTab.mockResolvedValue(left(new TabNotOpenError()));
 
     const { result } = renderHook(() => useTabs('session-1'), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    let ok: boolean | undefined;
+    let opened: Order | null | undefined;
     await act(async () => {
-      ok = await result.current.openTab('Maju');
+      opened = await result.current.openTab('Maju');
     });
 
-    expect(ok).toBe(false);
+    expect(opened).toBeNull();
   });
 
   it('lança itens na comanda e devolve true no sucesso', async () => {

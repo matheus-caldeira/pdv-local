@@ -31,25 +31,29 @@ export function useTabs(sessionUid: string) {
   }, [refresh]);
 
   const openTab = useCallback(
-    async (customerName: string, ticket?: string) => {
+    async (
+      customerName: string,
+      options: { customerUid?: string; ticket?: string } = {},
+    ): Promise<Order | null> => {
       if (!definition) {
         toast('Tipo de negócio não definido.', 'error');
-        return false;
+        return null;
       }
       const result = await container.openTab(definition, {
         sessionUid,
         customerName,
-        ticket,
+        customerUid: options.customerUid,
+        ticket: options.ticket,
       });
       return fold(
         result,
         (error) => {
           toast(error.message, 'error');
-          return false;
+          return null;
         },
-        () => {
+        (order) => {
           void refresh();
-          return true;
+          return order;
         },
       );
     },

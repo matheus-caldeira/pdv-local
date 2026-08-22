@@ -4,7 +4,7 @@ import { Button } from '../atoms/Button';
 import { ProductGrid } from '../organisms/ProductGrid';
 import { Cart } from '../organisms/Cart';
 import { CustomizationModal } from '../organisms/CustomizationModal';
-import { OpenTabModal } from '../organisms/OpenTabModal';
+import { TabOpenedModal } from '../organisms/TabOpenedModal';
 import { OpenTabPromptModal } from '../organisms/OpenTabPromptModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
 import { QuickCustomerModal } from '../organisms/QuickCustomerModal';
@@ -13,6 +13,7 @@ import { useSession } from '../hooks/useSession';
 import { useProducts } from '../hooks/useProducts';
 import { usePdvController, type PayOption } from '../hooks/usePdvController';
 import { useTabs } from '../hooks/useTabs';
+import { usePrint } from '../hooks/usePrint';
 import {
   useCustomizationLoader,
   type LoadedCustomizationGroup,
@@ -31,7 +32,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const products = useProducts();
   const loadCustomizations = useCustomizationLoader();
   const controller = usePdvController(sessionUid);
-  const { openTabs, addItems, refresh: refreshTabs } = useTabs(sessionUid);
+  const {
+    openTabs,
+    addItems,
+    openTab,
+    refresh: refreshTabs,
+  } = useTabs(sessionUid);
+  const { printTabNumber } = usePrint();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -42,9 +49,9 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const [selectedTabUid, setSelectedTabUid] = useState<string | null>(() =>
     searchParams.get('tab'),
   );
-  const [openTabModalOpen, setOpenTabModalOpen] = useState(false);
   const [quickCustomerOpen, setQuickCustomerOpen] = useState(false);
   const [promptTab, setPromptTab] = useState<Order | null>(null);
+  const [openedTab, setOpenedTab] = useState<Order | null>(null);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
@@ -88,8 +95,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     }
   }
 
-  function handleTabOpened(order: Order) {
-    setSelectedTabUid(order.uid);
+  async function handleOpenNewTab() {
+    const opened = await openTab(controller.customerName.trim(), {
+      customerUid: controller.matchedCustomer?.uid,
+    });
+    if (!opened) return;
+    setSelectedTabUid(opened.uid);
+    setOpenedTab(opened);
     void refreshTabs();
   }
 
@@ -120,8 +132,6 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           onAddressChange={controller.setAddress}
           showAddress={false}
           matchedCustomer={controller.matchedCustomer}
-          ticket={controller.ticket}
-          onTicketChange={controller.setTicket}
           ordering={controller.ordering}
           onUpdateQty={controller.updateQty}
           onRemoveItem={controller.removeCartItem}
@@ -131,7 +141,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
           onLaunchToTab={
             selectedTab ? () => handleLaunchToTab(selectedTab.uid) : undefined
           }
-          onOpenNewTab={() => setOpenTabModalOpen(true)}
+          onOpenNewTab={handleOpenNewTab}
         />
       </div>
 
@@ -154,11 +164,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         onFinalize={handleFinalize}
       />
 
-      <OpenTabModal
-        open={openTabModalOpen}
-        sessionUid={sessionUid}
-        onClose={() => setOpenTabModalOpen(false)}
-        onOpened={handleTabOpened}
+      <TabOpenedModal
+        tab={openedTab}
+        onContinue={() => setOpenedTab(null)}
+        onPrint={() => {
+          void printTabNumber(openedTab!);
+          setOpenedTab(null);
+        }}
       />
 
       <OpenTabPromptModal

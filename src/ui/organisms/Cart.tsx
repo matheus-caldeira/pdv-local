@@ -25,8 +25,6 @@ interface CartProps {
   onAddressChange: (value: string) => void;
   showAddress: boolean;
   matchedCustomer: Customer | null;
-  ticket: string;
-  onTicketChange: (value: string) => void;
   ordering?: BusinessTypeRules['ordering'];
   onUpdateQty: (cartId: string, delta: number) => void;
   onRemoveItem: (cartId: string) => void;
@@ -52,8 +50,6 @@ export function Cart({
   address,
   onAddressChange,
   showAddress,
-  ticket,
-  onTicketChange,
   ordering = 'optional',
   onUpdateQty,
   onRemoveItem,
@@ -117,15 +113,6 @@ export function Cart({
             placeholder="Endereço"
             value={address}
             onChange={(event) => onAddressChange(event.target.value)}
-          />
-        )}
-        {ordering === 'required' && (
-          <TextField
-            type="text"
-            aria-label="Comanda / Mesa"
-            placeholder="Comanda / Mesa"
-            value={ticket}
-            onChange={(event) => onTicketChange(event.target.value)}
           />
         )}
       </div>
@@ -226,15 +213,26 @@ export function Cart({
             </>
           )}
           {ordering !== 'none' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              fullWidth
-              className={cart.length > 0 ? 'mt-2' : undefined}
-              onClick={onOpenNewTab}
-            >
-              <Plus size={14} /> Nova comanda
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                disabled={!customerName.trim()}
+                title={
+                  customerName.trim() ? undefined : 'Informe o cliente primeiro'
+                }
+                className={cart.length > 0 ? 'mt-2' : undefined}
+                onClick={onOpenNewTab}
+              >
+                <Plus size={14} /> Nova comanda
+              </Button>
+              {!customerName.trim() && (
+                <span className="mt-1 block text-center text-xs text-ink-tertiary">
+                  Informe o cliente para abrir uma comanda
+                </span>
+              )}
+            </>
           )}
         </div>
       )}

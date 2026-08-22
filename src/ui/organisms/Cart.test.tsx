@@ -197,31 +197,8 @@ describe('Cart', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('encaminha a digitação da comanda', async () => {
-    const props = baseProps();
-    render(<Cart {...props} />);
-    await userEvent.type(screen.getByLabelText('Comanda / Mesa'), '5');
-    expect(props.onTicketChange).toHaveBeenCalled();
-  });
-
-  it('shows the ticket field when ordering is required', () => {
+  it('não pede o número da comanda em nenhum tipo de negócio', () => {
     render(<Cart {...baseProps()} ordering="required" />);
-    expect(screen.getByLabelText('Comanda / Mesa')).toBeInTheDocument();
-  });
-
-  it('hides the ticket field when ordering is optional', () => {
-    render(<Cart {...baseProps()} ordering="optional" />);
-    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
-  });
-
-  it('hides the ticket field when ordering is none', () => {
-    render(<Cart {...baseProps()} ordering="none" />);
-    expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
-  });
-
-  it('hides the ticket field by default when ordering is not provided', () => {
-    const props = baseProps();
-    render(<Cart {...props} ordering={undefined} />);
     expect(screen.queryByLabelText('Comanda / Mesa')).not.toBeInTheDocument();
   });
 
@@ -261,9 +238,18 @@ describe('Cart', () => {
 
   it('abre uma comanda nova pelo rodapé quando o negócio usa comandas', async () => {
     const props = baseProps();
-    render(<Cart {...props} ordering="optional" />);
+    render(<Cart {...props} ordering="optional" customerName="Maju" />);
     await userEvent.click(screen.getByRole('button', { name: 'Nova comanda' }));
     expect(props.onOpenNewTab).toHaveBeenCalledTimes(1);
+  });
+
+  it('impede abrir comanda sem cliente informado', () => {
+    render(<Cart {...baseProps()} ordering="optional" customerName="" />);
+
+    expect(screen.getByRole('button', { name: 'Nova comanda' })).toBeDisabled();
+    expect(
+      screen.getByText('Informe o cliente para abrir uma comanda'),
+    ).toBeInTheDocument();
   });
 
   it('esconde a nova comanda quando o negócio não usa comandas', () => {

@@ -193,6 +193,7 @@ export function usePdvController(sessionUid: string) {
         paymentMethod: option === 'tab' ? null : paymentMethod,
         status: statusForOption(option),
         customerName,
+        customerUid: matchedCustomer?.uid,
         customerPhone: matchedCustomer?.phone ?? '',
         customerAddress: realAddress,
       });

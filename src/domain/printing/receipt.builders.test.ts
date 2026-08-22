@@ -7,6 +7,7 @@ import {
   buildOrderReceipt,
   buildPendingTabsReceipt,
   buildStockReceipt,
+  buildTabNumberReceipt,
 } from './receipt.builders';
 
 function makeOrder(overrides: Partial<Order> = {}): Order {
@@ -31,6 +32,19 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
     ...overrides,
   };
 }
+
+describe('buildTabNumberReceipt', () => {
+  it('monta o cupom só com número e nome, sem itens nem total', () => {
+    const receipt = buildTabNumberReceipt(makeOrder(), 'Grupo Escoteiro', 1000);
+
+    expect(receipt.ticket).toBe('042');
+    expect(receipt.customerName).toBe('Maju (Lobinha)');
+    expect(receipt.lines).toEqual([]);
+    expect(receipt.total).toBeUndefined();
+    expect(receipt.footer).toBe('Guarde este número');
+    expect(receipt.printedAt).toBe(1000);
+  });
+});
 
 describe('buildOrderReceipt', () => {
   it('monta o cupom com número, nome, itens e total', () => {

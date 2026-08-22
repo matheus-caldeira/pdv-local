@@ -1,9 +1,4 @@
-import {
-  useId,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-} from 'react';
+import { useId, useState, type FocusEvent, type KeyboardEvent } from 'react';
 import { cn } from '../lib/cn';
 
 export interface AutocompleteOption {
