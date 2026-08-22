@@ -95,6 +95,13 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     }
   }
 
+  function finishTabOpening() {
+    setOpenedTab(null);
+    setSelectedTabUid(null);
+    controller.resetForm();
+    navigate('/orders');
+  }
+
   async function handleOpenNewTab() {
     const opened = await openTab(controller.customerName.trim(), {
       customerUid: controller.matchedCustomer?.uid,
@@ -166,10 +173,10 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
 
       <TabOpenedModal
         tab={openedTab}
-        onContinue={() => setOpenedTab(null)}
+        onContinue={finishTabOpening}
         onPrint={() => {
           void printTabNumber(openedTab!);
-          setOpenedTab(null);
+          finishTabOpening();
         }}
       />
 

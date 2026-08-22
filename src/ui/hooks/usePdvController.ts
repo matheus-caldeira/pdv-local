@@ -251,6 +251,7 @@ export function usePdvController(sessionUid: string) {
     removeCartItem,
     setObservation,
     clearCart,
+    resetForm,
     finalizeSale,
   };
 }

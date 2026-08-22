@@ -667,7 +667,7 @@ describe('PdvPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('abre uma comanda nova pelo carrinho e a seleciona automaticamente', async () => {
+  it('abre uma comanda nova, limpa a tela e vai para os pedidos', async () => {
     getActiveSession.mockResolvedValue(
       right({ id: 3, uid: 'session-3', closedAt: null }),
     );
@@ -704,11 +704,8 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    await waitFor(() =>
-      expect(screen.getByRole('combobox', { name: 'Comanda' })).toHaveValue(
-        '0001 — Maju',
-      ),
-    );
+    expect(navigate).toHaveBeenCalledWith('/orders');
+    expect(screen.getByRole('combobox', { name: 'Cliente' })).toHaveValue('');
   });
 
   it('imprime o número da comanda recém-aberta', async () => {
@@ -741,6 +738,8 @@ describe('PdvPage', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
+    expect(navigate).toHaveBeenCalledWith('/orders');
+    expect(screen.getByRole('combobox', { name: 'Cliente' })).toHaveValue('');
   });
 
   it('não seleciona comanda quando a abertura falha', async () => {
