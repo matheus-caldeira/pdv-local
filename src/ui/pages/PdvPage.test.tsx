@@ -903,4 +903,113 @@ describe('PdvPage no celular', () => {
       await screen.findByRole('dialog', { name: 'Novo cliente' }),
     ).toBeInTheDocument();
   });
+
+  it('avisa que falta o nome ao tentar abrir comanda', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    const bar = await screen.findByTestId('cart-bar');
+
+    await user.click(
+      within(bar).getByRole('button', { name: 'Abrir comanda' }),
+    );
+
+    expect(
+      await screen.findByText('Defina um nome para o cliente.'),
+    ).toBeInTheDocument();
+    expect(openTab).not.toHaveBeenCalled();
+  });
+
+  it('pergunta como identificar a venda ao finalizar sem cliente', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /Coca/ }));
+    const bar = await screen.findByTestId('cart-bar');
+
+    await user.click(
+      within(bar).getByRole('button', { name: 'Finalizar venda' }),
+    );
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Identificar a venda' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument();
+  });
+
+  it('segue para o pagamento ao usar o número da comanda', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /Coca/ }));
+    const bar = await screen.findByTestId('cart-bar');
+    await user.click(
+      within(bar).getByRole('button', { name: 'Finalizar venda' }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Identificar a venda',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Usar número da comanda' }),
+    );
+
+    expect(await screen.findByText('Como deseja pagar?')).toBeInTheDocument();
+  });
+
+  it('devolve o foco ao campo de cliente ao escolher informar o nome', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /Coca/ }));
+    const bar = await screen.findByTestId('cart-bar');
+    await user.click(
+      within(bar).getByRole('button', { name: 'Finalizar venda' }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Identificar a venda',
+    });
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Informar o nome' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Identificar a venda' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      within(screen.getByTestId('cart-bar')).getByRole('combobox', {
+        name: 'Cliente',
+      }),
+    ).toHaveFocus();
+    expect(screen.queryByText('Como deseja pagar?')).not.toBeInTheDocument();
+  });
+
+  it('não pergunta nada quando já há cliente definido', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Coca')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /Coca/ }));
+    const bar = await screen.findByTestId('cart-bar');
+    await user.type(
+      within(bar).getByRole('combobox', { name: 'Cliente' }),
+      'Fulano',
+    );
+
+    await user.click(
+      within(bar).getByRole('button', { name: 'Finalizar venda' }),
+    );
+
+    expect(await screen.findByText('Como deseja pagar?')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Identificar a venda' }),
+    ).not.toBeInTheDocument();
+  });
 });

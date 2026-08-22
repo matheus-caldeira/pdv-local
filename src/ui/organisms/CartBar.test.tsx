@@ -42,7 +42,7 @@ describe('CartBar', () => {
     render(<CartBar {...baseProps()} />);
 
     const bar = screen.getByTestId('cart-bar');
-    expect(bar.className).toContain('var(--nav-bottom-height)');
+    expect(bar.className).toContain('bottom-[var(--bottom-nav-h');
     expect(bar.className).toContain('z-[110]');
   });
 
@@ -136,12 +136,16 @@ describe('CartBar', () => {
     expect(props.onExpand).not.toHaveBeenCalled();
   });
 
-  it('impede abrir comanda sem cliente informado', () => {
-    render(<CartBar {...baseProps()} />);
+  it('deixa tentar abrir comanda sem cliente para avisar o motivo', async () => {
+    const props = baseProps();
+    render(<CartBar {...props} />);
 
-    expect(
-      screen.getByRole('button', { name: 'Abrir comanda' }),
-    ).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Abrir comanda' });
+    expect(button).toBeEnabled();
+
+    await userEvent.click(button);
+
+    expect(props.onOpenTab).toHaveBeenCalledTimes(1);
   });
 
   it('abre a comanda quando há cliente', async () => {

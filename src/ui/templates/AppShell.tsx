@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Info, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../lib/cn';
@@ -58,6 +58,21 @@ export function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [collapsed, setCollapsed] = useSidebarCollapsed();
+  const bottomNavRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => {
+      const height = bottomNavRef.current?.getBoundingClientRect().height ?? 0;
+      root.style.setProperty('--bottom-nav-h', `${Math.round(height)}px`);
+    };
+    sync();
+    window.addEventListener('resize', sync);
+    return () => {
+      window.removeEventListener('resize', sync);
+      root.style.removeProperty('--bottom-nav-h');
+    };
+  }, []);
 
   if (syncedGroupId !== activeGroupId) {
     setSyncedGroupId(activeGroupId);
@@ -204,6 +219,7 @@ export function AppShell({
 
       <nav
         aria-label="Menu do módulo"
+        ref={bottomNavRef}
         className="fixed inset-x-0 bottom-0 z-[100] hidden border-t border-border bg-surface-2 pb-[env(safe-area-inset-bottom,0px)] max-md:flex"
       >
         {bottomBar.map((item) =>

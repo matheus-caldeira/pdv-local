@@ -5,6 +5,7 @@ import { ProductGrid } from '../organisms/ProductGrid';
 import { Cart } from '../organisms/Cart';
 import { CustomizationModal } from '../organisms/CustomizationModal';
 import { TabOpenedModal } from '../organisms/TabOpenedModal';
+import { IdentifySaleModal } from '../organisms/IdentifySaleModal';
 import { OpenTabPromptModal } from '../organisms/OpenTabPromptModal';
 import { PaymentPanel } from '../organisms/PaymentPanel';
 import { QuickCustomerModal } from '../organisms/QuickCustomerModal';
@@ -60,6 +61,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   const [promptTab, setPromptTab] = useState<Order | null>(null);
   const [openedTab, setOpenedTab] = useState<Order | null>(null);
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
+  const [identifyOpen, setIdentifyOpen] = useState(false);
 
   const selectedTab =
     openTabs.find((tab) => tab.uid === selectedTabUid) ?? null;
@@ -113,7 +115,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
   async function handleOpenNewTab() {
     const name = controller.customerName.trim();
     if (!name) {
-      toast('Informe o cliente para abrir uma comanda.', 'error');
+      toast('Defina um nome para o cliente.', 'error');
       return;
     }
     const opened = await openTab(name, {
@@ -123,6 +125,23 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
     setSelectedTabUid(opened.uid);
     setOpenedTab(opened);
     void refreshTabs();
+  }
+
+  function focusCustomerField() {
+    const field = document.querySelector<HTMLInputElement>(
+      '[data-testid="cart-bar"] input[role="combobox"]',
+    );
+    field?.focus();
+  }
+
+  function handleRequestFinalize() {
+    const identified =
+      Boolean(controller.customerName.trim()) || Boolean(selectedTab);
+    if (!identified) {
+      setIdentifyOpen(true);
+      return;
+    }
+    setPaymentOpen(true);
   }
 
   function handleTabAction() {
@@ -161,7 +180,7 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
             onSelectCustomer={handleSelectCustomer}
             onExpand={() => setCartSheetOpen(true)}
             onOpenTab={handleTabAction}
-            onFinalize={() => setPaymentOpen(true)}
+            onFinalize={handleRequestFinalize}
             onCreateCustomer={() => setQuickCustomerOpen(true)}
             onClearCart={controller.clearCart}
           />
@@ -230,6 +249,19 @@ function PdvSession({ sessionUid }: { sessionUid: string }) {
         total={controller.total}
         onClose={() => setPaymentOpen(false)}
         onFinalize={handleFinalize}
+      />
+
+      <IdentifySaleModal
+        open={identifyOpen}
+        onUseTicket={() => {
+          setIdentifyOpen(false);
+          setPaymentOpen(true);
+        }}
+        onEnterName={() => {
+          setIdentifyOpen(false);
+          focusCustomerField();
+        }}
+        onClose={() => setIdentifyOpen(false)}
       />
 
       <TabOpenedModal

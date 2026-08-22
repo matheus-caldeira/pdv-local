@@ -411,4 +411,18 @@ describe('AppShell modules drawer', () => {
     const drawer = screen.getByRole('dialog', { name: 'Módulos' });
     expect(within(drawer).getByText(/08:30/)).toBeInTheDocument();
   });
+
+  it('publica a altura real da barra de navegação', () => {
+    const { unmount } = renderShell(bothModel, '/');
+
+    expect(
+      document.documentElement.style.getPropertyValue('--bottom-nav-h'),
+    ).toMatch(/^\d+px$/);
+
+    unmount();
+
+    expect(
+      document.documentElement.style.getPropertyValue('--bottom-nav-h'),
+    ).toBe('');
+  });
 });

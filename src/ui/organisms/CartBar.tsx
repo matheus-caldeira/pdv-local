@@ -51,7 +51,6 @@ export function CartBar({
   const [menuOpen, setMenuOpen] = useState(false);
   const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const hasItems = itemCount > 0;
-  const hasCustomer = Boolean(customerName.trim());
 
   function runAndClose(action: () => void) {
     setMenuOpen(false);
@@ -61,7 +60,7 @@ export function CartBar({
   return (
     <div
       data-testid="cart-bar"
-      className="fixed inset-x-0 bottom-[calc(var(--nav-bottom-height)+env(safe-area-inset-bottom,0px))] z-[110] border-t border-border-emphasis bg-surface-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+      className="fixed inset-x-0 bottom-[var(--bottom-nav-h,var(--nav-bottom-height))] z-[110] border-t border-border-emphasis bg-surface-2"
     >
       <button
         type="button"
@@ -127,7 +126,7 @@ export function CartBar({
                   ? `Lançar na comanda nº ${selectedTab.ticket}`
                   : 'Abrir comanda'
               }
-              disabled={selectedTab ? !hasItems : !hasCustomer}
+              disabled={selectedTab ? !hasItems : false}
               onClick={onOpenTab}
             >
               <Receipt size={18} />
