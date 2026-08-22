@@ -12,7 +12,7 @@ import type { RegisterOrderInput } from '../../application/order/register-order.
 
 const registerOrder = vi.fn();
 const peekTicketSuggestion = vi.fn();
-const searchCustomersByPhone = vi.fn();
+const searchCustomers = vi.fn();
 const readConfig = vi.fn();
 
 vi.mock('../../app/container', () => ({
@@ -23,7 +23,7 @@ vi.mock('../../app/container', () => ({
       input: RegisterOrderInput,
     ) => registerOrder(businessTypeId, definition, input),
     peekTicketSuggestion: () => peekTicketSuggestion(),
-    searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
+    searchCustomers: (value: string) => searchCustomers(value),
     readConfig: () => readConfig(),
   },
 }));
@@ -59,10 +59,10 @@ describe('usePdvController', () => {
   beforeEach(() => {
     registerOrder.mockReset();
     peekTicketSuggestion.mockReset();
-    searchCustomersByPhone.mockReset();
+    searchCustomers.mockReset();
     readConfig.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
-    searchCustomersByPhone.mockResolvedValue(right([]));
+    searchCustomers.mockResolvedValue(right([]));
     readConfig.mockResolvedValue(
       right({
         businessTypeId: 'tab',
@@ -126,7 +126,7 @@ describe('usePdvController', () => {
   });
 
   it('searches and selects a customer, keeping its name', async () => {
-    searchCustomersByPhone.mockResolvedValue(
+    searchCustomers.mockResolvedValue(
       right([
         {
           id: 1,

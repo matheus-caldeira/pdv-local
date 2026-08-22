@@ -13,33 +13,34 @@ export function makeListCustomers(repository: CustomerRepository) {
   return (): Promise<Either<AppError, Customer[]>> => repository.list();
 }
 
-const PHONE_SEARCH_MIN = 3;
-const PHONE_SEARCH_LIMIT = 6;
+const SEARCH_LIMIT = 6;
 
-export function makeSearchCustomersByPhone(repository: CustomerRepository) {
-  return async (value: string): Promise<Either<AppError, Customer[]>> => {
-    const query = value.trim();
-    if (query.length < PHONE_SEARCH_MIN) return right([]);
-    const result = await repository.list();
-    if (isLeft(result)) return result;
-    const matches = result.right
-      .filter((customer) => (customer.phone ?? '').includes(query))
-      .slice(0, PHONE_SEARCH_LIMIT);
-    return right(matches);
-  };
+function normalize(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
-const NAME_SEARCH_LIMIT = 6;
+function customerHaystack(customer: Customer): string {
+  return normalize(
+    [customer.name, customer.phone ?? '', ...Object.values(customer.extra)]
+      .filter(Boolean)
+      .join(' '),
+  );
+}
 
-export function makeSearchCustomersByName(repository: CustomerRepository) {
+export function makeSearchCustomers(repository: CustomerRepository) {
   return async (value: string): Promise<Either<AppError, Customer[]>> => {
-    const query = value.trim().toLowerCase();
+    const query = normalize(value.trim());
     if (!query) return right([]);
+
     const result = await repository.list();
     if (isLeft(result)) return result;
+
     const matches = result.right
-      .filter((customer) => customer.name.toLowerCase().includes(query))
-      .slice(0, NAME_SEARCH_LIMIT);
+      .filter((customer) => customerHaystack(customer).includes(query))
+      .slice(0, SEARCH_LIMIT);
     return right(matches);
   };
 }

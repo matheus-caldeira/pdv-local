@@ -23,8 +23,7 @@ const registerOrder = vi.fn();
 const getActiveSession = vi.fn();
 const listActiveProducts = vi.fn();
 const peekTicketSuggestion = vi.fn();
-const searchCustomersByPhone = vi.fn();
-const searchCustomersByName = vi.fn();
+const searchCustomers = vi.fn();
 const loadProductCustomizations = vi.fn();
 const readConfig = vi.fn();
 const resolveActiveType = vi.fn();
@@ -49,8 +48,7 @@ vi.mock('../../app/container', () => ({
     getActiveSession: () => getActiveSession(),
     listActiveProducts: () => listActiveProducts(),
     peekTicketSuggestion: () => peekTicketSuggestion(),
-    searchCustomersByPhone: (value: string) => searchCustomersByPhone(value),
-    searchCustomersByName: (value: string) => searchCustomersByName(value),
+    searchCustomers: (value: string) => searchCustomers(value),
     loadProductCustomizations: (ids: number[]) =>
       loadProductCustomizations(ids),
     readConfig: () => readConfig(),
@@ -129,8 +127,7 @@ describe('PdvPage', () => {
     getActiveSession.mockReset();
     listActiveProducts.mockReset();
     peekTicketSuggestion.mockReset();
-    searchCustomersByPhone.mockReset();
-    searchCustomersByName.mockReset();
+    searchCustomers.mockReset();
     loadProductCustomizations.mockReset();
     readConfig.mockReset();
     resolveActiveType.mockReset();
@@ -140,8 +137,7 @@ describe('PdvPage', () => {
     closeTab.mockReset();
     reopenTab.mockReset();
     peekTicketSuggestion.mockResolvedValue(right('0001'));
-    searchCustomersByPhone.mockResolvedValue(right([]));
-    searchCustomersByName.mockResolvedValue(right([]));
+    searchCustomers.mockResolvedValue(right([]));
     loadProductCustomizations.mockResolvedValue(right([]));
     listActiveProducts.mockResolvedValue(right([simpleProduct, customProduct]));
     readConfig.mockResolvedValue(

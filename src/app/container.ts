@@ -38,8 +38,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
-  makeSearchCustomersByName,
-  makeSearchCustomersByPhone,
+  makeSearchCustomers,
 } from '../application/customer/customer.usecases';
 import {
   makeAddCashMovement,
@@ -208,8 +207,7 @@ export function createContainer() {
     updateItem: makeUpdateItem(customizations),
     removeItem: makeRemoveItem(customizations),
     listCustomers: makeListCustomers(customers),
-    searchCustomersByPhone: makeSearchCustomersByPhone(customers),
-    searchCustomersByName: makeSearchCustomersByName(customers),
+    searchCustomers: makeSearchCustomers(customers),
     saveCustomer: makeSaveCustomer(customers),
     removeCustomer: makeRemoveCustomer(customers),
     loadCashSummary: makeLoadCashSummary(cash, orders),

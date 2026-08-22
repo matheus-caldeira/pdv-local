@@ -10,8 +10,7 @@ import {
   makeListCustomers,
   makeRemoveCustomer,
   makeSaveCustomer,
-  makeSearchCustomersByName,
-  makeSearchCustomersByPhone,
+  makeSearchCustomers,
 } from './customer.usecases';
 
 const customer = (over: Partial<Customer> = {}): Customer => ({
@@ -146,91 +145,107 @@ describe('customer use cases', () => {
     const result = await makeSaveCustomer(repo)(input(), quickSale);
     expect(isLeft(result)).toBe(true);
   });
+});
 
-  it('returns no suggestions for a query shorter than three chars', async () => {
-    const repo = fakeRepo();
-    const result = await makeSearchCustomersByPhone(repo)('41');
-    expect(isRight(result) && result.right).toEqual([]);
+describe('makeSearchCustomers', () => {
+  const customers: Customer[] = [
+    {
+      uid: 'c-1',
+      name: 'Maju Gonçalves',
+      phone: '11988887777',
+      addresses: [],
+      extra: { section: 'lobinho', guardian: 'Ana Paula' },
+      createdAt: 1,
+      updatedAt: 1,
+    },
+    {
+      uid: 'c-2',
+      name: 'Pedro',
+      phone: '11911112222',
+      addresses: [],
+      extra: {},
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ];
+
+  it('casa por nome ignorando acento e caixa', async () => {
+    const repo = fakeRepo({ list: vi.fn(async () => right(customers)) });
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('goncalves');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right).toHaveLength(1);
+  });
+
+  it('casa por telefone', async () => {
+    const repo = fakeRepo({ list: vi.fn(async () => right(customers)) });
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('9888');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right[0].uid).toBe('c-1');
+  });
+
+  it('casa por responsável', async () => {
+    const repo = fakeRepo({ list: vi.fn(async () => right(customers)) });
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('ana');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right[0].uid).toBe('c-1');
+  });
+
+  it('casa por nome quando o cliente não tem telefone', async () => {
+    const repo = fakeRepo({
+      list: vi.fn(async () =>
+        right([
+          customer({ uid: 'c-3', name: 'Sem Telefone', phone: undefined }),
+        ]),
+      ),
+    });
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('sem telefone');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right[0].uid).toBe('c-3');
+  });
+
+  it('devolve vazio para termo em branco', async () => {
+    const repo = fakeRepo({ list: vi.fn(async () => right(customers)) });
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('   ');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right).toEqual([]);
     expect(repo.list).not.toHaveBeenCalled();
   });
 
-  it('returns up to six phone matches', async () => {
-    const many = Array.from({ length: 8 }, (_, i) =>
-      customer({ id: i + 1, uid: `customer-${i + 1}`, phone: `4199${i}` }),
-    );
-    const repo = fakeRepo({ list: vi.fn(async () => right(many)) });
-    const result = await makeSearchCustomersByPhone(repo)('4199');
-    expect(isRight(result) && result.right).toHaveLength(6);
-  });
-
-  it('skips customers without a phone when matching', async () => {
-    const withoutPhone = customer({
-      id: 2,
-      uid: 'customer-2',
-      phone: undefined,
-    });
-    const withPhone = customer({ id: 1, uid: 'customer-1', phone: '4199' });
-    const repo = fakeRepo({
-      list: vi.fn(async () => right([withoutPhone, withPhone])),
-    });
-    const result = await makeSearchCustomersByPhone(repo)('4199');
-    expect(isRight(result) && result.right).toEqual([withPhone]);
-  });
-
-  it('propagates a failure when listing for search', async () => {
-    const repo = fakeRepo({
-      list: vi.fn(async () => left(new ConnectorError('x'))),
-    });
-    const result = await makeSearchCustomersByPhone(repo)('4199');
-    expect(isLeft(result)).toBe(true);
-  });
-
-  it('returns no name suggestions for an empty query', async () => {
-    const repo = fakeRepo();
-    const result = await makeSearchCustomersByName(repo)('');
-    expect(isRight(result) && result.right).toEqual([]);
-    expect(repo.list).not.toHaveBeenCalled();
-  });
-
-  it('returns no name suggestions for a query with only spaces', async () => {
-    const repo = fakeRepo();
-    const result = await makeSearchCustomersByName(repo)('   ');
-    expect(isRight(result) && result.right).toEqual([]);
-    expect(repo.list).not.toHaveBeenCalled();
-  });
-
-  it('matches names case-insensitively by substring', async () => {
-    const maju = customer({ id: 1, uid: 'customer-1', name: 'Maju' });
-    const marcos = customer({ id: 2, uid: 'customer-2', name: 'Marcos' });
-    const repo = fakeRepo({
-      list: vi.fn(async () => right([maju, marcos])),
-    });
-    const result = await makeSearchCustomersByName(repo)('ma');
-    expect(isRight(result) && result.right).toEqual([maju, marcos]);
-  });
-
-  it('returns no results when no name matches', async () => {
-    const repo = fakeRepo({
-      list: vi.fn(async () => right([customer({ name: 'Maju' })])),
-    });
-    const result = await makeSearchCustomersByName(repo)('zzz');
-    expect(isRight(result) && result.right).toEqual([]);
-  });
-
-  it('returns up to six name matches', async () => {
+  it('limita a seis resultados', async () => {
     const many = Array.from({ length: 8 }, (_, i) =>
       customer({ id: i + 1, uid: `customer-${i + 1}`, name: `Maju ${i}` }),
     );
     const repo = fakeRepo({ list: vi.fn(async () => right(many)) });
-    const result = await makeSearchCustomersByName(repo)('maju');
-    expect(isRight(result) && result.right).toHaveLength(6);
+    const search = makeSearchCustomers(repo);
+
+    const result = await search('maju');
+
+    expect(isRight(result)).toBe(true);
+    if (isRight(result)) expect(result.right).toHaveLength(6);
   });
 
-  it('propagates a failure when listing for name search', async () => {
-    const repo = fakeRepo({
-      list: vi.fn(async () => left(new ConnectorError('x'))),
-    });
-    const result = await makeSearchCustomersByName(repo)('maju');
+  it('propaga falha do repositório', async () => {
+    const search = makeSearchCustomers(
+      fakeRepo({ list: vi.fn(async () => left(new ConnectorError('x'))) }),
+    );
+
+    const result = await search('maju');
+
     expect(isLeft(result)).toBe(true);
   });
 });

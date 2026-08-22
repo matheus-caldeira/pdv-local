@@ -30,7 +30,7 @@ export function OpenTabModal({
   onOpened,
 }: OpenTabModalProps) {
   const { openTab, openTabs } = useTabs(sessionUid);
-  const { suggestions, searchByName, clearByName } = useCustomerSearch();
+  const { suggestions, search, clear } = useCustomerSearch();
   const { suggestion } = useTicketSuggestion();
 
   const [name, setName] = useState('');
@@ -57,7 +57,7 @@ export function OpenTabModal({
   function handleNameChange(value: string) {
     setName(value);
     setError('');
-    void searchByName(value);
+    void search(value);
   }
 
   function handleSelectSuggestion(customer: Customer) {
@@ -65,7 +65,7 @@ export function OpenTabModal({
     setName(
       sectionLabel ? `${customer.name} (${sectionLabel})` : customer.name,
     );
-    clearByName();
+    clear();
   }
 
   async function handleSubmit() {
@@ -85,7 +85,7 @@ export function OpenTabModal({
     setName('');
     setTicketOverride(null);
     setError('');
-    clearByName();
+    clear();
     onClose();
   }
 

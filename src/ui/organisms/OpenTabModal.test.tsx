@@ -35,8 +35,8 @@ vi.mock('../hooks/useTabs', () => ({
 vi.mock('../hooks/useCustomerSearch', () => ({
   useCustomerSearch: () => ({
     suggestions: suggestions(),
-    searchByName: vi.fn(),
-    clearByName: vi.fn(),
+    search: vi.fn(),
+    clear: vi.fn(),
   }),
 }));
 
