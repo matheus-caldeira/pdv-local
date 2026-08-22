@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Money } from '../atoms/Money';
 import { cn } from '../lib/cn';
 import type { Product } from '../../domain/product/product.entity';
@@ -8,9 +9,15 @@ interface ProductGridProps {
   products: Product[];
   cart: CartItem[];
   onSelect: (product: Product) => void;
+  onOutOfStock: (product: Product) => void;
 }
 
-export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  cart,
+  onSelect,
+  onOutOfStock,
+}: ProductGridProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const categories = useMemo(() => {
@@ -73,6 +80,7 @@ export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
               .filter((item) => item.productUid === product.uid)
               .reduce((sum, item) => sum + item.qty, 0);
             const hasCustom = (product.customizationGroupIds?.length || 0) > 0;
+            const outOfStock = product.stock <= 0;
             return (
               <button
                 key={product.id}
@@ -80,8 +88,11 @@ export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
                 className={cn(
                   'relative flex min-h-20 flex-col items-center justify-center gap-1 rounded-md border-2 border-transparent bg-cardapio-bg px-3 py-4 text-center transition-colors hover:bg-cardapio-surface active:scale-[0.97]',
                   inCartQty > 0 && 'border-accent',
+                  outOfStock && 'opacity-50',
                 )}
-                onClick={() => onSelect(product)}
+                onClick={() =>
+                  outOfStock ? onOutOfStock(product) : onSelect(product)
+                }
               >
                 <span className="text-sm font-semibold text-cardapio-text">
                   {product.name}
@@ -90,6 +101,17 @@ export function ProductGrid({ products, cart, onSelect }: ProductGridProps) {
                   value={product.salePrice}
                   className="text-base font-bold text-accent"
                 />
+                <span className="font-mono text-xs tabular-nums text-cardapio-muted">
+                  {product.stock} un.
+                </span>
+                {outOfStock && (
+                  <span
+                    aria-label="Sem estoque"
+                    className="absolute left-1 top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-danger text-accent-text"
+                  >
+                    <AlertTriangle size={11} />
+                  </span>
+                )}
                 {hasCustom && (
                   <span className="absolute bottom-1 right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-cardapio-surface text-xs font-bold text-cardapio-muted">
                     +

@@ -97,6 +97,14 @@ const customProduct = {
   customizationGroupIds: [10],
 };
 
+const outOfStockProduct = {
+  ...simpleProduct,
+  id: 3,
+  uid: 'product-3',
+  name: 'Guaraná',
+  stock: 0,
+};
+
 const openTabFixture = {
   id: 9,
   uid: 'tab-1',
@@ -438,6 +446,26 @@ describe('PdvPage', () => {
     expect(
       screen.getByRole('button', { name: /finalizar/i }),
     ).toBeInTheDocument();
+  });
+
+  it('avisa e não adiciona ao carrinho quando o produto está sem estoque', async () => {
+    getActiveSession.mockResolvedValue(
+      right({ id: 3, uid: 'session-3', closedAt: null }),
+    );
+    listActiveProducts.mockResolvedValue(
+      right([simpleProduct, customProduct, outOfStockProduct]),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: /Guaraná/ }));
+
+    expect(
+      await screen.findByText('Guaraná está sem estoque'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finalizar Venda' }),
+    ).not.toBeInTheDocument();
   });
 
   it('abre uma comanda nova e a seleciona automaticamente', async () => {

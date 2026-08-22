@@ -37,7 +37,14 @@ const products: Product[] = [
 
 describe('ProductGrid', () => {
   it('shows the empty state when there are no products at all', () => {
-    render(<ProductGrid products={[]} cart={[]} onSelect={vi.fn()} />);
+    render(
+      <ProductGrid
+        products={[]}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     expect(screen.getByText('Cadastre produtos primeiro')).toBeInTheDocument();
   });
 
@@ -52,7 +59,14 @@ describe('ProductGrid', () => {
         qty: 2,
       },
     ];
-    render(<ProductGrid products={products} cart={cart} onSelect={vi.fn()} />);
+    render(
+      <ProductGrid
+        products={products}
+        cart={cart}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     expect(screen.getByRole('button', { name: 'Todos' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bebidas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Lanches' })).toBeInTheDocument();
@@ -62,13 +76,27 @@ describe('ProductGrid', () => {
 
   it('filters by category and shows the per-category empty state', async () => {
     const onlyLanches = products.filter((p) => p.category === 'Lanches');
-    render(<ProductGrid products={onlyLanches} cart={[]} onSelect={vi.fn()} />);
+    render(
+      <ProductGrid
+        products={onlyLanches}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Lanches' }));
     expect(screen.getByText('X-Burger')).toBeInTheDocument();
   });
 
   it('switches category and back to Todos', async () => {
-    render(<ProductGrid products={products} cart={[]} onSelect={vi.fn()} />);
+    render(
+      <ProductGrid
+        products={products}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Bebidas' }));
     expect(screen.getByText('Coca')).toBeInTheDocument();
     expect(screen.queryByText('X-Burger')).not.toBeInTheDocument();
@@ -82,7 +110,12 @@ describe('ProductGrid', () => {
       make({ id: 10, name: 'Suco', category: 'Bebidas' }),
     ];
     const { rerender } = render(
-      <ProductGrid products={withBebidas} cart={[]} onSelect={vi.fn()} />,
+      <ProductGrid
+        products={withBebidas}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Bebidas' }));
     expect(screen.getByText('Suco')).toBeInTheDocument();
@@ -91,6 +124,7 @@ describe('ProductGrid', () => {
         products={[make({ id: 9, name: 'Only', category: 'Lanches' })]}
         cart={[]}
         onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
       />,
     );
     expect(
@@ -100,16 +134,90 @@ describe('ProductGrid', () => {
 
   it('calls onSelect when a product is clicked', async () => {
     const onSelect = vi.fn();
-    render(<ProductGrid products={products} cart={[]} onSelect={onSelect} />);
+    render(
+      <ProductGrid
+        products={products}
+        cart={[]}
+        onSelect={onSelect}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     await userEvent.click(screen.getByText('Coca'));
     expect(onSelect).toHaveBeenCalledWith(products[1]);
   });
 
   it('does not render category pills when no product has a category', () => {
     const noCats = [make({ id: 1, name: 'X', category: '' })];
-    render(<ProductGrid products={noCats} cart={[]} onSelect={vi.fn()} />);
+    render(
+      <ProductGrid
+        products={noCats}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
     expect(
       screen.queryByRole('button', { name: 'Todos' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('mostra a quantidade em estoque de cada produto', () => {
+    render(
+      <ProductGrid
+        products={[make({ id: 1, name: 'Coca', stock: 12 })]}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('12 un.')).toBeInTheDocument();
+  });
+
+  it('avisa e não adiciona ao carrinho quando o produto está sem estoque', async () => {
+    const onSelect = vi.fn();
+    const onOutOfStock = vi.fn();
+    render(
+      <ProductGrid
+        products={[make({ id: 1, name: 'Coca', stock: 0 })]}
+        cart={[]}
+        onSelect={onSelect}
+        onOutOfStock={onOutOfStock}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Coca/ }));
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onOutOfStock).toHaveBeenCalledTimes(1);
+  });
+
+  it('marca o produto sem estoque para leitores de tela', () => {
+    render(
+      <ProductGrid
+        products={[make({ id: 1, name: 'Coca', stock: 0 })]}
+        cart={[]}
+        onSelect={vi.fn()}
+        onOutOfStock={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Sem estoque')).toBeInTheDocument();
+  });
+
+  it('adiciona normalmente quando há estoque', async () => {
+    const onSelect = vi.fn();
+    render(
+      <ProductGrid
+        products={[make({ id: 1, name: 'Coca', stock: 3 })]}
+        cart={[]}
+        onSelect={onSelect}
+        onOutOfStock={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Coca/ }));
+
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 });
