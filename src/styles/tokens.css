@@ -96,6 +96,7 @@
 
   /* Layout */
   --nav-sidebar-width: 240px;
+  --nav-sidebar-collapsed-width: 64px;
   --nav-bottom-height: 64px;
   --header-height: 56px;
 }

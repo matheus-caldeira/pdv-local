@@ -94,4 +94,37 @@ describe('NavAccordionGroup', () => {
       screen.getByRole('link', { name: 'Lançamentos' }),
     ).toBeInTheDocument();
   });
+
+  it('keeps the accessible name of the collapsed header when compact', () => {
+    renderGroup(financeGroup, { compact: true });
+    expect(
+      screen.getByRole('button', { name: 'Financeiro' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the items of the expanded group when compact', () => {
+    renderGroup(financeGroup, { compact: true, expanded: true });
+    expect(screen.getByRole('link', { name: 'Resumo' })).toBeInTheDocument();
+  });
+
+  it('titles the compact items so the hover reveals the label', () => {
+    renderGroup(financeGroup, { compact: true, expanded: true });
+    expect(screen.getByRole('link', { name: 'Resumo' })).toHaveAttribute(
+      'title',
+      'Resumo',
+    );
+  });
+
+  it('titles compact action items too', () => {
+    renderGroup(settingsGroup, { compact: true, expanded: true });
+    expect(
+      screen.getByRole('button', { name: 'Sobre e contato' }),
+    ).toHaveAttribute('title', 'Sobre e contato');
+  });
+
+  it('renders a compact fixed group without repeating the label as text', () => {
+    renderGroup(fixedFinance, { compact: true });
+    expect(screen.queryByText('Financeiro')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Resumo' })).toBeInTheDocument();
+  });
 });

@@ -43,7 +43,104 @@ function renderShell(
   );
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+});
+
+describe('AppShell sidebar collapse', () => {
+  it('starts expanded showing the brand and the labels', () => {
+    renderShell(bothModel, '/');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+    expect(within(sidebar).getByText('Meu Bolso')).toBeInTheDocument();
+    expect(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    ).toBeInTheDocument();
+  });
+
+  it('collapses the sidebar keeping the navigation reachable', async () => {
+    renderShell(bothModel, '/');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    );
+
+    expect(within(sidebar).queryByText('Meu Bolso')).toBeNull();
+    expect(
+      within(sidebar).getByRole('link', { name: 'Vender' }),
+    ).toBeInTheDocument();
+    expect(
+      within(sidebar).getByRole('button', { name: 'Expandir menu' }),
+    ).toBeInTheDocument();
+  });
+
+  it('expands again from the compact state', async () => {
+    renderShell(bothModel, '/');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    );
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Expandir menu' }),
+    );
+
+    expect(within(sidebar).getByText('Meu Bolso')).toBeInTheDocument();
+  });
+
+  it('restores the collapsed choice on the next mount', async () => {
+    const first = renderShell(bothModel, '/');
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Recolher menu' }),
+    );
+    first.unmount();
+
+    renderShell(bothModel, '/');
+
+    expect(
+      screen.getByRole('button', { name: 'Expandir menu' }),
+    ).toBeInTheDocument();
+  });
+
+  it('highlights the compact home link on the home route', async () => {
+    renderShell(bothModel, '/');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    );
+
+    expect(within(sidebar).getByRole('link', { name: 'Início' })).toHaveClass(
+      'text-accent',
+    );
+  });
+
+  it('leaves the compact home link unhighlighted off the home route', async () => {
+    renderShell(bothModel, '/pdv');
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    );
+
+    expect(
+      within(sidebar).getByRole('link', { name: 'Início' }),
+    ).not.toHaveClass('text-accent');
+  });
+
+  it('hides the session hint text when collapsed', async () => {
+    const session = { openedAt: Date.now() } as Session;
+    renderShell(bothModel, '/', session);
+    const sidebar = screen.getByRole('navigation', { name: 'Menu principal' });
+
+    await userEvent.click(
+      within(sidebar).getByRole('button', { name: 'Recolher menu' }),
+    );
+
+    expect(within(sidebar).queryByText(/Caixa aberto desde/)).toBeNull();
+  });
+});
 
 describe('AppShell sidebar', () => {
   it('renders the outlet content', () => {

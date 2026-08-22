@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Info } from 'lucide-react';
+import { Menu, X, Info, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { cn } from '../lib/cn';
+import { useSidebarCollapsed } from '../hooks/useSidebarCollapsed';
 import { formatTime } from '../../domain/shared/format';
 import type { Session } from '../../domain/cash/cash.entity';
 import {
@@ -29,6 +31,14 @@ const homeLinkClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-ink-primary hover:bg-surface-inset',
   ].join(' ');
 
+const compactHomeLinkClass = ({ isActive }: { isActive: boolean }) =>
+  [
+    'flex items-center justify-center rounded-md py-2.5 text-sm font-semibold transition-colors',
+    isActive
+      ? 'bg-accent-subtle text-accent'
+      : 'text-ink-primary hover:bg-surface-inset',
+  ].join(' ');
+
 const bottomLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
     'flex flex-1 flex-col items-center gap-0.5 px-1 pt-2 pb-3 text-[10px] font-medium transition-colors',
@@ -47,6 +57,7 @@ export function AppShell({
   const [syncedGroupId, setSyncedGroupId] = useState<NavGroupId>(activeGroupId);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
   if (syncedGroupId !== activeGroupId) {
     setSyncedGroupId(activeGroupId);
@@ -72,17 +83,20 @@ export function AppShell({
     setInfoOpen(true);
   };
 
-  const groupList = (onNavigate: () => void) => (
+  const groupList = (onNavigate: () => void, compact = false) => (
     <>
       {model.home && (
         <NavLink
           to={model.home.to}
           end
-          className={homeLinkClass}
+          className={compact ? compactHomeLinkClass : homeLinkClass}
+          title={compact ? model.home.label : undefined}
           onClick={onNavigate}
         >
           <model.home.icon size={18} strokeWidth={2} />
-          <span>{model.home.label}</span>
+          <span className={compact ? 'sr-only' : undefined}>
+            {model.home.label}
+          </span>
         </NavLink>
       )}
       {model.groups.map((group) => (
@@ -96,6 +110,7 @@ export function AppShell({
           searchFor={searchFor}
           onNavigate={onNavigate}
           onAction={openAbout}
+          compact={compact}
         />
       ))}
     </>
@@ -105,38 +120,85 @@ export function AppShell({
     <div className="flex min-h-dvh">
       <nav
         aria-label="Menu principal"
-        className="fixed inset-y-0 left-0 z-[100] flex w-[var(--nav-sidebar-width)] flex-col gap-1 overflow-y-auto border-r border-border bg-surface-0 px-2 py-4 max-md:hidden"
+        className={cn(
+          'fixed inset-y-0 left-0 z-[100] flex flex-col gap-1 overflow-y-auto border-r border-border bg-surface-0 py-4 transition-[width] max-md:hidden',
+          collapsed
+            ? 'w-[var(--nav-sidebar-collapsed-width)] px-2'
+            : 'w-[var(--nav-sidebar-width)] px-2',
+        )}
       >
-        <div className="mb-3 flex items-center gap-2 px-3 py-2">
-          <img
-            src={LOGO_URL}
-            alt="Meu Bolso"
-            className="h-9 w-9 object-contain"
-          />
-          <span className="text-base font-bold">Meu Bolso</span>
-        </div>
-        {groupList(() => {})}
-        <div className="mt-auto flex flex-col gap-2 pt-2">
-          {activeSession && (
-            <div className="flex items-center gap-2 px-4 py-2 text-xs text-ink-tertiary">
-              <div className="h-2 w-2 rounded-full bg-success" />
-              <span>
-                Caixa aberto desde {formatTime(activeSession.openedAt)}
-              </span>
-            </div>
-          )}
+        {collapsed ? (
           <button
             type="button"
-            className="flex items-center gap-3 rounded-md px-4 py-2 text-sm font-medium text-ink-tertiary transition-colors hover:bg-surface-inset hover:text-ink-primary"
+            className="mb-3 flex items-center justify-center rounded-md py-2.5 text-ink-secondary transition-colors hover:bg-surface-inset hover:text-ink-primary"
+            aria-label="Expandir menu"
+            title="Expandir menu"
+            onClick={() => setCollapsed(false)}
+          >
+            <PanelLeftOpen size={20} strokeWidth={2} />
+          </button>
+        ) : (
+          <div className="mb-3 flex items-center gap-2 py-2 pr-1 pl-3">
+            <img
+              src={LOGO_URL}
+              alt="Meu Bolso"
+              className="h-9 w-9 object-contain"
+            />
+            <span className="flex-1 text-base font-bold">Meu Bolso</span>
+            <button
+              type="button"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-tertiary transition-colors hover:bg-surface-inset hover:text-ink-primary"
+              aria-label="Recolher menu"
+              title="Recolher menu"
+              onClick={() => setCollapsed(true)}
+            >
+              <PanelLeftClose size={18} strokeWidth={2} />
+            </button>
+          </div>
+        )}
+        {groupList(() => {}, collapsed)}
+        <div className="mt-auto flex flex-col gap-2 pt-2">
+          {activeSession &&
+            (collapsed ? (
+              <div
+                className="flex justify-center py-2"
+                title={`Caixa aberto desde ${formatTime(activeSession.openedAt)}`}
+              >
+                <div className="h-2 w-2 rounded-full bg-success" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 text-xs text-ink-tertiary">
+                <div className="h-2 w-2 rounded-full bg-success" />
+                <span>
+                  Caixa aberto desde {formatTime(activeSession.openedAt)}
+                </span>
+              </div>
+            ))}
+          <button
+            type="button"
+            className={cn(
+              'flex items-center rounded-md text-sm font-medium text-ink-tertiary transition-colors hover:bg-surface-inset hover:text-ink-primary',
+              collapsed ? 'justify-center py-2.5' : 'gap-3 px-4 py-2',
+            )}
+            title={collapsed ? 'Sobre e contato' : undefined}
             onClick={() => setInfoOpen(true)}
           >
             <Info size={18} strokeWidth={2} />
-            <span>Sobre e contato</span>
+            <span className={collapsed ? 'sr-only' : undefined}>
+              Sobre e contato
+            </span>
           </button>
         </div>
       </nav>
 
-      <main className="ml-[var(--nav-sidebar-width)] min-w-0 flex-1 p-6 pb-8 max-md:ml-0 max-md:p-4 max-md:pb-[calc(var(--nav-bottom-height)+1rem+env(safe-area-inset-bottom,0px))] [&>*]:mx-auto [&>*]:max-w-[1200px]">
+      <main
+        className={cn(
+          'min-w-0 flex-1 p-6 pb-8 transition-[margin] max-md:ml-0 max-md:p-4 max-md:pb-[calc(var(--nav-bottom-height)+1rem+env(safe-area-inset-bottom,0px))] [&>*]:mx-auto [&>*]:max-w-[1200px]',
+          collapsed
+            ? 'ml-[var(--nav-sidebar-collapsed-width)]'
+            : 'ml-[var(--nav-sidebar-width)]',
+        )}
+      >
         <Outlet />
       </main>
 
