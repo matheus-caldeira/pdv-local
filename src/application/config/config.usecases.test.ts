@@ -39,6 +39,7 @@ const config: BusinessConfig = {
   printerPaperWidth: 80,
   printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
+  layoutMode: 'auto',
 };
 
 class FakeConfigRepository implements ConfigRepository {
@@ -68,6 +69,7 @@ const input = (over: Partial<ConfigInput> = {}): ConfigInput => ({
   statusControlEnabled: true,
   businessTypeId: 'scout',
   extra: { group: 'Alcatéia' },
+  layoutMode: 'mobile',
   ...over,
 });
 
@@ -93,7 +95,17 @@ describe('makeSaveConfig', () => {
       statusControlEnabled: true,
       businessTypeId: 'scout',
       extra: { group: 'Alcatéia' },
+      layoutMode: 'mobile',
     });
+  });
+
+  it('cai em auto quando o layoutMode informado é inválido', async () => {
+    const repo = new FakeConfigRepository();
+    const result = await makeSaveConfig(repo)(
+      input({ layoutMode: 'invalid' as ConfigInput['layoutMode'] }),
+    );
+    expect(isRight(result)).toBe(true);
+    expect(repo.saved?.layoutMode).toBe('auto');
   });
 });
 

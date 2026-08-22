@@ -90,6 +90,7 @@ const CONFIG: BusinessConfig = {
   printerPaperWidth: 80,
   printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
+  layoutMode: 'auto',
 };
 
 function renderPage() {
@@ -193,6 +194,7 @@ describe('SettingsPage', () => {
       statusControlEnabled: false,
       businessTypeId: 'tab',
       extra: {},
+      layoutMode: 'auto',
     });
   });
 
@@ -285,6 +287,7 @@ describe('SettingsPage', () => {
         statusControlEnabled: false,
         businessTypeId: 'tab',
         extra: {},
+        layoutMode: 'auto',
       }),
     );
   });
@@ -303,6 +306,26 @@ describe('SettingsPage', () => {
     await waitFor(() =>
       expect(saveConfig).toHaveBeenCalledWith(
         expect.objectContaining({ statusControlEnabled: true }),
+      ),
+    );
+  });
+
+  it('changes the sale screen layout mode and saves', async () => {
+    saveConfig.mockResolvedValue(right(CONFIG));
+    renderPage();
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText('Layout da tela de venda'),
+      ).toBeInTheDocument(),
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText('Layout da tela de venda'),
+      'mobile',
+    );
+    await userEvent.click(screen.getAllByRole('button', { name: 'Salvar' })[2]);
+    await waitFor(() =>
+      expect(saveConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ layoutMode: 'mobile' }),
       ),
     );
   });

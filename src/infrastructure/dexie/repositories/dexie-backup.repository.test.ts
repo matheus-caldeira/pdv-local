@@ -68,6 +68,7 @@ const businessConfig = (name: string): BusinessConfig => ({
   printerPaperWidth: 80,
   printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
+  layoutMode: 'auto',
 });
 
 const familyMember = (uid: string, name = 'Ana'): NewFamilyMember => ({

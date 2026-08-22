@@ -131,6 +131,7 @@ const businessConfig = (
   printerPaperWidth: 80,
   printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
+  layoutMode: 'auto',
   ...over,
 });
 

@@ -30,6 +30,7 @@ function withDefaults(stored?: BusinessConfig): BusinessConfig {
     printerPaperWidth: 80,
     printerCodepage: 'cp860',
     printerAutoPrintOnClose: false,
+    layoutMode: 'auto',
     ...stored,
   };
 }

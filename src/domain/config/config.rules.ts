@@ -1,3 +1,5 @@
+import type { LayoutMode } from './config.entity';
+
 export interface BusinessInfoInput {
   name: string;
   document: string;
@@ -35,6 +37,14 @@ export function nextTicketCounter(
   const next = current + 1;
   if (autoReset && next > limit) return 1;
   return next;
+}
+
+const LAYOUT_MODES: LayoutMode[] = ['auto', 'mobile', 'desktop'];
+
+export function normalizeLayoutMode(value: string | undefined): LayoutMode {
+  return LAYOUT_MODES.includes(value as LayoutMode)
+    ? (value as LayoutMode)
+    : 'auto';
 }
 
 export function shouldClaimTicket(

@@ -30,6 +30,7 @@ function configRepoWith(businessTypeId: string) {
     printerPaperWidth: 80,
     printerCodepage: 'cp860',
     printerAutoPrintOnClose: false,
+    layoutMode: 'auto',
   };
   return {
     read: async (): Promise<Either<InfrastructureError, BusinessConfig>> =>

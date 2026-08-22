@@ -24,7 +24,10 @@ import { container } from '../../app/container';
 import { useModules } from '../../app/modules-context';
 import { fold } from '../../domain/shared/either';
 import { ALL_MODULE_IDS, type ModuleId } from '../../domain/modules/module';
-import type { BusinessConfig } from '../../domain/config/config.entity';
+import type {
+  BusinessConfig,
+  LayoutMode,
+} from '../../domain/config/config.entity';
 import {
   PRINTER_CODEPAGES,
   type PaperWidth,
@@ -54,6 +57,7 @@ interface FormState {
   statusControlEnabled: boolean;
   businessTypeId: string;
   extra: Record<string, string>;
+  layoutMode: LayoutMode;
 }
 
 interface PrinterFormState {
@@ -90,6 +94,7 @@ function toFormState(config: BusinessConfig): FormState {
     statusControlEnabled: config.statusControlEnabled,
     businessTypeId: config.businessTypeId,
     extra: config.extra,
+    layoutMode: config.layoutMode,
   };
 }
 
@@ -187,6 +192,7 @@ export function SettingsPage() {
       statusControlEnabled: state.statusControlEnabled,
       businessTypeId: state.businessTypeId,
       extra: state.extra,
+      layoutMode: state.layoutMode,
     };
   }
 
@@ -451,6 +457,20 @@ export function SettingsPage() {
           >
             <option value="0">Desligado</option>
             <option value="1">Ligado - habilita KDS e painel</option>
+          </Select>
+        </FormField>
+        <FormField label="Layout da tela de venda">
+          <Select
+            value={form.layoutMode}
+            onChange={(e) =>
+              setForm(
+                (p) => p && { ...p, layoutMode: e.target.value as LayoutMode },
+              )
+            }
+          >
+            <option value="auto">Automático (segue o tamanho da tela)</option>
+            <option value="mobile">Sempre celular</option>
+            <option value="desktop">Sempre computador</option>
           </Select>
         </FormField>
         <Button className="self-start" onClick={handleSave}>

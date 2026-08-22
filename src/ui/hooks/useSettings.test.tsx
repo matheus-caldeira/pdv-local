@@ -50,6 +50,7 @@ const CONFIG: BusinessConfig = {
   printerPaperWidth: 80,
   printerCodepage: 'cp860',
   printerAutoPrintOnClose: false,
+  layoutMode: 'auto',
 };
 
 const INPUT = {
@@ -62,6 +63,7 @@ const INPUT = {
   statusControlEnabled: false,
   businessTypeId: 'tab',
   extra: {},
+  layoutMode: 'auto' as const,
 };
 
 function Probe() {

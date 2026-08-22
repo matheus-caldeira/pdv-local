@@ -3,6 +3,7 @@ import {
   buildBusinessInfo,
   formatTicket,
   nextTicketCounter,
+  normalizeLayoutMode,
   normalizeTicketCounter,
   normalizeTicketLimit,
   shouldClaimTicket,
@@ -67,6 +68,20 @@ describe('normalizeTicketCounter', () => {
     expect(normalizeTicketCounter(5.7)).toBe(5);
     expect(normalizeTicketCounter(-3)).toBe(1);
     expect(normalizeTicketCounter(Number.POSITIVE_INFINITY)).toBe(1);
+  });
+});
+
+describe('normalizeLayoutMode', () => {
+  it('aceita os três modos válidos', () => {
+    expect(normalizeLayoutMode('auto')).toBe('auto');
+    expect(normalizeLayoutMode('mobile')).toBe('mobile');
+    expect(normalizeLayoutMode('desktop')).toBe('desktop');
+  });
+
+  it('cai em auto para qualquer valor inválido', () => {
+    expect(normalizeLayoutMode('tablet')).toBe('auto');
+    expect(normalizeLayoutMode('')).toBe('auto');
+    expect(normalizeLayoutMode(undefined)).toBe('auto');
   });
 });
 

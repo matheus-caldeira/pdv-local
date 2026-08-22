@@ -298,5 +298,17 @@ export class PDVDatabase extends Dexie {
             if (product.tracksStock == null) product.tracksStock = true;
           });
       });
+    this.version(10)
+      .stores({
+        config: '++id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('config')
+          .toCollection()
+          .modify((config) => {
+            if (config.layoutMode == null) config.layoutMode = 'auto';
+          });
+      });
   }
 }

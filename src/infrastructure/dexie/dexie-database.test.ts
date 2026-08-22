@@ -241,7 +241,7 @@ describe('migração v6', () => {
     const db = new PDVDatabase();
     await db.open();
 
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
 
     const products = await db.products.toArray();
     expect(products).toHaveLength(1);
@@ -278,6 +278,64 @@ describe('migração v6', () => {
     const members = await db.financeMembers.toArray();
     expect(members).toHaveLength(1);
     expect(members[0].uid).toBe('member-uid');
+
+    db.close();
+    await db.delete();
+  });
+});
+
+describe('migração v10', () => {
+  it('preenche layoutMode=auto na config existente ao migrar de v9', async () => {
+    globalThis.indexedDB = new IDBFactory();
+
+    const legacy = new Dexie('pdv_v2');
+    legacy.version(9).stores({
+      products: '++id, &uid, name, category, active',
+      orders: '++id, &uid, sessionUid, status, paymentMethod, createdAt, stage',
+      sessions: '++id, &uid, openedAt, closedAt',
+      cashMovements: '++id, &uid, sessionUid, type',
+      config: '++id',
+      customizationGroups: '++id, &uid, name',
+      customizationItems: '++id, &uid, groupUid, active',
+      customers: '++id, &uid, phone, name',
+      financeMembers: '++id, &uid',
+      financeCategories: '++id, &uid, kind',
+      financeEntries:
+        '++id, &uid, month, categoryUid, sourceUid, status, invoiceUid, paymentMethodUid, invoiceMonth',
+      financeBudgetItems: '++id, &uid, categoryUid',
+      financeFormulas: '++id, &uid',
+      financeRecurrences: '++id, &uid',
+      financeInstallmentPlans: '++id, &uid',
+      financeClosings: '++id, &uid, &month',
+      financePaymentMethods: '++id, &uid, type, archived',
+      financeCardInvoices:
+        '++id, &uid, paymentMethodUid, month, [paymentMethodUid+month]',
+    });
+    await legacy.open();
+
+    await legacy.table('config').add({
+      id: 1,
+      name: 'Loja da Maria',
+      document: '',
+      phone: '',
+      address: '',
+      ticketCounter: 1,
+      ticketLimit: 9999,
+      ticketAutoReset: true,
+      statusControlEnabled: false,
+      businessTypeId: '',
+      extra: {},
+    });
+    legacy.close();
+
+    const db = new PDVDatabase();
+    await db.open();
+
+    expect(db.verno).toBe(10);
+
+    const config = await db.config.toArray();
+    expect(config).toHaveLength(1);
+    expect(config[0].layoutMode).toBe('auto');
 
     db.close();
     await db.delete();
@@ -330,7 +388,7 @@ describe('migração v9', () => {
     const db = new PDVDatabase();
     await db.open();
 
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
 
     const products = await db.products.toArray();
     expect(products).toHaveLength(1);

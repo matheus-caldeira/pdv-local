@@ -1,6 +1,9 @@
 import { isLeft, right, type Either } from '../../domain/shared/either';
 import type { AppError } from '../../domain/shared/errors';
-import type { BusinessConfig } from '../../domain/config/config.entity';
+import type {
+  BusinessConfig,
+  LayoutMode,
+} from '../../domain/config/config.entity';
 import type { ConfigRepository } from '../../domain/config/config.repository';
 import type {
   PaperWidth,
@@ -10,6 +13,7 @@ import type {
 import {
   buildBusinessInfo,
   formatTicket,
+  normalizeLayoutMode,
   normalizeTicketCounter,
   normalizeTicketLimit,
 } from '../../domain/config/config.rules';
@@ -24,6 +28,7 @@ export interface ConfigInput {
   statusControlEnabled: boolean;
   businessTypeId: string;
   extra: Record<string, string>;
+  layoutMode: LayoutMode;
 }
 
 export interface PrinterConfigInput {
@@ -57,6 +62,7 @@ export function makeSaveConfig(repository: ConfigRepository) {
       statusControlEnabled: input.statusControlEnabled,
       businessTypeId: input.businessTypeId,
       extra: input.extra,
+      layoutMode: normalizeLayoutMode(input.layoutMode),
     });
   };
 }

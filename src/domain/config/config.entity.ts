@@ -4,6 +4,8 @@ import type {
   PrinterDriver,
 } from '../printing/printer-driver';
 
+export type LayoutMode = 'auto' | 'mobile' | 'desktop';
+
 export interface BusinessConfig {
   id?: number;
   name: string;
@@ -21,6 +23,7 @@ export interface BusinessConfig {
   printerPaperWidth: PaperWidth;
   printerCodepage: PrinterCodepage;
   printerAutoPrintOnClose: boolean;
+  layoutMode: LayoutMode;
   lastBackupAt?: number;
   lastBackupPromptAt?: number;
 }
