@@ -3,6 +3,7 @@ import { container } from '../../app/container';
 import { fold } from '../../domain/shared/either';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { CustomerInput } from '../../domain/customer/customer.rules';
+import type { BusinessTypeDefinition } from '../../domain/business-type/registry';
 import { useToast } from '../molecules/toast-context';
 
 export function useCustomers() {
@@ -24,8 +25,12 @@ export function useCustomers() {
   }, [loadCustomers]);
 
   const saveCustomer = useCallback(
-    async (input: CustomerInput, uid?: string) => {
-      const result = await container.saveCustomer(input, uid);
+    async (
+      input: CustomerInput,
+      definition: BusinessTypeDefinition,
+      uid?: string,
+    ) => {
+      const result = await container.saveCustomer(input, definition, uid);
       return fold(
         result,
         (error) => {

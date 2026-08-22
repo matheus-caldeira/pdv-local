@@ -26,24 +26,4 @@ describe('DexieCustomerRepository', () => {
     expect(isRight(result)).toBe(true);
     if (isRight(result)) expect(result.right.uid).toBeTruthy();
   });
-
-  it('findOrCreate sem phone retorna undefined', async () => {
-    const result = await repo.findOrCreate({
-      phone: '',
-      name: 'X',
-      address: '',
-    });
-    expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.right).toBeUndefined();
-  });
-
-  it('findOrCreate com phone novo cria e retorna o uid', async () => {
-    const result = await repo.findOrCreate({
-      phone: '11',
-      name: 'Bia',
-      address: 'Rua 1',
-    });
-    expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(typeof result.right).toBe('string');
-  });
 });

@@ -11,7 +11,10 @@ import { CustomersPage } from './CustomersPage';
 import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
-import { getBusinessType } from '../../domain/business-type/registry';
+import {
+  getBusinessType,
+  type BusinessTypeDefinition,
+} from '../../domain/business-type/registry';
 import type { CustomerInput } from '../../domain/customer/customer.rules';
 
 const listCustomers = vi.fn();
@@ -22,8 +25,11 @@ const resolveActiveType = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listCustomers: () => listCustomers(),
-    saveCustomer: (input: CustomerInput, uid?: string) =>
-      saveCustomer(input, uid),
+    saveCustomer: (
+      input: CustomerInput,
+      definition: BusinessTypeDefinition,
+      uid?: string,
+    ) => saveCustomer(input, definition, uid),
     removeCustomer: (uid: string) => removeCustomer(uid),
     resolveActiveType: () => resolveActiveType(),
   },
@@ -178,6 +184,7 @@ describe('CustomersPage', () => {
     );
     expect(saveCustomer).toHaveBeenCalledWith(
       { name: 'Carla', phone: '551199', addresses: ['Rua Dois'], extra: {} },
+      getBusinessType('quick_sale'),
       undefined,
     );
   });
@@ -209,6 +216,7 @@ describe('CustomersPage', () => {
         addresses: ['Rua A', 'Rua Nova'],
         extra: {},
       },
+      getBusinessType('quick_sale'),
       'customer-1',
     );
   });
@@ -321,6 +329,7 @@ describe('CustomersPage', () => {
           addresses: [],
           extra: { section: 'lobinho', guardian: 'Marta' },
         },
+        getBusinessType('scout'),
         undefined,
       );
     });
@@ -346,6 +355,7 @@ describe('CustomersPage', () => {
         expect.objectContaining({
           extra: { legacyKey: 'valor antigo' },
         }),
+        getBusinessType('scout'),
         'customer-1',
       );
     });

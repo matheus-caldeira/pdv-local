@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isRight, left, right, type Either } from '../../domain/shared/either';
 import type { InfrastructureError } from '../../infrastructure/errors';
-import {
-  TicketLimitReachedError,
-  DuplicatePhoneError,
-} from '../../domain/errors';
+import { TicketLimitReachedError } from '../../domain/errors';
 import { ConnectorError } from '../../infrastructure/errors';
 import type { NewOrder, Order } from '../../domain/order/order.entity';
 import type { BusinessConfig } from '../../domain/config/config.entity';
@@ -24,7 +21,6 @@ function makeRepositories(
   options: {
     ticketFails?: boolean;
     configReadFails?: boolean;
-    customerFails?: boolean;
     claims?: number[];
     suggestion?: string;
   } = {},
@@ -51,13 +47,6 @@ function makeRepositories(
         return options.ticketFails
           ? left(new TicketLimitReachedError())
           : right(suggestion);
-      },
-    },
-    customers: {
-      async findOrCreate() {
-        return options.customerFails
-          ? left(new DuplicatePhoneError())
-          : right('customer-1');
       },
     },
   } as unknown as Repositories;
@@ -186,10 +175,10 @@ describe('OpenTabUseCase', () => {
     expect(created).toHaveLength(0);
   });
 
-  it('propaga falha ao vincular o cliente', async () => {
+  it('não vincula cliente quando nenhum uid é informado', async () => {
     const created: NewOrder[] = [];
     const useCase = new OpenTabUseCase(
-      makeUow(makeRepositories(created, { customerFails: true })),
+      makeUow(makeRepositories(created)),
       scout,
     );
 
@@ -198,9 +187,9 @@ describe('OpenTabUseCase', () => {
       customerName: 'Maju',
     });
 
-    expect(isRight(result)).toBe(false);
-    if (!isRight(result)) expect(result.left.code).toBe('DUPLICATE_PHONE');
-    expect(created).toHaveLength(0);
+    expect(isRight(result)).toBe(true);
+    expect(created[0].customerUid).toBeUndefined();
+    expect(created[0].customerName).toBe('Maju');
   });
 
   it('avança o contador quando nenhum ticket é informado', async () => {

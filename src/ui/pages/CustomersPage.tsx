@@ -67,6 +67,7 @@ export function CustomersPage() {
         addresses: editing.addresses,
         extra: editing.extra,
       },
+      definition!,
       editing.uid,
     );
     if (ok) setModalOpen(false);
@@ -154,7 +155,7 @@ export function CustomersPage() {
               onChange={(e) =>
                 setEditing((p) => ({ ...p, name: e.target.value }))
               }
-              placeholder="Consumidor"
+              placeholder="Nome do cliente"
             />
           </FormField>
           <FormField label="Telefone">
@@ -210,7 +211,9 @@ export function CustomersPage() {
               Excluir
             </Button>
           )}
-          <Button onClick={handleSave}>Salvar</Button>
+          <Button onClick={handleSave} disabled={!definition}>
+            Salvar
+          </Button>
         </div>
       </Modal>
     </div>

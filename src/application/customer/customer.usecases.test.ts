@@ -4,6 +4,7 @@ import { DuplicatePhoneError, InvalidCustomerError } from '../../domain/errors';
 import type { Customer } from '../../domain/customer/customer.entity';
 import type { CustomerRepository } from '../../domain/customer/customer.repository';
 import type { CustomerInput } from '../../domain/customer/customer.rules';
+import { getBusinessType } from '../../domain/business-type/registry';
 import { ConnectorError } from '../../infrastructure/errors';
 import {
   makeListCustomers,
@@ -32,7 +33,6 @@ function fakeRepo(over: Partial<CustomerRepository> = {}): CustomerRepository {
     create: vi.fn(async (d) => right(customer({ ...d, uid: 'customer-9' }))),
     update: vi.fn(async (uid, d) => right(customer({ ...d, uid }))),
     remove: vi.fn(async () => right(undefined)),
-    findOrCreate: vi.fn(async () => right('customer-1')),
     ...over,
   };
 }
@@ -43,6 +43,9 @@ const input = (over: Partial<CustomerInput> = {}): CustomerInput => ({
   addresses: [],
   ...over,
 });
+
+const quickSale = getBusinessType('quick_sale')!;
+const scout = getBusinessType('scout')!;
 
 describe('customer use cases', () => {
   it('lists customers', async () => {
@@ -59,7 +62,10 @@ describe('customer use cases', () => {
 
   it('rejects an invalid customer before touching the repo', async () => {
     const repo = fakeRepo();
-    const result = await makeSaveCustomer(repo)(input({ phone: '' }));
+    const result = await makeSaveCustomer(repo)(
+      input({ phone: '' }),
+      quickSale,
+    );
     expect(isLeft(result)).toBe(true);
     if (isLeft(result))
       expect(result.left).toBeInstanceOf(InvalidCustomerError);
@@ -68,7 +74,7 @@ describe('customer use cases', () => {
 
   it('creates a new customer when phone is free', async () => {
     const repo = fakeRepo();
-    const result = await makeSaveCustomer(repo)(input());
+    const result = await makeSaveCustomer(repo)(input(), quickSale);
     expect(isRight(result)).toBe(true);
     expect(repo.create).toHaveBeenCalled();
   });
@@ -77,7 +83,11 @@ describe('customer use cases', () => {
     const repo = fakeRepo({
       findByPhone: vi.fn(async () => right(customer({ uid: 'customer-5' }))),
     });
-    const result = await makeSaveCustomer(repo)(input(), 'customer-5');
+    const result = await makeSaveCustomer(repo)(
+      input(),
+      quickSale,
+      'customer-5',
+    );
     expect(isRight(result)).toBe(true);
     expect(repo.update).toHaveBeenCalledWith('customer-5', expect.anything());
   });
@@ -86,6 +96,7 @@ describe('customer use cases', () => {
     const repo = fakeRepo();
     const result = await makeSaveCustomer(repo)(
       input({ extra: { section: 'lobinho', guardian: 'Ana' } }),
+      quickSale,
     );
     expect(isRight(result)).toBe(true);
     expect(repo.create).toHaveBeenCalledWith(
@@ -97,7 +108,7 @@ describe('customer use cases', () => {
 
   it('defaults extra to an empty object when omitted', async () => {
     const repo = fakeRepo();
-    const result = await makeSaveCustomer(repo)(input());
+    const result = await makeSaveCustomer(repo)(input(), quickSale);
     expect(isRight(result)).toBe(true);
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({ extra: {} }),
@@ -108,16 +119,31 @@ describe('customer use cases', () => {
     const repo = fakeRepo({
       findByPhone: vi.fn(async () => right(customer({ uid: 'customer-2' }))),
     });
-    const result = await makeSaveCustomer(repo)(input(), 'customer-5');
+    const result = await makeSaveCustomer(repo)(
+      input(),
+      quickSale,
+      'customer-5',
+    );
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) expect(result.left).toBeInstanceOf(DuplicatePhoneError);
+  });
+
+  it('skips the duplicate phone check when the customer has no phone', async () => {
+    const repo = fakeRepo();
+    const result = await makeSaveCustomer(repo)(
+      input({ phone: '', extra: { section: 'lobinho' } }),
+      scout,
+    );
+    expect(isRight(result)).toBe(true);
+    expect(repo.findByPhone).not.toHaveBeenCalled();
+    expect(repo.create).toHaveBeenCalled();
   });
 
   it('propagates a failure from findByPhone', async () => {
     const repo = fakeRepo({
       findByPhone: vi.fn(async () => left(new ConnectorError('x'))),
     });
-    const result = await makeSaveCustomer(repo)(input());
+    const result = await makeSaveCustomer(repo)(input(), quickSale);
     expect(isLeft(result)).toBe(true);
   });
 

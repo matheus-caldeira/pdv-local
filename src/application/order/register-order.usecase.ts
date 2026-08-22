@@ -62,7 +62,7 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
     const ticketResult = await this.resolveTicket(input, repositories);
     if (isLeft(ticketResult)) return ticketResult;
 
-    const customerResult = await this.resolveCustomer(input, repositories);
+    const customerResult = await this.resolveCustomer(input);
     if (isLeft(customerResult)) return customerResult;
 
     const now = Date.now();
@@ -119,14 +119,7 @@ export class RegisterOrderUseCase extends UseCase<RegisterOrderInput, Order> {
 
   private async resolveCustomer(
     input: RegisterOrderInput,
-    repositories: Repositories,
   ): Promise<Either<AppError, string | undefined>> {
-    if (input.customerUid) return right(input.customerUid);
-    if (!input.customerName && !input.customerPhone) return right(undefined);
-    return repositories.customers.findOrCreate({
-      phone: input.customerPhone ?? '',
-      name: input.customerName ?? '',
-      address: input.customerAddress ?? '',
-    });
+    return right(input.customerUid);
   }
 }

@@ -39,9 +39,6 @@ function makeUow(): UnitOfWork {
     config: {
       claimTicket: async () => right('0001'),
     },
-    customers: {
-      findOrCreate: async () => right(undefined),
-    },
   } as unknown as Repositories;
   return { run: async (work) => work(repositories) };
 }

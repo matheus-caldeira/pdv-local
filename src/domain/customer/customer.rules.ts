@@ -1,5 +1,6 @@
 import { left, right, type Either } from '../shared/either';
 import { InvalidCustomerError } from '../errors';
+import type { BusinessTypeDefinition } from '../business-type/business-type.entity';
 
 export interface CustomerInput {
   name: string;
@@ -15,17 +16,35 @@ export interface NormalizedCustomer {
   extra: Record<string, string>;
 }
 
-const DEFAULT_NAME = 'Consumidor';
+const SCOUT_TYPE_ID = 'scout';
+const SCOUT_REQUIRED_FIELD = 'section';
+
+function phoneIsRequired(definition: BusinessTypeDefinition): boolean {
+  return definition.id !== SCOUT_TYPE_ID;
+}
 
 export function buildCustomer(
   input: CustomerInput,
+  definition: BusinessTypeDefinition,
 ): Either<InvalidCustomerError, NormalizedCustomer> {
+  const name = input.name.trim();
+  if (!name) {
+    return left(new InvalidCustomerError('Informe o nome.'));
+  }
+
   const phone = input.phone.trim();
-  if (!phone) {
+  if (!phone && phoneIsRequired(definition)) {
     return left(new InvalidCustomerError('Informe o telefone.'));
   }
-  const name = input.name.trim() || DEFAULT_NAME;
-  const addresses = input.addresses.map((a) => a.trim()).filter(Boolean);
+
   const extra = input.extra ?? {};
+  if (
+    definition.id === SCOUT_TYPE_ID &&
+    !(extra[SCOUT_REQUIRED_FIELD] ?? '').trim()
+  ) {
+    return left(new InvalidCustomerError('Informe a seção.'));
+  }
+
+  const addresses = input.addresses.map((a) => a.trim()).filter(Boolean);
   return right({ name, phone, addresses, extra });
 }

@@ -125,13 +125,13 @@ describe('usePdvController', () => {
     expect(result.current.cart[1].observation).toBeUndefined();
   });
 
-  it('searches and selects a customer, mapping Consumidor to empty name', async () => {
+  it('searches and selects a customer, keeping its name', async () => {
     searchCustomersByPhone.mockResolvedValue(
       right([
         {
           id: 1,
           uid: 'customer-1',
-          name: 'Consumidor',
+          name: 'Maju',
           phone: '99887766',
           addresses: [],
           extra: {},
@@ -148,7 +148,7 @@ describe('usePdvController', () => {
     act(() =>
       result.current.selectCustomer(result.current.customerSuggestions[0]),
     );
-    expect(result.current.customerName).toBe('');
+    expect(result.current.customerName).toBe('Maju');
     expect(result.current.phone).toBe('99887766');
     expect(result.current.matchedCustomer).not.toBeNull();
     expect(result.current.customerSuggestions).toHaveLength(0);

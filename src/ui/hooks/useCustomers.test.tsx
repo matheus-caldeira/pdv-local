@@ -6,6 +6,10 @@ import { ToastProvider } from '../molecules/Toast';
 import { left, right } from '../../domain/shared/either';
 import { AppError } from '../../domain/shared/errors';
 import type { CustomerInput } from '../../domain/customer/customer.rules';
+import {
+  getBusinessType,
+  type BusinessTypeDefinition,
+} from '../../domain/business-type/registry';
 
 const listCustomers = vi.fn();
 const saveCustomer = vi.fn();
@@ -14,8 +18,11 @@ const removeCustomer = vi.fn();
 vi.mock('../../app/container', () => ({
   container: {
     listCustomers: () => listCustomers(),
-    saveCustomer: (input: CustomerInput, uid?: string) =>
-      saveCustomer(input, uid),
+    saveCustomer: (
+      input: CustomerInput,
+      definition: BusinessTypeDefinition,
+      uid?: string,
+    ) => saveCustomer(input, definition, uid),
     removeCustomer: (uid: string) => removeCustomer(uid),
   },
 }));
@@ -31,13 +38,17 @@ const INPUT: CustomerInput = {
   addresses: ['Rua A'],
 };
 
+const DEFINITION = getBusinessType('quick_sale')!;
+
 function Probe() {
   const { customers, saveCustomer, removeCustomer } = useCustomers();
   return (
     <div>
       <span>customers:{customers.map((c) => c.name).join(',')}</span>
-      <button onClick={() => saveCustomer(INPUT)}>create</button>
-      <button onClick={() => saveCustomer(INPUT, 'customer-7')}>update</button>
+      <button onClick={() => saveCustomer(INPUT, DEFINITION)}>create</button>
+      <button onClick={() => saveCustomer(INPUT, DEFINITION, 'customer-7')}>
+        update
+      </button>
       <button onClick={() => removeCustomer('customer-9')}>remove</button>
     </div>
   );
@@ -89,7 +100,7 @@ describe('useCustomers', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('Cliente salvo'),
     );
-    expect(saveCustomer).toHaveBeenCalledWith(INPUT, undefined);
+    expect(saveCustomer).toHaveBeenCalledWith(INPUT, DEFINITION, undefined);
     expect(listCustomers).toHaveBeenCalledTimes(2);
   });
 
@@ -101,7 +112,7 @@ describe('useCustomers', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent('Cliente salvo'),
     );
-    expect(saveCustomer).toHaveBeenCalledWith(INPUT, 'customer-7');
+    expect(saveCustomer).toHaveBeenCalledWith(INPUT, DEFINITION, 'customer-7');
   });
 
   it('toasts and returns false when saving fails', async () => {

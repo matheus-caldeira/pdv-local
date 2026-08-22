@@ -87,7 +87,7 @@ export function usePdvController(sessionUid: string) {
     (customer: Customer) => {
       setMatchedCustomer(customer);
       setPhone(customer.phone ?? '');
-      setCustomerName(customer.name === 'Consumidor' ? '' : customer.name);
+      setCustomerName(customer.name);
       setAddress(customer.addresses[0] || '');
       customerSearch.clear();
     },

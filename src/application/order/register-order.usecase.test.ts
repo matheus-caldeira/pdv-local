@@ -57,9 +57,6 @@ function makeUow(): { uow: UnitOfWork; created: NewOrder[] } {
     config: {
       claimTicket: async () => right('0001'),
     },
-    customers: {
-      findOrCreate: async () => right(undefined),
-    },
   } as unknown as Repositories;
   return { uow: { run: async (work) => work(repositories) }, created };
 }
@@ -68,12 +65,7 @@ class FakeRepositories implements Repositories {
   claimedTicket = false;
   createdOrder: NewOrder | null = null;
   adjustments: { productUid: string; qty: number }[] = [];
-  findOrCreateInput: { phone: string; name: string; address: string } | null =
-    null;
-
   claimTicketResult: Either<InfrastructureError, string> = right('0001');
-  findOrCreateResult: Either<InfrastructureError, string | undefined> =
-    right('cust-uid');
   adjustResult: Either<InfrastructureError, void> = right(undefined);
   createResult: Either<InfrastructureError, Order> | null = null;
 
@@ -111,14 +103,6 @@ class FakeRepositories implements Repositories {
     create: async () => right(null as never),
     update: async () => right(null as never),
     remove: async () => right(undefined),
-    findOrCreate: async (input: {
-      phone: string;
-      name: string;
-      address: string;
-    }) => {
-      this.findOrCreateInput = input;
-      return this.findOrCreateResult;
-    },
   };
 
   products = {
@@ -284,7 +268,7 @@ describe('RegisterOrderUseCase', () => {
       expect(repositories.createdOrder?.ticket).toBe('');
     });
 
-    it('faz upsert do cliente quando nome/telefone são informados', async () => {
+    it('guarda nome e telefone livres sem vincular cliente', async () => {
       const { repositories, uow } = setup();
       const result = await new RegisterOrderUseCase(
         uow,
@@ -297,12 +281,9 @@ describe('RegisterOrderUseCase', () => {
         customerAddress: 'Rua A',
       });
       expect(isRight(result)).toBe(true);
-      expect(repositories.findOrCreateInput).toEqual({
-        phone: '41999',
-        name: 'Maria',
-        address: 'Rua A',
-      });
-      expect(repositories.createdOrder?.customerUid).toBe('cust-uid');
+      expect(repositories.createdOrder?.customerUid).toBeUndefined();
+      expect(repositories.createdOrder?.customerName).toBe('Maria');
+      expect(repositories.createdOrder?.customerPhone).toBe('41999');
     });
 
     it('decrementa estoque para itens com productUid', async () => {
@@ -333,7 +314,7 @@ describe('RegisterOrderUseCase', () => {
       expect(repositories.createdOrder).toBeNull();
     });
 
-    it('usa o customerUid informado sem consultar findOrCreate', async () => {
+    it('usa o customerUid informado', async () => {
       const { repositories, uow } = setup();
       const result = await new RegisterOrderUseCase(
         uow,
@@ -344,41 +325,7 @@ describe('RegisterOrderUseCase', () => {
         customerUid: 'cust-existing',
       });
       expect(isRight(result)).toBe(true);
-      expect(repositories.findOrCreateInput).toBeNull();
       expect(repositories.createdOrder?.customerUid).toBe('cust-existing');
-    });
-
-    it('faz upsert do cliente usando apenas o telefone quando não há nome', async () => {
-      const { repositories, uow } = setup();
-      const result = await new RegisterOrderUseCase(
-        uow,
-        definitionWith('none'),
-      ).run({
-        sessionUid: 's1',
-        items: [itemWithProduct()],
-        customerPhone: '41999',
-      });
-      expect(isRight(result)).toBe(true);
-      expect(repositories.findOrCreateInput).toEqual({
-        phone: '41999',
-        name: '',
-        address: '',
-      });
-    });
-
-    it('aborta quando o upsert do cliente falha', async () => {
-      const { repositories, uow } = setup();
-      repositories.findOrCreateResult = left(new ConnectorError('down'));
-      const result = await new RegisterOrderUseCase(
-        uow,
-        definitionWith('none'),
-      ).run({
-        sessionUid: 's1',
-        items: [itemWithProduct()],
-        customerName: 'Maria',
-      });
-      expect(isLeft(result)).toBe(true);
-      expect(repositories.createdOrder).toBeNull();
     });
 
     it('aborta quando decrementar o estoque falha', async () => {

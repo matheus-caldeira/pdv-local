@@ -86,80 +86,6 @@ describe('DexieConfigRepository', () => {
   });
 });
 
-describe('DexieCustomerRepository', () => {
-  it('returns undefined when the phone is blank', async () => {
-    const repo = new DexieCustomerRepository(db);
-    const result = await repo.findOrCreate({
-      phone: '   ',
-      name: 'X',
-      address: 'Y',
-    });
-    expect(isRight(result) && result.right).toBeUndefined();
-  });
-
-  it('creates a new customer with the address', async () => {
-    const repo = new DexieCustomerRepository(db);
-    const result = await repo.findOrCreate({
-      phone: '41999',
-      name: 'Maria',
-      address: 'Rua A',
-    });
-    expect(isRight(result)).toBe(true);
-    const stored = await db.customers.where('phone').equals('41999').first();
-    expect(stored?.name).toBe('Maria');
-    expect(stored?.addresses).toEqual(['Rua A']);
-  });
-
-  it('creates with the default name and no address when both are blank', async () => {
-    const repo = new DexieCustomerRepository(db);
-    await repo.findOrCreate({ phone: '41888', name: '  ', address: '  ' });
-    const stored = await db.customers.where('phone').equals('41888').first();
-    expect(stored?.name).toBe('Consumidor');
-    expect(stored?.addresses).toEqual([]);
-  });
-
-  it('appends a new address and upgrades the default name', async () => {
-    const repo = new DexieCustomerRepository(db);
-    await db.customers.add({
-      uid: 'uid-1',
-      name: 'Consumidor',
-      phone: '41999',
-      addresses: ['Rua A'],
-      extra: {},
-      createdAt: 1,
-      updatedAt: 1,
-    });
-    await repo.findOrCreate({
-      phone: '41999',
-      name: 'Maria',
-      address: 'Rua B',
-    });
-    const stored = await db.customers.where('phone').equals('41999').first();
-    expect(stored?.name).toBe('Maria');
-    expect(stored?.addresses).toEqual(['Rua A', 'Rua B']);
-  });
-
-  it('keeps the existing address list when the address repeats', async () => {
-    const repo = new DexieCustomerRepository(db);
-    await db.customers.add({
-      uid: 'uid-2',
-      name: 'Maria',
-      phone: '41999',
-      addresses: ['Rua A'],
-      extra: {},
-      createdAt: 1,
-      updatedAt: 1,
-    });
-    await repo.findOrCreate({
-      phone: '41999',
-      name: 'Maria',
-      address: 'Rua A',
-    });
-    const stored = await db.customers.where('phone').equals('41999').first();
-    expect(stored?.addresses).toEqual(['Rua A']);
-  });
-});
-
 describe('DexieProductRepository', () => {
   it('decrements stock consistently, allowing it to go negative', async () => {
     const repo = new DexieProductRepository(db);
@@ -413,11 +339,7 @@ describe('repository error paths', () => {
   it('DexieCustomerRepository returns Left when the table fails', async () => {
     const repo = new DexieCustomerRepository(db);
     db.close();
-    const result = await repo.findOrCreate({
-      phone: '41999',
-      name: 'A',
-      address: '',
-    });
+    const result = await repo.findByPhone('41999');
     expect(isLeft(result)).toBe(true);
   });
 

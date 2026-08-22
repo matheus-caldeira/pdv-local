@@ -7,6 +7,7 @@ import {
   buildCustomer,
   type CustomerInput,
 } from '../../domain/customer/customer.rules';
+import type { BusinessTypeDefinition } from '../../domain/business-type/business-type.entity';
 
 export function makeListCustomers(repository: CustomerRepository) {
   return (): Promise<Either<AppError, Customer[]>> => repository.list();
@@ -46,18 +47,22 @@ export function makeSearchCustomersByName(repository: CustomerRepository) {
 export function makeSaveCustomer(repository: CustomerRepository) {
   return async (
     input: CustomerInput,
+    definition: BusinessTypeDefinition,
     uid?: string,
   ): Promise<Either<AppError, Customer>> => {
-    const built = buildCustomer(input);
+    const built = buildCustomer(input, definition);
     if (isLeft(built)) return built;
 
-    const existing = await repository.findByPhone(built.right.phone);
-    if (isLeft(existing)) return existing;
-    if (existing.right && existing.right.uid !== uid) {
-      return left(new DuplicatePhoneError());
+    const data = built.right;
+
+    if (data.phone) {
+      const existing = await repository.findByPhone(data.phone);
+      if (isLeft(existing)) return existing;
+      if (existing.right && existing.right.uid !== uid) {
+        return left(new DuplicatePhoneError());
+      }
     }
 
-    const data = built.right;
     return uid === undefined
       ? repository.create(data)
       : repository.update(uid, data);
